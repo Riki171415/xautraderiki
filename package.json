@@ -1,0 +1,14 @@
+{
+  "name": "cop-tah-analytics",
+  "version": "1.0.0",
+  "description": "COP TAH Analytics Dashboard — XAUUSD/PAXG Monorepo",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "start:backend": "npm start --prefix backend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev": "start cmd /k \"npm run dev:backend\" && start cmd /k \"npm run dev:frontend\"",
+    "build:frontend": "npm run build --prefix frontend"
+  }
+}
