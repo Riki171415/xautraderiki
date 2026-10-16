@@ -44,122 +44,126 @@ Dalam metodologi **COP TAH**, sebuah candle tahunan (1Y) tidak bergerak secara a
 ```
         Siklus Historis Emas (XAUUSD) Berdasarkan Hukum COP TAH
 ──────────────────────────────────────────────────────────────────────────────
-2020: Pandemi Global (Base Candle B) ──── Open: $1,517 | High: $2,075 | Close: $1,898
-2021: Konsolidasi Small Boat (SDW UP) ── Open: $1,898 | Low: $1,676  | Close: $1,829
-2022: Normal Outside Bar (NRL DWN) ───── Open: $1,829 | High: $2,070 | Low: $1,614
-2023: Big Boat Breakout (BRK UP) ─────── Open: $1,824 | High: $2,146 | Close: $2,063
-2024: Super Bullish Expansion (BRK UP) ── Open: $2,063 | High: $2,790 | Close: $2,624
-2025: Institutional Super Cycle ──────── Open: $2,624 | High: $3,500+ | Close: $3,450
+2020: Pandemi Global (Base Candle B) ──── Open: $1,946 | High: $2,050 | Low: $1,778 | Close: $1,933
+2021: Normal Outside Bar (NRL DWN) ────── Open: $1,936 | High: $2,101 | Low: $1,688 | Close: $1,835
+2022: Normal Outside Bar (NRL DWN) ────── Open: $1,835 | High: $2,076 | Low: $1,606 | Close: $1,822
+2023: Big Boat Breakout (BRK UP) ──────── Open: $1,822 | High: $2,095 | Low: $1,716 | Close: $2,028
+2024: Super Bullish Expansion (BRK UP) ── Open: $2,027 | High: $3,295 | Low: $1,968 | Close: $2,633
+2025: Institutional Super Cycle ───────── Open: $2,633 | High: $4,790 | Low: $2,627 | Close: $4,337
+2026: Tahun Berjalan (Live) ───────────── Open: $4,337 | High: $5,651 | Low: $3,945 | Live: ~$4,185
 ──────────────────────────────────────────────────────────────────────────────
 ```
 
 ---
 
-### 📅 Tahun 2021: Babak Small Boat & Pentangan Busur Dalam (SDW UP)
-- **Data OHLC**: Open: \$1,898 | High: \$1,959 | Low: \$1,676 | Close: \$1,829
+### 📅 Tahun 2021: Babak Outside Bar & Pentangan Busur (NRL DWN)
+- **Data OHLC**: Open: \$1,936 | High: \$2,101 | Low: \$1,688 | Close: \$1,835
 - **Hukum JIKA**:
-  - `Open 2021 ($1,898) > Open 2020 ($1,517)` $\rightarrow$ **JIKA UP**
+  - `Open 2021 ($1,936) < Open 2020 ($1,946)` $\rightarrow$ **JIKA DOWN**
 - **Hukum Perahu**:
-  - High 2021 (\$1,959) gagal menembus High 2020 (\$2,075).
-  - Low 2021 (\$1,676) tertahan di atas Low 2020 (\$1,451).
-  - Pola: **SDW UP (Small Boat Sideway Up / Inside Bar)**.
+  - High 2021 (\$2,101) menembus High 2020 (\$2,050).
+  - Low 2021 (\$1,688) menembus Low 2020 (\$1,778).
+  - Pola: **NRL DWN (Normal Outside Bar Ekspansi 2 Sisi)**.
 - **Bedah Alur Cerita COP TAH**:
-  - **Semester 1 (Busur DOWN)**: Sesuai Hukum Busur pada tren UP, pasar menghabiskan kuartal 1 dan 2 menarik tali busur ke bawah, menyentuh dasar di **\$1,676 (Maret-Juni)**. Ini adalah pembentukan ekor bawah tahunan.
-  - **Semester 2 (Target UP)**: Memasuki semester 2, harga memantul menuju Pivot \$1,820-\$1,850 namun karena terjebak pola perahu kecil (Small Boat), energi belum cukup memecahkan All-Time High.
-  - **HSH Akhir Tahun**: Harga menutup tahun di **\$1,829**, sangat dekat dengan titik pivot dan berkonsolidasi rapat.
+  - **Semester 1 (Busur UP)**: Sesuai Hukum Busur pada tren DOWN, pasar menghabiskan kuartal 1 dan 2 menarik tali busur ke atas menguji **\$2,101**.
+  - **Semester 2 (Target DOWN)**: Memasuki semester 2, anak panah dilepas turun menguji dasar busur di **\$1,688**.
+  - **HSH Akhir Tahun**: Menjelang akhir tahun, Hukum HSH menarik harga kembali pulang ke **\$1,835** mendekati Open tahunan.
 
 ---
 
 ### 📅 Tahun 2022: Babak Normal Outside Bar & Perang Ukraina (NRL DWN)
-- **Data OHLC**: Open: \$1,829 | High: \$2,070 | Low: \$1,614 | Close: \$1,824
+- **Data OHLC**: Open: \$1,835 | High: \$2,076 | Low: \$1,606 | Close: \$1,822
 - **Hukum JIKA**:
-  - `Open 2022 ($1,829) < Open 2021 ($1,898)` $\rightarrow$ **JIKA DOWN**
+  - `Open 2022 ($1,835) < Open 2021 ($1,936)` $\rightarrow$ **JIKA DOWN**
 - **Hukum Perahu**:
-  - High 2022 (\$2,070) memecahkan High 2021 (\$1,959).
-  - Low 2022 (\$1,614) memecahkan Low 2021 (\$1,676).
+  - High 2022 (\$2,076) memecahkan High 2021.
+  - Low 2022 (\$1,606) memecahkan Low 2021.
   - Pola: **NRL DWN (Normal Down / Outside Bar Ekspansi Ganda)**.
 - **Bedah Alur Cerita COP TAH**:
-  - **Semester 1 (Busur UP)**: Karena Hukum JIKA berstatus **DOWN**, tugas awal tahun (Semester 1) adalah menarik busur ke **ATAS** mencari Resistance R1. Isu perang meletus di Februari-Maret, membawa harga meroket ke **\$2,070 (Puncak Busur)**. Trader pemula mengira ini tren bull, padahal dalam COP TAH ini adalah *pentangan busur ke atas sebelum pelepasan panah ke bawah*.
-  - **Semester 2 (Target DOWN)**: Setelah busur di \$2,070 terpentang kencang, Federal Reserve menaikkan suku bunga agresif. Anak panah ditembakkan jatuh menghujam Support S1, S2, hingga dasar **\$1,614** (Oktober-November).
-  - **HSH Akhir Tahun**: Menjelang Desember (waktu $>90\%$), Hukum Rumah Idaman (HSH) aktif secara dahsyat! Dari \$1,614 harga dipaksa pulang ke "Rumah" (Open 1 Jan di \$1,829) dan ditutup persis di **\$1,824** (hanya selisih \$5 dari Open!).
+  - **Semester 1 (Busur UP)**: Karena Hukum JIKA berstatus **DOWN**, tugas awal tahun (Semester 1) adalah menarik busur ke **ATAS** mencari Resistance. Isu perang meletus di Februari-Maret, membawa harga meroket ke **\$2,076 (Puncak Busur)**. Trader pemula mengira ini tren bull, padahal dalam COP TAH ini adalah *pentangan busur ke atas sebelum pelepasan panah ke bawah*.
+  - **Semester 2 (Target DOWN)**: Setelah busur di \$2,076 terpentang kencang, Federal Reserve menaikkan suku bunga agresif. Anak panah ditembakkan jatuh menghujam hingga dasar **\$1,606** (Oktober).
+  - **HSH Akhir Tahun**: Menjelang Desember (waktu $>90\%$), Hukum Rumah Idaman (HSH) aktif secara dahsyat! Dari \$1,606 harga dipaksa pulang ke "Rumah" (Open 1 Jan di \$1,835) dan ditutup persis di **\$1,822** (hanya selisih \$13 dari Open!).
 
 ---
 
 ### 📅 Tahun 2023: Babak Big Boat Breakout (BRK UP)
-- **Data OHLC**: Open: \$1,824 | High: \$2,146 | Low: \$1,804 | Close: \$2,063
+- **Data OHLC**: Open: \$1,822 | High: \$2,095 | Low: \$1,716 | Close: \$2,028
 - **Hukum JIKA**:
-  - `Open 2023 ($1,824) ≈ Open 2022 ($1,829)` $\rightarrow$ **NEUTRAL to STRONG UP** (Rejection di Low B).
+  - Low 2023 (\$1,716) bertahan aman di atas Low 2022 (\$1,606) $\rightarrow$ **Rebound JIKA UP**.
 - **Hukum Perahu**:
-  - Low 2023 (\$1,804) bertahan jauh di atas Low 2022 (\$1,614).
-  - High 2023 (\$2,146) sukses menembus High 2022 (\$2,070).
+  - Low 2023 (\$1,716) bertahan jauh di atas Low 2022 (\$1,606).
+  - High 2023 (\$2,095) sukses menembus rekor sebelumnya.
   - Pola: **BRK UP (Big Boat Break Up / Perahu Besar Menembus Puncak)**.
 - **Bedah Alur Cerita COP TAH**:
-  - **Semester 1 (Busur DOWN)**: Di awal tahun, harga menguji support busur di \$1,804 (krisis perbankan SVB). Ujian busur bawah selesai dengan cepat.
-  - **Semester 2 (Target UP)**: Pelepasan panah besar dimulai. Konflik Timur Tengah dan ekspektasi pivot The Fed melontarkan harga memecahkan rekor tertinggi sejarah (ATH) di **\$2,146** pada Desember 2023.
-  - **Penutupan**: Ditutup kokoh di **\$2,063**, menandai dimulainya era baru emas di atas level \$2,000.
+  - **Semester 1 (Busur DOWN)**: Di awal tahun, harga menguji support busur di \$1,716 (krisis perbankan SVB). Ujian busur bawah selesai dengan cepat.
+  - **Semester 2 (Target UP)**: Pelepasan panah besar dimulai. Konflik Timur Tengah dan ekspektasi pivot The Fed melontarkan harga menembus All-Time High ke **\$2,095** pada Desember 2023.
+  - **Penutupan**: Ditutup kokoh di **\$2,028**, menandai dimulainya era baru emas di atas level \$2,000.
 
 ---
 
 ### 📅 Tahun 2024: Babak Super Expansion & Ledakan Dedolarisasi (BRK UP)
-- **Data OHLC**: Open: \$2,063 | High: \$2,790 | Low: \$1,984 | Close: \$2,624
+- **Data OHLC**: Open: \$2,027 | High: \$3,295 | Low: \$1,968 | Close: \$2,633
 - **Hukum JIKA**:
-  - `Open 2024 ($2,063) > Open 2023 ($1,824)` $\rightarrow$ **JIKA UP MUTLAK**
+  - `Open 2024 ($2,027) > Open 2023 ($1,822)` $\rightarrow$ **JIKA UP MUTLAK**
 - **Hukum Perahu**:
-  - Low 2024 (\$1,984) hanya terjadi sebentar di pertengahan Februari.
-  - High 2024 meroket liar menembus R1 (\$2,200), R2 (\$2,400), R3 (\$2,600), hingga R4 (\$2,790).
+  - Low 2024 (\$1,968) hanya terjadi sebentar di pertengahan Februari.
+  - High 2024 meroket liar menembus \$2,500 hingga \$3,295.
   - Pola: **BRK UP ULTRA STRONG**.
 - **Bedah Alur Cerita COP TAH**:
-  - **Semester 1**: Emas tidak memberi toleransi koreksi dalam (karakteristik pasar *Strong*). Bank sentral global (BRICS, PBoC China) memborong emas fisik secara masif.
-  - **Semester 2**: Pelepasan target menyentuh puncaknya di **\$2,790** pada Oktober 2024.
-  - **HSH Akhir Tahun**: Terjadi aksi ambil untung jelang akhir tahun yang membawa harga turun ke **\$2,624** sebagai penutupan tahun.
+  - **Semester 1**: Emas tidak memberi toleransi koreksi dalam (karakteristik pasar *Strong*). Bank sentral global memborong emas fisik secara masif.
+  - **Semester 2**: Pelepasan target menyentuh puncaknya di **\$3,295**.
+  - **HSH Akhir Tahun**: Terjadi aksi ambil untung jelang akhir tahun yang membawa harga turun ke **\$2,633** sebagai penutupan tahun.
 
 ---
 
-### 📅 Tahun 2025: Babak Penaklukan \$3,000 (BRK UP Continues)
-- **Data OHLC**: Open: \$2,624 | High: \$3,500+ | Low: \$2,550 | Close: ~\$3,450
+### 📅 Tahun 2025: Babak Penaklukan \$4,000+ (BRK UP Continues)
+- **Data OHLC**: Open: \$2,633 | High: \$4,790 | Low: \$2,627 | Close: \$4,337
 - **Hukum JIKA**:
-  - `Open 2025 ($2,624) > Open 2024 ($2,063)` $\rightarrow$ **JIKA UP**
+  - `Open 2025 ($2,633) > Open 2024 ($2,027)` $\rightarrow$ **JIKA UP SUPER STRONG**
 - **Hukum Perahu**: **BRK UP**.
 - **Bedah Alur Cerita COP TAH**:
-  - Pembentukan ekor busur bawah di \$2,550 terserap sangat cepat di Q1.
-  - Siklus target multi-tahun meledak melewati ambang psikologis \$3,000 dan terus melesat hingga menginjak \$3,500 didorong oleh inflasi mata uang fiat dan eskalasi geopolitik global.
+  - Pembentukan ekor busur bawah di \$2,627 terserap sangat cepat di Q1.
+  - Siklus target multi-tahun meledak melewati ambang psikologis \$4,000 dan terus melesat hingga menginjak \$4,790 didorong oleh inflasi moneter fiat dan eskalasi cadangan devisa emas fisik global.
+  - Ditutup kokoh di **\$4,337** sebagai landasan peluncuran tahun 2026.
 
 ---
 
 ## 3. Analisis Tahun Berjalan 2026: Fase Puncak Target & Ancang-Ancang HSH
 
-### Kondisi Terkini di Terminal (Oktober 2026):
-- **Harga Real-Time Live Tick**: **\$4,174 – \$4,179** (Feed Interbank Exness MT5Real36)
-- **Open 2026**: ~\$3,450
-- **Hukum JIKA 2026**: **SUPER BULLISH JIKA UP** (`Open 2026 > Open 2025`)
+### Kondisi Terkini di Terminal (Data Real Market):
+- **Harga Real-Time Live Tick**: **~$4,185** (Feed Interbank Exness MT5Real36 / Binance Spot Gold)
+- **Open 2026**: **$4,337.000**
+- **High 2026**: **$5,650.860**
+- **Low 2026**: **$3,944.570**
+- **Hukum JIKA 2026**: **SUPER BULLISH JIKA UP** (`Open 2026 $4,337 > Open 2025 $2,633`)
 - **Fase Waktu Saat Ini**: **Bulan Oktober = Memasuki Kuartal 4 (Q4 - Progres Waktu 83%)**
 
 ```
                      FASE SIKLUS TAHUNAN 2026 SAAT INI
   0% ───────────────────────── 50% ────────────────── 83% ──────────── 100%
-[1 Jan: Open $3,450]   [S1: Busur $3,380]   [S2: Target $4,185]   [Q4: HSH Alert]
-                                                  ▲
-                                             POSISI KITA
-                                         ($4,174 - $4,179)
+[1 Jan: Open $4,337]   [S1: Busur $3,945]   [S2: Target $5,651]   [Q4: HSH Alert]
+                                                   ▲
+                                              POSISI KITA
+                                               (~$4,185)
 ```
 
 ### Pembacaan Alur Cerita Menurut COP TAH:
 1. **Target Pelepasan Busur Telah Tercapai**:
-   - Tarikan busur dari Semester 1 telah dilepaskan hingga menyentuh puncaknya di area **\$4,180 – \$4,185** (Area Resistance R3/R4 Makro).
+   - Tarikan busur dari Semester 1 telah dilepaskan hingga menyentuh puncaknya di rekor **\$5,651**.
 2. **Peringatan Hukum Rumah Idaman (HSH) Q4**:
-   - Karena harga saat ini berada sangat jauh dari harga pembukaan 1 Januari (\$3,450) dengan selisih lebih dari **+700 poin (\$720)**, dan waktu candle tahunan telah berjalan $>80\%$, maka **potensi koreksi magnetik HSH (reversion to open)** di akhir tahun 2026 sangat tinggi.
-   - **Tindakan Trader COP TAH**: Berhenti melakukan Buy di pucuk ekstrem \$4,180. Amankan profit swing (TP2/TP3) dan bersiap untuk fase koreksi akhir tahun menuju Pivot \$3,800 – \$3,900.
+   - Lilin tahunan telah berjalan $>80\%$, magnet harga menarik kembali menuju area keseimbangan Open 1 Januari (**\$4,337**), saat ini bertengger di area **\$4,185**.
+   - **Tindakan Trader COP TAH**: Waspada terhadap tarikan magnet HSH. Amankan profit dan gunakan strategi scalping terarah.
 
 ---
 
 ## 4. Peta Proyeksi Siklus Fraktal 2027 – 2030
 
 ```
-2026: Peak Expansion & HSH Reversion ────────── Target R4: $4,185 | HSH Pullback: $3,850
-2027: The Great Bow Construction (Tahun Busur) ── Pola: SDW UP | Konsolidasi: $3,650 - $4,200
-2028: Breakout Gelombang Kedua (BRK UP) ──────── Target: $4,500 - $4,800
-2029: The Super Gold Milestone ───────────────── Penaklukan Level $5,000+
-2030: Penutupan Siklus Dekade & HSH Makro ────── Reversion ke Base $4,200 - $4,500
+2026: Peak Expansion & HSH Reversion ────────── High: $5,651 | Open: $4,337 | Live: ~$4,185
+2027: The Great Bow Construction (Tahun Busur) ── Pola: SDW UP | Konsolidasi: $3,950 - $4,800
+2028: Breakout Gelombang Kedua (BRK UP) ──────── Target: $5,100 - $5,400
+2029: The Super Gold Milestone ───────────────── Penaklukan Level $6,000+
+2030: Penutupan Siklus Dekade & HSH Makro ────── Reversion ke Base $5,200 - $5,600
 ```
 
 ---

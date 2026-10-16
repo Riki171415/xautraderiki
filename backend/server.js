@@ -463,6 +463,7 @@ async function fetchBrokerOHLCV(brokerId = 'EXNESS', marketSymbol = 'XAUUSD', ti
 // Multi-Timeframe Cache for Leak 4 REG Table (TTL: 30s)
 let multiTfCandlesCache = {
   data: {},
+  annualCandles: [],
   lastFetch: 0,
 };
 
@@ -478,6 +479,9 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
   for (const tf of tfs) {
     try {
       const ohlcv = await fetchBrokerOHLCV(brokerId, marketSymbol, tf);
+      if (tf === '1Y' && Array.isArray(ohlcv)) {
+        multiTfCandlesCache.annualCandles = ohlcv;
+      }
       if (ohlcv && ohlcv.length >= 2) {
         res[tf] = {
           ohlcv_N: {
@@ -505,7 +509,7 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
     res['market'] = res['1h'];
   }
 
-  multiTfCandlesCache = { data: res, lastFetch: now };
+  multiTfCandlesCache = { data: res, annualCandles: multiTfCandlesCache.annualCandles, lastFetch: now };
   return { ...res };
 }
 
@@ -716,6 +720,14 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       subAlurCerita,
       multiTfDecision,
       leak4RegMatrix,
+      yearlyCandles: (multiTfCandlesCache.annualCandles || []).map(([ts, o, h, l, c, v]) => ({
+        year: new Date(ts).getUTCFullYear(),
+        open: Number(Number(o).toFixed(decimals)),
+        high: Number(Number(h).toFixed(decimals)),
+        low: Number(Number(l).toFixed(decimals)),
+        close: Number(Number(c).toFixed(decimals)),
+        volume: v,
+      })),
     };
 
     lastAnalysis = result;
@@ -731,6 +743,24 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now(), service: 'COP TAH Backend' });
+});
+
+// Annual historical candles (2020 - 2026)
+app.get('/api/yearly-history', async (req, res) => {
+  try {
+    const ohlcv = await fetchBrokerOHLCV('EXNESS', 'XAUUSD', '1Y');
+    const candles = (ohlcv || []).map(([ts, o, h, l, c, v]) => ({
+      year: new Date(ts).getUTCFullYear(),
+      open: o,
+      high: h,
+      low: l,
+      close: c,
+      volume: v,
+    }));
+    res.json({ success: true, candles });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Available brokers / servers
