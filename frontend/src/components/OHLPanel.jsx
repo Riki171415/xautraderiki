@@ -43,7 +43,7 @@ function OHLMetric({ label, valueN, valueB, diff, decimals = 2, isLive = false, 
 
       <div className="flex items-end justify-between gap-3">
         <div>
-          <div className="text-[10px] text-slate-400 font-mono mb-0.5">Candle N (Saat Ini)</div>
+          <div className="text-[10px] text-slate-400 font-mono mb-0.5">Data N (Saat Ini)</div>
           <div
             className={`text-xl lg:text-2xl font-black font-mono tracking-tight tabular-nums transition-colors ${
               isLive && liveDirection === 'UP'
@@ -58,7 +58,7 @@ function OHLMetric({ label, valueN, valueB, diff, decimals = 2, isLive = false, 
         </div>
 
         <div className="text-right">
-          <div className="text-[10px] text-slate-400 font-mono mb-0.5">Candle B (Sebelumnya)</div>
+          <div className="text-[10px] text-slate-400 font-mono mb-0.5">Data B (Sebelumnya)</div>
           <div className="text-xs font-mono font-semibold text-slate-300 tabular-nums">
             {valueB !== undefined ? valueB.toFixed(decimals) : '—'}
           </div>
@@ -139,7 +139,7 @@ export default function OHLPanel({ data, liveTick }) {
               </span>
             </div>
             <p className="text-xs text-slate-300 font-mono mt-0.5">
-              {jika?.description || 'Analisis posisi Open Candle N vs Candle B'}
+              {jika?.description || 'Analisis posisi Open Data N vs Data B'}
             </p>
           </div>
         </div>
@@ -180,7 +180,7 @@ export default function OHLPanel({ data, liveTick }) {
         />
       </div>
 
-      {/* ── Intraday Candle Range Visualizer ── */}
+      {/* ── Intraday Data Range Visualizer ── */}
       {N?.high && N?.low && (
         <div className="p-3 rounded-xl bg-cop-card/70 border border-cop-border/80">
           <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1.5">
@@ -188,7 +188,7 @@ export default function OHLPanel({ data, liveTick }) {
               <span className="text-rose-400 font-bold">LOW: ${N.low.toFixed(decimals)}</span>
             </span>
             <span className="text-slate-300">
-              Rentang Candle: <strong className="text-cop-gold tabular-nums">{candleRange.toFixed(decimals)} pts</strong> ({pricePositionPercent.toFixed(1)}% dari Low)
+              Rentang Data: <strong className="text-cop-gold tabular-nums">{candleRange.toFixed(decimals)} pts</strong> ({pricePositionPercent.toFixed(1)}% dari Low)
             </span>
             <span className="flex items-center gap-1.5">
               <span className="text-emerald-400 font-bold">HIGH: ${N.high.toFixed(decimals)}</span>

@@ -80,7 +80,7 @@ const BASE_YEARLY_DATA = {
     jikaDesc: 'Low ($1,716) bertahan kokoh di atas Low 2022 ($1,606) — Rebound JIKA UP',
     perahu: 'BRK UP',
     perahuTitle: 'Big Boat Break Up',
-    perahuDesc: 'Low ($1,716) bertahan aman, High ($2,095) menembus rekor sebelumnya dan candle ditutup di $2,028.',
+    perahuDesc: 'Low ($1,716) bertahan aman, High ($2,095) menembus rekor sebelumnya dan data ditutup di $2,028.',
     busurS1: 'Ujian Busur Bawah ke $1,716 (Krisis Perbankan SVB Maret)',
     targetS2: 'Breakout All-Time High ke $2,095 (Desember)',
     hsh: 'Ditutup kokoh di $2,028 di atas level psikologis $2,000.',

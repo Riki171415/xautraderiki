@@ -55,7 +55,7 @@ function HSHBanner({ hsh }) {
             />
           </div>
           <div className="text-[10px] font-mono text-slate-500 mt-1.5">
-            Candle {hsh?.percentElapsed || 0}% selesai · Belum ada sinyal HSH aktif
+            Durasi Periode Data {hsh?.percentElapsed || 0}% selesai · Belum ada sinyal HSH aktif
           </div>
         </div>
       </div>

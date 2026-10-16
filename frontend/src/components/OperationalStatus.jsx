@@ -122,7 +122,7 @@ export default function OperationalStatus({ data }) {
         {perahu && (
           <div className="mt-3 p-3 rounded-xl bg-cop-card border border-cop-border">
             <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-1">
-              Hukum Perahu (Pola Candle)
+              Hukum Perahu (Pola Data)
             </div>
             <div className={`text-sm font-black font-mono mb-1 ${getMoveClass(perahu.pattern)}`}>
               {perahu.pattern}

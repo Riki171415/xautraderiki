@@ -1,14 +1,13 @@
 /**
  * COP TAH Analytics Dashboard — Main App
- * Institutional Trading Analytics for XAUUSD/PAXG
+ * Platform Trading Institusional XAUUSD / Gold Berdasarkan 3 Core Theories & 5 Hukum COP TAH
  *
- * View Modes:
- *  - 'dashboard': Executive Dashboard (OHL, RS Matrix, Pending Orders, Operational Status, Narrative)
- *  - 'weekly': Trading Plan Mingguan (Real Market Data 1W Plan & Execution Map)
- *  - 'global': Alur Cerita Global COP TAH (2021 - 2030 Peta Siklus 10 Tahun)
- *  - 'table': Multi-Timeframe Matrix Terminal (17-column Leak4Reg Matrix & 9-column RS)
- *  - 'cycle': Market Cycle 12-Step Timeline & Sub-Alur Fraktal
- *  - 'both': All-in-One Integrated View
+ * Alur Kerja Runtut (Institutional Trading Pipeline):
+ *  - Pilar 1: 'global'    ➔ Peta Makro Global (2021 - 2030 Peta Siklus 10 Tahun)
+ *  - Pilar 2: 'weekly'    ➔ Trading Plan Mingguan (WEEK 3 — Skenario 2 Arah BUY & SELL HSH)
+ *  - Pilar 3: 'dashboard' ➔ Cockpit Eksekusi Live (OHL Intraday, Ladder RS Matrix, Tiket Order, Sesi Pasar)
+ *  - Pilar 4: 'terminal'  ➔ Terminal Matriks 17-Kolom & Siklus 12 Langkah Sesi
+ *  - 'all': Semua Bagian Terintegrasi (All-in-One View)
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -25,8 +24,7 @@ import Leak4RegTable from './components/Leak4RegTable';
 import GlobalStoryline from './components/GlobalStoryline';
 import WeeklyTradingPlan from './components/WeeklyTradingPlan';
 import { useWebSocket } from './hooks/useWebSocket';
-import { useAnalysis } from './hooks/useAnalysis';
-import { resetTouches } from './hooks/useAnalysis';
+import { useAnalysis, resetTouches } from './hooks/useAnalysis';
 import {
   RefreshCw,
   AlertOctagon,
@@ -39,15 +37,24 @@ import {
   Calendar,
   Globe,
   Radio,
-  ChevronDown
+  ChevronDown,
+  Zap,
+  ArrowRight,
+  TrendingUp,
+  Activity,
+  Maximize2,
+  Sparkles,
+  Shield,
+  Split
 } from 'lucide-react';
 
 export default function App() {
   const [symbol, setSymbol] = useState('XAUUSD');
   const [timeframe, setTimeframe] = useState('1h');
   const [broker, setBroker] = useState('EXNESS');
-  // OPSI A: Executive Dashboard as default view mode
-  const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard' | 'weekly' | 'global' | 'table' | 'cycle' | 'both'
+  // Default to Cockpit Eksekusi Live (Pilar 3) or Weekly (Pilar 2)
+  const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard' | 'weekly' | 'global' | 'terminal' | 'all'
+  const [terminalTab, setTerminalTab] = useState('both'); // 'table' | 'cycle' | 'both'
   const [notification, setNotification] = useState(null);
 
   // ── Data Sources ───────────────────────────────────────────────────────────
@@ -97,6 +104,54 @@ export default function App() {
     refetch();
   }, [refetch]);
 
+  // ── Current Telemetry Quick Stats ──────────────────────────────────────────
+  const currentPrice = liveTick?.price || data?.ohlcv_N?.close || 4185.0;
+  const weeklyRow = data?.leak4RegMatrix?.tableRows?.find(
+    (r) => r.timeframe === '1w' || r.label?.includes('WEEK') || r.label?.includes('1w')
+  );
+  const isWeeklyUp = weeklyRow ? parseFloat(weeklyRow.openN) >= parseFloat(weeklyRow.openB) : true;
+  const weekLabel = weeklyRow?.label || 'WEEK_3';
+
+  // ── 4 Pilar Navigation Config ──────────────────────────────────────────────
+  const WORKFLOW_PILLARS = [
+    {
+      id: 'global',
+      pillarNum: '1',
+      title: 'Peta Global (2021–2030)',
+      shortTitle: '1. Peta Global',
+      icon: Globe,
+      badge: 'Makro',
+      desc: 'Siklus 10 Tahun & Posisi 2026 Q4'
+    },
+    {
+      id: 'weekly',
+      pillarNum: '2',
+      title: `Plan Mingguan (${weekLabel})`,
+      shortTitle: '2. Plan Mingguan',
+      icon: Calendar,
+      badge: 'Strategi 2 Arah',
+      desc: 'Skenario A (BUY) & Skenario B (SELL HSH)'
+    },
+    {
+      id: 'dashboard',
+      pillarNum: '3',
+      title: 'Cockpit Eksekusi Live',
+      shortTitle: '3. Cockpit Live',
+      icon: Zap,
+      badge: 'Live Trading',
+      desc: 'OHL Intraday, Tangga RS & Tiket Order'
+    },
+    {
+      id: 'terminal',
+      pillarNum: '4',
+      title: 'Terminal Matriks & Siklus',
+      shortTitle: '4. Terminal Matriks',
+      icon: Layers,
+      badge: 'Deep Dive',
+      desc: 'Matriks 17-Kolom & 12 Sesi Harian'
+    }
+  ];
+
   // ── Loading State ──────────────────────────────────────────────────────────
   if (!data && (loading || wsStatus === 'connecting')) {
     return (
@@ -108,10 +163,9 @@ export default function App() {
     );
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-cop-bg flex flex-col overflow-hidden text-slate-100">
-      {/* ── Institutional Header ── */}
+      {/* ── 1. Institutional Header ── */}
       <Header
         symbol={symbol}
         timeframe={timeframe}
@@ -151,130 +205,159 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Institutional Toolbar Strip ── */}
-      <div className="flex items-center justify-between px-4 lg:px-6 py-2 bg-cop-surface/80 border-b border-cop-border/80 backdrop-blur-md flex-wrap gap-2">
-        {/* Left: Feed Telemetry */}
-        <div className="flex items-center gap-2.5">
-          {data && (
-            <>
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Feed:</span>
-              <span className="text-[11px] font-mono font-bold text-cop-gold flex items-center gap-1.5 bg-amber-950/30 px-2 py-0.5 rounded-lg border border-amber-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {data.broker?.name || broker} ({data.broker?.server || 'Interbank CFD'})
-              </span>
-              <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
-                {data.symbol} · TF: <strong className="text-white">{data.timeframe}</strong> · Spread: <strong className="text-cop-cyan">{data.broker?.spreadLabel || '1.2 pips'}</strong>
-              </span>
-            </>
-          )}
+      {/* ── 2. WORKFLOW NAVIGATION BAR (4 PILAR TRADING PIPELINE) ── */}
+      <div className="bg-cop-surface/95 border-b border-cop-border/80 backdrop-blur-md px-4 lg:px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap">
+        {/* Left: 4 Pilar Workflow Controller */}
+        <div className="flex items-center gap-1.5 p-1 bg-cop-card/90 rounded-2xl border border-cop-border shadow-sm flex-wrap">
+          {WORKFLOW_PILLARS.map((p) => {
+            const Icon = p.icon;
+            const isActive = viewMode === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setViewMode(p.id)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
+                  isActive
+                    ? p.id === 'global'
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-glow-gold-sm font-black'
+                      : p.id === 'weekly'
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-glow-green-sm'
+                      : p.id === 'dashboard'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                      : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+                title={p.desc}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? '' : 'text-slate-400'}`} />
+                <span className="hidden sm:inline">{p.title}</span>
+                <span className="sm:hidden">{p.shortTitle}</span>
+              </button>
+            );
+          })}
+
+          {/* Opsi Tampilkan Semua (All-in-One) */}
+          <button
+            onClick={() => setViewMode('all')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
+              viewMode === 'all'
+                ? 'bg-slate-700 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+            title="Tampilkan Semua 4 Pilar Sekaligus"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Semua Bagian</span>
+          </button>
         </div>
 
-        {/* Right: View Mode Segmented Switcher & Quick Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Segmented View Mode Controller */}
-          <div className="flex items-center gap-1 bg-cop-card/90 p-1 rounded-xl border border-cop-border shadow-sm flex-wrap">
-            {/* 1. Dashboard */}
-            <button
-              onClick={() => setViewMode('dashboard')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                viewMode === 'dashboard'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-glow-gold-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
-              title="Executive Dashboard (Tampilan Utama)"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>Dashboard</span>
-            </button>
-
-            {/* 2. Weekly Trading Plan (NEW!) */}
-            <button
-              onClick={() => setViewMode('weekly')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                viewMode === 'weekly'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-glow-green-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
-              title="Trading Plan Mingguan Berdasarkan Data Pasar Nyata 1W"
-            >
-              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Plan Mingguan</span>
-            </button>
-
-            {/* 3. Global Storyline 2021-2030 (NEW!) */}
-            <button
-              onClick={() => setViewMode('global')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                viewMode === 'global'
-                  ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-slate-950 shadow-glow-gold-sm font-black'
-                  : 'text-cop-gold hover:text-white hover:bg-amber-500/10'
-              }`}
-              title="Alur Cerita Global COP TAH (2021 – 2030 Peta Siklus 10 Tahun)"
-            >
-              <Globe className="w-3.5 h-3.5 text-cop-gold" />
-              <span>Cerita 2021-2030</span>
-            </button>
-
-            {/* 4. Matrix Table */}
-            <button
-              onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                viewMode === 'table'
-                  ? 'bg-cop-blue text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
-              title="Multi-Timeframe Matrix Terminal"
-            >
-              <Table className="w-3.5 h-3.5" />
-              <span>Tabel Matriks</span>
-            </button>
-
-            {/* 5. Market Cycle */}
-            <button
-              onClick={() => setViewMode('cycle')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                viewMode === 'cycle'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
-              title="Siklus 12 Langkah Sesi Harian"
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span>Market Cycle</span>
-            </button>
-
-            {/* 6. All-in-One */}
-            <button
-              onClick={() => setViewMode('both')}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                viewMode === 'both'
-                  ? 'bg-slate-700 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
-              title="Tampilkan Semua Bagian Secara Lengkap"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Semua</span>
-            </button>
+        {/* Right: Quick Action Reset RS & Market Telemetry Pill */}
+        <div className="flex items-center gap-2.5 font-mono text-xs">
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-cop-card border border-cop-border text-[11px]">
+            <span className="text-slate-400">Harga Live:</span>
+            <strong className="text-white tabular-nums">${currentPrice.toFixed(data?.decimals ?? 3)}</strong>
+            <span className="text-slate-600">·</span>
+            <span className={`font-bold ${isWeeklyUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+              1W JIKA {isWeeklyUp ? 'UP' : 'DOWN'}
+            </span>
           </div>
 
           <button
             onClick={handleResetTouches}
-            className="btn-ghost text-[11px]"
-            title="Reset deteksi sentuhan level RS"
+            className="btn-ghost text-[11px] flex items-center gap-1.5 px-2.5 py-1.5"
+            title="Reset sensor deteksi sentuhan level RS"
           >
             <RotateCcw className="w-3 h-3 text-slate-400" />
-            <span className="hidden md:inline">Reset RS</span>
+            <span className="hidden sm:inline">Reset RS</span>
           </button>
         </div>
       </div>
 
-      {/* ── Main Dashboard Workspace ── */}
-      <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
+      {/* ── 3. WORKFLOW BREADCRUMB STRIP (PANDUAN LANGKAH TRADING) ── */}
+      <div className="bg-cop-bg/90 border-b border-cop-border/40 px-4 lg:px-6 py-1.5 flex items-center justify-between text-[11px] font-mono text-slate-400 flex-wrap gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto py-0.5">
+          <span className="text-slate-500 uppercase tracking-widest text-[10px] hidden md:inline">Alur Analisis:</span>
+          {WORKFLOW_PILLARS.map((p, idx) => {
+            const isCurrent = viewMode === p.id;
+            return (
+              <div key={p.id} className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setViewMode(p.id)}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition-all ${
+                    isCurrent
+                      ? 'bg-amber-500/20 text-cop-gold border border-amber-500/40 font-bold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-cop-gold animate-pulse' : 'bg-slate-600'}`} />
+                  <span>{p.shortTitle}</span>
+                </button>
+                {idx < WORKFLOW_PILLARS.length - 1 && (
+                  <span className="text-slate-600">➔</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-        {/* ── VIEW 1: EXECUTIVE DASHBOARD (DEFAULT OPSI A) ── */}
-        {(viewMode === 'dashboard' || viewMode === 'both') && (
+        <div className="text-[10px] text-slate-500 hidden xl:flex items-center gap-2">
+          <span>Feed: <strong className="text-slate-300">{data?.broker?.name || broker}</strong></span>
+          <span>·</span>
+          <span>Spread: <strong className="text-cop-cyan">{data?.broker?.spreadLabel || '1.2 pips'}</strong></span>
+        </div>
+      </div>
+
+      {/* ── 4. MAIN WORKSPACE CONTAINER ── */}
+      <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+
+        {/* ════════════════════════════════════════════════════════════════════════
+            PILAR 1: PETA GLOBAL COP TAH (2021 – 2030)
+            ════════════════════════════════════════════════════════════════════════ */}
+        {(viewMode === 'global' || viewMode === 'all') && (
+          <div className="space-y-4">
+            {viewMode === 'all' && (
+              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60 font-mono">
+                <div className="w-2.5 h-2.5 rounded-full bg-cop-gold" />
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Pilar 1: Peta Makro Global COP TAH (2021 – 2030)
+                </h2>
+              </div>
+            )}
+            <GlobalStoryline data={data} liveTick={liveTick} />
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════════════════
+            PILAR 2: TRADING PLAN MINGGUAN (REAL MARKET DATA 1W)
+            ════════════════════════════════════════════════════════════════════════ */}
+        {(viewMode === 'weekly' || viewMode === 'all') && (
+          <div className="space-y-4">
+            {viewMode === 'all' && (
+              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60 font-mono">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Pilar 2: Trading Plan Mingguan 2 Arah (Real Market Data)
+                </h2>
+              </div>
+            )}
+            <WeeklyTradingPlan data={data} liveTick={liveTick} />
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════════════════
+            PILAR 3: COCKPIT EKSEKUSI LIVE (DASHBOARD REAL-TIME)
+            ════════════════════════════════════════════════════════════════════════ */}
+        {(viewMode === 'dashboard' || viewMode === 'all') && (
           <div className="space-y-5">
+            {viewMode === 'all' && (
+              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60 font-mono">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Pilar 3: Cockpit Eksekusi Live (Real-Time Intraday)
+                </h2>
+              </div>
+            )}
+
             {/* 1. OHL Metrics & Intraday Range Bar */}
             <OHLPanel data={data} liveTick={liveTick} />
 
@@ -304,74 +387,75 @@ export default function App() {
           </div>
         )}
 
-        {/* ── VIEW 2: TRADING PLAN MINGGUAN (REAL MARKET DATA) ── */}
-        {(viewMode === 'weekly' || viewMode === 'both') && (
-          <div className="space-y-4">
-            {viewMode === 'both' && (
-              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
-                  Trading Plan Mingguan (Real Market Data)
-                </h2>
-              </div>
-            )}
-            <WeeklyTradingPlan data={data} liveTick={liveTick} />
-          </div>
-        )}
-
-        {/* ── VIEW 3: ALUR CERITA GLOBAL COP TAH (2021 – 2030) ── */}
-        {(viewMode === 'global' || viewMode === 'both') && (
-          <div className="space-y-4">
-            {viewMode === 'both' && (
-              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60">
-                <div className="w-2.5 h-2.5 rounded-full bg-cop-gold" />
-                <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
-                  Alur Cerita Global COP TAH (2021 – 2030)
-                </h2>
-              </div>
-            )}
-            <GlobalStoryline data={data} liveTick={liveTick} />
-          </div>
-        )}
-
-        {/* ── VIEW 4: MULTI-TIMEFRAME MATRIX TERMINAL TABLE ── */}
-        {(viewMode === 'table' || viewMode === 'both') && (
-          <div className="space-y-4">
-            {viewMode === 'both' && (
-              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60">
-                <div className="w-2.5 h-2.5 rounded-full bg-cop-blue" />
-                <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
-                  Matriks Multi-Timeframe COP TAH
-                </h2>
-              </div>
-            )}
-            <Leak4RegTable data={data} liveTick={liveTick} />
-          </div>
-        )}
-
-        {/* ── VIEW 5: MARKET CYCLE & SUB-ALUR FRAKTAL ── */}
-        {(viewMode === 'cycle' || viewMode === 'both') && (
-          <div className="space-y-4">
-            {viewMode === 'both' && (
-              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60">
+        {/* ════════════════════════════════════════════════════════════════════════
+            PILAR 4: TERMINAL MATRIKS & SIKLUS (DEEP DIVE DATA)
+            ════════════════════════════════════════════════════════════════════════ */}
+        {(viewMode === 'terminal' || viewMode === 'all') && (
+          <div className="space-y-5 font-mono">
+            {/* Terminal Header & Sub-Tab Switcher */}
+            <div className="flex items-center justify-between border-b border-cop-border pb-3 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
-                  Analisis Siklus Pergerakan & Sub-Alur Fraktal
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Pilar 4: Terminal Matriks 17-Kolom & Siklus 12 Langkah
                 </h2>
               </div>
+
+              {/* Sub-Tabs Selector */}
+              {viewMode !== 'all' && (
+                <div className="flex items-center gap-1 p-1 bg-cop-surface rounded-xl border border-cop-border text-xs">
+                  <button
+                    onClick={() => setTerminalTab('both')}
+                    className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                      terminalTab === 'both' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Keduanya
+                  </button>
+                  <button
+                    onClick={() => setTerminalTab('table')}
+                    className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                      terminalTab === 'table' ? 'bg-cop-blue text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Matriks 17 Kolom
+                  </button>
+                  <button
+                    onClick={() => setTerminalTab('cycle')}
+                    className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                      terminalTab === 'cycle' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Siklus 12 Sesi
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 1. Multi-Timeframe Matrix Table */}
+            {(terminalTab === 'table' || terminalTab === 'both' || viewMode === 'all') && (
+              <div className="space-y-2">
+                <Leak4RegTable data={data} liveTick={liveTick} />
+              </div>
             )}
-            <MarketCycleAnalysis data={data} />
+
+            {/* 2. Market Cycle 12-Step Session Analysis */}
+            {(terminalTab === 'cycle' || terminalTab === 'both' || viewMode === 'all') && (
+              <div className="space-y-2">
+                <MarketCycleAnalysis data={data} />
+              </div>
+            )}
           </div>
         )}
 
       </main>
 
-      {/* ── Terminal Footer ── */}
+      {/* ── 5. Terminal Footer ── */}
       <footer className="border-t border-cop-border/80 px-4 lg:px-6 py-2.5 flex items-center justify-between text-[11px] font-mono text-slate-400 bg-cop-surface/90 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <span className="text-cop-gold font-bold">COP TAH Engine</span>
           <span>·</span>
-          <span>Institutional Gold Terminal</span>
+          <span>Institutional Gold Platform (XAUUSD)</span>
         </div>
         <div className="hidden sm:flex items-center gap-3 text-slate-400">
           <span>3 Core Theories</span>
@@ -381,7 +465,7 @@ export default function App() {
           <span className="text-emerald-400">Multi-TF Confluence</span>
         </div>
         <div className="text-slate-400">
-          Exness & Binance Interbank Feed
+          Feed: <strong className="text-slate-200">{data?.broker?.name || broker}</strong>
         </div>
       </footer>
     </div>
