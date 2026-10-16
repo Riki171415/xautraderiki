@@ -762,7 +762,17 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     const session = getTradingSession();
 
     // Market Cycle Analysis (NORMAL vs STRONG, 12-step cycle)
-    const marketCycle = calcMarketCycle(ohlcv_N, ohlcv_B, timeframe, ohlcv_N.close);
+    let cycleContext = {source: broker.id === 'EXNESS' ? `MT5 Exness ${mt5State.symbol}` : broker.name};
+    try {
+      const [hourly, dailyRows] = await Promise.all([
+        fetchBrokerOHLCV(broker.id, marketSymbol, '1h'),
+        fetchBrokerOHLCV(broker.id, marketSymbol, '1d'),
+      ]);
+      const asCandle = r => ({timestamp:r[0],open:r[1],high:r[2],low:r[3],close:r[4]});
+      cycleContext = {...cycleContext,hourly,daily:asCandle(dailyRows.at(-1)),dailyBefore:asCandle(dailyRows.at(-2)),
+        price:broker.id === 'EXNESS' ? mt5State.bid : dailyRows.at(-1)[4]};
+    } catch (error) { console.warn('[Market Cycle] ' + error.message); }
+    const marketCycle = calcMarketCycle(ohlcv_N, ohlcv_B, timeframe, ohlcv_N.close, cycleContext);
 
     // Sub-Alur Cerita Fraktal (Busur vs Target hierarchy across 1Y, 6M, 3M, 1M, 1W, D1, H4)
     const subAlurCerita = calcSubAlurCerita(timeframe, ohlcv_N, ohlcv_B, jika, ohlcv_N.close);

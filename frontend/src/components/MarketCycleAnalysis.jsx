@@ -1,3 +1,4 @@
+import MarketSessionCycle from './MarketSessionCycle';
 /**
  * MarketCycleAnalysis — Analisis Siklus Pasar & Alur Fraktal COP TAH
  *
@@ -33,14 +34,20 @@ import {
   Shield
 } from 'lucide-react';
 
-export default function MarketCycleAnalysis({ data, liveTick }) {
+export default function MarketCycleAnalysis({data,liveTick}) {
+  const daily=data?.leak4RegMatrix?.tableRows?.find(r=>r.timeframe==='1d');
+  const rs=data?.leak4RegMatrix?.rsColumns?.find(r=>r.timeframe==='1d');
+  if(!data) return null;
+  if(!daily || !rs) return <section className="cop-panel space-y-4"><h2 className="font-bold">Analisis Siklus Pasar</h2><MarketSessionCycle cycle={data.marketCycle} decimals={data.decimals}/><p className="text-xs text-amber-200">Plan harian ditahan: data D1/RS asli belum lengkap.</p></section>;
+  return <MarketCycleDetails data={data} liveTick={liveTick}/>;
+}
+function MarketCycleDetails({ data, liveTick }) {
   if (!data) return null;
 
   const { marketCycle, subAlurCerita, multiTfDecision, leak4RegMatrix, broker, userModal = 10000, lotCalc, decimals = 3 } = data;
   const [activeTab, setActiveTab] = useState('cycle'); // 'cycle' | 'two-way' | 'fractal' | 'confluence'
-  const [cycleViewMode, setCycleViewMode] = useState('auto'); // 'auto' | 'NORMAL' | 'STRONG'
 
-  const currentPrice = liveTick?.price || data?.ohlcv_N?.close || 4184.25;
+  const currentPrice = liveTick?.bid ?? data?.ohlcv_N?.close;
 
   // ── Extract Daily Real Numbers from leak4RegMatrix ──────────────────────────
   const dailyRow = leak4RegMatrix?.tableRows?.find(
@@ -50,22 +57,22 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
     (c) => c.timeframe === '1d' || c.label?.includes('DAILY')
   );
 
-  const dOpen = dailyRow ? parseFloat(dailyRow.openN) : currentPrice - 20;
-  const dOpenB = dailyRow ? parseFloat(dailyRow.openB) : dOpen - 15;
-  const dHigh = dailyRow ? parseFloat(dailyRow.highN) : currentPrice + 10;
-  const dLow = dailyRow ? parseFloat(dailyRow.lowN) : currentPrice - 25;
-  const dRange = dailyRow ? parseFloat(dailyRow.rangeN) : dHigh - dLow;
+  const dOpen = parseFloat(dailyRow.openN);
+  const dOpenB = parseFloat(dailyRow.openB);
+  const dHigh = parseFloat(dailyRow.highN);
+  const dLow = parseFloat(dailyRow.lowN);
+  const dRange = dHigh - dLow;
 
-  const dPivot = dailyRS ? parseFloat(dailyRS.pivot) : (dOpen + dHigh + dLow) / 3;
-  const dRes1 = dailyRS ? parseFloat(dailyRS.res1) : dPivot + 20;
-  const dRes2 = dailyRS ? parseFloat(dailyRS.res2) : dPivot + 45;
-  const dRes3 = dailyRS ? parseFloat(dailyRS.res3) : dPivot + 75;
-  const dSup1 = dailyRS ? parseFloat(dailyRS.sup1) : dPivot - 20;
-  const dSup2 = dailyRS ? parseFloat(dailyRS.sup2) : dPivot - 45;
-  const dSup3 = dailyRS ? parseFloat(dailyRS.sup3) : dPivot - 75;
+  const dPivot = parseFloat(dailyRS.pivot);
+  const dRes1 = parseFloat(dailyRS.res1);
+  const dRes2 = parseFloat(dailyRS.res2);
+  const dRes3 = parseFloat(dailyRS.res3);
+  const dSup1 = parseFloat(dailyRS.sup1);
+  const dSup2 = parseFloat(dailyRS.sup2);
+  const dSup3 = parseFloat(dailyRS.sup3);
 
-  const isDailyUp = dOpen >= dOpenB;
-  const dailyTrend = isDailyUp ? 'UP' : 'DOWN';
+  const isDailyUp = dOpen > dOpenB;
+  const dailyTrend = dOpen === dOpenB ? 'NEUTRAL' : isDailyUp ? 'UP' : 'DOWN';
 
   // Lot Calculation (3 Core Theories)
   const lot = lotCalc?.lot || (userModal / 25000).toFixed(2);
@@ -106,14 +113,14 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
   const hshProfitTp3 = (parseFloat(lot) * parseFloat(hshTp3Pts) * 10).toFixed(2);
   const hshLossSl = (parseFloat(lot) * parseFloat(hshSlPts) * 10).toFixed(2);
 
-  // Institutional Touch Detection for Intraday Levels
-  const isTrendEntryTouched = Boolean(currentPrice <= trendEntry || (dailyRow?.lowN && parseFloat(dailyRow.lowN) <= trendEntry));
-  const isTrendTp1Touched = Boolean(currentPrice >= trendTp1 || (dailyRow?.highN && parseFloat(dailyRow.highN) >= trendTp1));
-  const isTrendTp2Touched = Boolean(currentPrice >= trendTp2 || (dailyRow?.highN && parseFloat(dailyRow.highN) >= trendTp2));
-
-  const isHshEntryTouched = Boolean(currentPrice >= hshEntryPrimary || (dailyRow?.highN && parseFloat(dailyRow.highN) >= hshEntryPrimary));
-  const isHshTp1Touched = Boolean(currentPrice <= hshTp1 || (dailyRow?.lowN && parseFloat(dailyRow.lowN) <= hshTp1));
-  const isHshTp2Touched = Boolean(currentPrice <= hshTp2 || (dailyRow?.lowN && parseFloat(dailyRow.lowN) <= hshTp2));
+  // Only observed range touches; no order execution or chronological TP claim.
+  const crossed = level => dLow <= level && dHigh >= level;
+  const isTrendEntryTouched = crossed(trendEntry);
+  const isTrendTp1Touched = crossed(trendTp1);
+  const isTrendTp2Touched = crossed(trendTp2);
+  const isHshEntryTouched = crossed(hshEntryPrimary);
+  const isHshTp1Touched = crossed(hshTp1);
+  const isHshTp2Touched = crossed(hshTp2);
 
   // ── Helper to Lookup Multi-TF Matrix Numbers for Fractal Table ─────────────
   const getTfNumbers = (tfKey) => {
@@ -156,14 +163,9 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
       pivot: rs ? parseFloat(rs.pivot) : null,
       res1: rs ? parseFloat(rs.res1) : null,
       sup1: rs ? parseFloat(rs.sup1) : null,
-      range: row ? parseFloat(row.rangeN) : null,
+      range: row ? Number(row.highN) - Number(row.lowN) : null,
     };
   };
-
-  const currentPattern = marketCycle?.marketType || 'NORMAL';
-  const displayPattern = cycleViewMode === 'auto' ? currentPattern : cycleViewMode;
-  const isStrong = displayPattern === 'STRONG';
-  const activeStep = marketCycle?.currentStep || 4;
 
   return (
     <div className="cop-panel space-y-4">
@@ -280,241 +282,17 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
 
         <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border">
           <span className="text-[10px] text-slate-400 block uppercase">Rentang Hari</span>
-          <span className="text-sm font-black text-cop-cyan tabular-nums">{dRange.toFixed(1)} pts</span>
+          <span className="text-sm font-black text-cop-cyan tabular-nums">{dRange.toFixed(1)} selisih harga</span>
         </div>
       </div>
 
       {/* ──────────────────────────────────────────────────────────────────────────
           TAB 1: SIKLUS 12 LANGKAH PERGERAKAN MARKET DENGAN ANGKA LEVEL LENGKAP
          ────────────────────────────────────────────────────────────────────────── */}
-      {activeTab === 'cycle' && (
-        <div className="space-y-4">
-          {/* Status Bar: Pola Aktif & Toggle Mode */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-cop-card to-slate-900 border border-cop-border flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div
-                className={`p-2.5 rounded-xl border flex items-center justify-center ${
-                  marketCycle?.bias === 'BEARISH'
-                    ? 'bg-rose-950/40 border-rose-500/40 text-rose-400 shadow-glow-red-sm'
-                    : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400 shadow-glow-green-sm'
-                }`}
-              >
-                {marketCycle?.bias === 'BEARISH' ? (
-                  <ArrowDownRight className="w-5 h-5 stroke-[2.5]" />
-                ) : (
-                  <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
-                    Status Pola Hari Ini:
-                  </span>
-                  <span
-                    className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full border ${
-                      marketCycle?.marketType === 'STRONG'
-                        ? 'bg-purple-950/70 border-purple-500/60 text-purple-300'
-                        : 'bg-blue-950/70 border-blue-500/60 text-blue-300'
-                    }`}
-                  >
-                    {marketCycle?.label || 'MARKET NORMAL BEARISH'}
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-950/60 text-amber-300 border border-amber-600/40 font-bold">
-                    Langkah {activeStep} / 12
-                  </span>
-                </div>
+      {activeTab === 'cycle' && <MarketSessionCycle cycle={marketCycle} decimals={decimals} />}
 
-                <div className="text-xs text-slate-300 mt-1 font-mono flex items-center gap-2 flex-wrap">
-                  <span className="text-white font-bold">{marketCycle?.activeSession}</span>
-                  <span className="text-slate-500">·</span>
-                  <span className="text-cop-cyan font-bold">{marketCycle?.wibTime}</span>
-                  <span className="text-slate-500">·</span>
-                  <span className="text-slate-400">{marketCycle?.activeStepTitle}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Pattern Switcher */}
-            <div className="flex items-center gap-2 self-start lg:self-auto bg-cop-surface p-1 rounded-xl border border-cop-border">
-              <span className="text-[10px] font-mono text-slate-500 px-2 uppercase">Lihat Pola:</span>
-              <button
-                onClick={() => setCycleViewMode('auto')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
-                  cycleViewMode === 'auto'
-                    ? 'bg-amber-500/20 text-cop-gold border border-amber-500/50'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Otomatis ({currentPattern})
-              </button>
-              <button
-                onClick={() => setCycleViewMode('NORMAL')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
-                  cycleViewMode === 'NORMAL'
-                    ? 'bg-blue-950 text-blue-300 border border-blue-600/50'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Pola NORMAL
-              </button>
-              <button
-                onClick={() => setCycleViewMode('STRONG')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
-                  cycleViewMode === 'STRONG'
-                    ? 'bg-purple-950 text-purple-300 border border-purple-600/50'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Pola STRONG
-              </button>
-            </div>
-          </div>
-
-          {/* 12-Step Grid Timeline dengan Angka Level Sesi Lengkap */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Phase 1: ASIA (Steps 1-4) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5 font-mono">
-              <div className="flex items-center justify-between border-b border-cop-border pb-2">
-                <div className="flex items-center gap-2">
-                  <Sun className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-bold text-white uppercase">1. Pagi (ASIA)</span>
-                </div>
-                <span className="text-[10px] text-slate-400">06:00 - 14:00 WIB</span>
-              </div>
-
-              {/* Box Level Acuan Angka Asia */}
-              <div className="p-2 rounded-lg bg-cop-surface border border-cop-border/80 text-[11px] space-y-1">
-                <div className="flex items-center justify-between text-slate-400 text-[10px]">
-                  <span>LEVEL ACUAN ASIA:</span>
-                  <span className="text-cop-gold font-bold">Fase Busur</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Open D1:</span>
-                  <strong className="text-white">${dOpen.toFixed(decimals)}</strong>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-400">Lantai S1 (Buy):</span>
-                  <strong className="text-blue-300">${dSup1.toFixed(decimals)}</strong>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {marketCycle?.steps?.slice(0, 4).map((s) => (
-                  <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
-                ))}
-              </div>
-            </div>
-
-            {/* Phase 2: EROPA (Steps 5-7) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5 font-mono">
-              <div className="flex items-center justify-between border-b border-cop-border pb-2">
-                <div className="flex items-center gap-2">
-                  <Sunset className="w-4 h-4 text-cop-cyan" />
-                  <span className="text-xs font-bold text-white uppercase">2. Sore (EROPA)</span>
-                </div>
-                <span className="text-[10px] text-slate-400">14:00 - 20:00 WIB</span>
-              </div>
-
-              {/* Box Level Acuan Angka Eropa */}
-              <div className="p-2 rounded-lg bg-cop-surface border border-cop-border/80 text-[11px] space-y-1">
-                <div className="flex items-center justify-between text-slate-400 text-[10px]">
-                  <span>LEVEL ACUAN EROPA:</span>
-                  <span className="text-cop-cyan font-bold">Titik Balik</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-cop-gold">Pivot Harian:</span>
-                  <strong className="text-cop-gold">${dPivot.toFixed(decimals)}</strong>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-400">Target Break R1:</span>
-                  <strong className="text-emerald-300">${dRes1.toFixed(decimals)}</strong>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {marketCycle?.steps?.slice(4, 7).map((s) => (
-                  <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
-                ))}
-              </div>
-            </div>
-
-            {/* Phase 3: USA (Steps 8-11) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5 font-mono">
-              <div className="flex items-center justify-between border-b border-cop-border pb-2">
-                <div className="flex items-center gap-2">
-                  <Moon className="w-4 h-4 text-indigo-400" />
-                  <span className="text-xs font-bold text-white uppercase">3. Malam (USA)</span>
-                </div>
-                <span className="text-[10px] text-slate-400">20:00 - 04:00 WIB</span>
-              </div>
-
-              {/* Box Level Acuan Angka USA & HSH */}
-              <div className="p-2 rounded-lg bg-cop-surface border border-cop-border/80 text-[11px] space-y-1">
-                <div className="flex items-center justify-between text-slate-400 text-[10px]">
-                  <span>LEVEL ACUAN USA:</span>
-                  <span className="text-rose-400 font-bold">Target & HSH</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-400">Target R2:</span>
-                  <strong className="text-emerald-300">${dRes2.toFixed(decimals)}</strong>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-rose-400">Pembalikan HSH:</span>
-                  <strong className="text-rose-300">➔ ${dOpen.toFixed(decimals)}</strong>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {marketCycle?.steps?.slice(7, 11).map((s) => (
-                  <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
-                ))}
-              </div>
-            </div>
-
-            {/* Phase 4: Transisi (Step 12) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5 font-mono">
-              <div className="flex items-center justify-between border-b border-cop-border pb-2">
-                <div className="flex items-center gap-2">
-                  <Repeat className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-bold text-white uppercase">4. Transisi Esok</span>
-                </div>
-                <span className="text-[10px] text-slate-400">04:00 - 06:00 WIB</span>
-              </div>
-
-              {/* Box Level Acuan Angka Transisi */}
-              <div className="p-2 rounded-lg bg-cop-surface border border-cop-border/80 text-[11px] space-y-1">
-                <div className="flex items-center justify-between text-slate-400 text-[10px]">
-                  <span>LEVEL TRANSISI:</span>
-                  <span className="text-amber-300 font-bold">Ekuilibrium</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300">Area Closing:</span>
-                  <strong className="text-white">${dPivot.toFixed(decimals)}</strong>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Rentang Final:</span>
-                  <strong className="text-cop-cyan">{dRange.toFixed(1)} pts</strong>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {marketCycle?.steps?.slice(11, 12).map((s) => (
-                  <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
-                ))}
-                <div className="p-2.5 rounded-lg bg-cop-surface border border-cop-border text-[11px] font-mono text-slate-300 leading-relaxed">
-                  <span className="text-cop-gold font-bold block mb-1">💡 Siklus Harmonis:</span>
-                  Pola ini berulang secara fraktal setiap hari sampai High dan Low mingguan terisi sempurna.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ──────────────────────────────────────────────────────────────────────────
-          TAB 2: ANALISA 2 ARAH SIKLUS HARIAN (BUY TREND VS SELL HSH REVERSAL)
-         ────────────────────────────────────────────────────────────────────────── */}
-      {activeTab === 'two-way' && (
+      {activeTab === 'two-way' && dailyTrend === 'NEUTRAL' && <p className="text-sm text-amber-200">Open N sama dengan Open B. JIKA netral: tunggu arah sebelum membuat skenario.</p>}
+      {activeTab === 'two-way' && dailyTrend !== 'NEUTRAL' && (
         <div className="space-y-4 font-mono">
           <div className="p-3.5 rounded-xl bg-cop-card border border-cop-border flex items-center justify-between flex-wrap gap-2 text-xs">
             <div className="flex items-center gap-2">
@@ -526,6 +304,7 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
             </span>
           </div>
 
+          <p className="text-[11px] text-slate-400">Level tersentuh berarti masuk rentang High–Low D1, bukan bukti order terisi atau target tercapai setelah entry. Selisih harga bukan jumlah pip broker.</p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* KARTU SKENARIO A: BUY TREND INTRADAY (BUSUR S1) */}
             <div className="p-5 rounded-2xl border-2 border-emerald-500/60 bg-gradient-to-br from-emerald-950/20 via-cop-card to-slate-900 shadow-glow-green-sm space-y-4">
@@ -536,11 +315,11 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                       SKENARIO A
                     </span>
                     <h3 className="text-base font-black text-white">
-                      BUY LIMIT @ ${trendEntry.toFixed(decimals)}
+                      {isDailyUp ? 'BUY LIMIT' : 'SELL LIMIT'} @ ${trendEntry.toFixed(decimals)}
                     </h3>
                   </div>
                   <p className="text-xs text-slate-300 mt-1">
-                    Sesuai Hukum JIKA {dailyTrend} harian. Pasang Buy Limit saat sesi pagi (Asia) menarik busur bawah ke Support S1.
+                    Sesuai Hukum JIKA {dailyTrend} harian. {isDailyUp ? 'Skenario Buy Limit menunggu busur ke S1.' : 'Skenario Sell Limit menunggu busur ke R1.'}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
@@ -563,7 +342,7 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                     )}
                   </div>
                   <div className="text-sm font-black text-white tabular-nums">${trendEntry.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-slate-400">Support S1</span>
+                  <span className="text-[9px] text-slate-400">{isDailyUp ? 'Support S1' : 'Resistance R1'}</span>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border transition-all ${
@@ -573,38 +352,38 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                     <span className="text-[10px] text-emerald-400 font-bold">TARGET 1 (PIVOT)</span>
                     {isTrendTp1Touched && (
                       <span className="text-[8px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
-                        ✓ HIT
+                        ✓ LEVEL TERSENTUH
                       </span>
                     )}
                   </div>
                   <div className="text-sm font-black text-emerald-300 tabular-nums">${trendTp1.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-slate-300">+{trendTp1Pts} pts (+${trendProfitTp1})</span>
+                  <span className="text-[9px] text-slate-300">+{trendTp1Pts} selisih harga</span>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border transition-all ${
                   isTrendTp2Touched ? 'bg-emerald-950/70 border-emerald-400 shadow-glow-green-sm' : 'bg-emerald-950/50 border-emerald-500/70 shadow-glow-green-sm'
                 }`}>
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[10px] text-emerald-300 font-black">TARGET 2 (R1)</span>
+                    <span className="text-[10px] text-emerald-300 font-black">TARGET 2 ({isDailyUp ? 'R1' : 'S1'})</span>
                     {isTrendTp2Touched && (
                       <span className="text-[8px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
-                        ✓ HIT
+                        ✓ LEVEL TERSENTUH
                       </span>
                     )}
                   </div>
                   <div className="text-sm font-black text-emerald-300 tabular-nums">${trendTp2.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-emerald-400 font-bold">+{trendTp2Pts} pts (+${trendProfitTp2})</span>
+                  <span className="text-[9px] text-emerald-400 font-bold">+{trendTp2Pts} selisih harga</span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-700/60">
                   <span className="text-[10px] text-rose-400 font-bold block mb-0.5">STOP LOSS (S2)</span>
                   <div className="text-sm font-black text-rose-300 tabular-nums">${trendSl.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-rose-300">-{trendSlPts} pts (-${trendLossSl})</span>
+                  <span className="text-[9px] text-rose-300">-{trendSlPts} selisih harga</span>
                 </div>
               </div>
 
               <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border text-xs flex items-center justify-between text-slate-300">
-                <span>🎯 Target 3 Runner: <strong className="text-white">${trendTp3.toFixed(decimals)}</strong> (Resistance R2)</span>
+                <span>🎯 Target 3 Runner: <strong className="text-white">${trendTp3.toFixed(decimals)}</strong> ({isDailyUp ? 'Resistance R2' : 'Support S2'})</span>
                 <span className="text-slate-400 text-[11px]">Waktu: <strong className="text-cop-gold">Sesi Asia s/d Awal Eropa</strong></span>
               </div>
             </div>
@@ -618,11 +397,11 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                       SKENARIO B (2 ARAH)
                     </span>
                     <h3 className="text-base font-black text-white">
-                      SELL REVERSAL @ ${hshEntryPrimary.toFixed(decimals)}
+                      {isDailyUp ? 'SELL REVERSAL' : 'BUY REVERSAL'} @ ${hshEntryPrimary.toFixed(decimals)}
                     </h3>
                   </div>
                   <p className="text-xs text-rose-200/90 mt-1">
-                    Jika Target R1 (${dRes1.toFixed(decimals)}) atau R2 (${dRes2.toFixed(decimals)}) disentuh di sesi USA malam & muncul rejection wick, harga ditarik HSH pulang ke Open N D1. Pivot merupakan level RS terpisah.
+                    Skenario HSH menunggu reaksi di {isDailyUp ? 'R1/R2' : 'S1/S2'} (${hshEntryPrimary.toFixed(decimals)} / ${hshEntrySecondary.toFixed(decimals)}), dengan rumah di Open N D1. Rejection dan pembalikan belum otomatis terkonfirmasi. Pivot merupakan level RS terpisah.
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
@@ -637,7 +416,7 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                   isHshEntryTouched ? 'bg-amber-500/20 border-amber-400 shadow-glow-gold-sm' : 'bg-cop-surface border-rose-500/40'
                 }`}>
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[10px] text-rose-400 font-bold">AREA ENTRY SELL</span>
+                    <span className="text-[10px] text-rose-400 font-bold">AREA ENTRY {isDailyUp ? 'SELL' : 'BUY'}</span>
                     {isHshEntryTouched && (
                       <span className="text-[8px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
                         ✓ TERSENTUH
@@ -655,12 +434,12 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                     <span className="text-[10px] text-rose-400 font-bold">TP 1 (OPEN HARI INI)</span>
                     {isHshTp1Touched && (
                       <span className="text-[8px] bg-rose-400 text-white font-black px-1.5 py-0.2 rounded shadow-sm">
-                        ✓ HIT
+                        ✓ LEVEL TERSENTUH
                       </span>
                     )}
                   </div>
                   <div className="text-sm font-black text-rose-300 tabular-nums">${hshTp1.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-slate-300">+{hshTp1Pts} pts (+${hshProfitTp1})</span>
+                  <span className="text-[9px] text-slate-300">+{hshTp1Pts} selisih harga</span>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border transition-all ${
@@ -670,24 +449,24 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                     <span className="text-[10px] text-rose-300 font-black">RS TAMBAHAN (PIVOT)</span>
                     {isHshTp2Touched && (
                       <span className="text-[8px] bg-rose-400 text-white font-black px-1.5 py-0.2 rounded shadow-sm">
-                        ✓ HIT
+                        ✓ LEVEL TERSENTUH
                       </span>
                     )}
                   </div>
                   <div className="text-sm font-black text-rose-300 tabular-nums">${hshTp2.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-rose-400 font-bold">+{hshTp2Pts} pts (+${hshProfitTp2})</span>
+                  <span className="text-[9px] text-rose-400 font-bold">+{hshTp2Pts} selisih harga</span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-700/80">
-                  <span className="text-[10px] text-rose-300 font-bold block mb-0.5">STOP LOSS SELL (SL)</span>
+                  <span className="text-[10px] text-rose-300 font-bold block mb-0.5">STOP LOSS (SL)</span>
                   <div className="text-sm font-black text-rose-200 tabular-nums">${hshSl.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-rose-300">-{hshSlPts} pts (-${hshLossSl})</span>
+                  <span className="text-[9px] text-rose-300">-{hshSlPts} selisih harga</span>
                 </div>
               </div>
 
               <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border text-xs flex items-center justify-between text-slate-300">
-                <span>🎯 TP 3 Koreksi Dasar: <strong className="text-white">${hshTp3.toFixed(decimals)}</strong> (Support S1 / +{hshTp3Pts} pts)</span>
-                <span className="text-slate-400 text-[11px]">Waktu Eksekusi: <strong className="text-rose-400">Sesi USA (21:00 - 02:00 WIB)</strong></span>
+                <span>🎯 TP 3 Koreksi Dasar: <strong className="text-white">${hshTp3.toFixed(decimals)}</strong> ({isDailyUp ? 'Support S1' : 'Resistance R1'} / {hshTp3Pts} selisih harga)</span>
+                <span className="text-slate-400 text-[11px]">Waktu Eksekusi: <strong className="text-rose-400">Sesi USA metode (20:00–04:00 WIB)</strong></span>
               </div>
             </div>
           </div>
@@ -827,7 +606,7 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
 
                       {/* Rentang Data Pts */}
                       <td className="py-2.5 px-3 font-mono text-slate-300 tabular-nums">
-                        {nums.range !== null ? `${nums.range.toFixed(1)} pts` : '—'}
+                        {nums.range !== null ? `${nums.range.toFixed(1)} selisih harga` : '—'}
                       </td>
 
                       {/* Hukum Jika */}
@@ -881,7 +660,7 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                 Timeframe Besar (HTF): <strong className="text-white">{multiTfDecision?.htf?.timeframe || 'D1'}</strong>
               </span>
               <div className="text-xs text-slate-300 leading-relaxed">
-                JIKA: <strong className="text-emerald-400">{multiTfDecision?.htf?.jika || 'UP'}</strong> · MOVE: <strong className="text-cop-gold">{multiTfDecision?.htf?.move || 'NRL DWN'}</strong>
+                JIKA: <strong className="text-emerald-400">{multiTfDecision?.htf?.jika || '—'}</strong> · MOVE: <strong className="text-cop-gold">{multiTfDecision?.htf?.move || '—'}</strong>
               </div>
               <div className="text-[11px] text-slate-400 border-t border-cop-border/60 pt-2 flex items-center justify-between">
                 <span>Open D1: <strong className="text-white">${dOpen.toFixed(decimals)}</strong></span>
