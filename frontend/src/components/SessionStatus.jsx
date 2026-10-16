@@ -1,31 +1,34 @@
 /**
- * SessionStatus — Global trading session status (Tokyo, London, New York)
- * + HSH Warning Banner
+ * SessionStatus — Global Trading Sessions (Tokyo, London, New York) + HSH Warning Banner
  */
 import { Globe, Home, AlertTriangle, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-function SessionBadge({ name, sessionData, emoji }) {
+function SessionBadge({ name, sessionData, flag }) {
   const isActive = sessionData?.active;
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-300 ${
-      isActive
-        ? 'border-emerald-600/60 bg-emerald-900/20 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
-        : 'border-cop-border bg-cop-card'
-    }`}>
-      <div className={`w-2.5 h-2.5 rounded-full ${
-        isActive ? 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse' : 'bg-slate-700'
-      }`} />
-      <div>
-        <div className={`text-xs font-bold font-mono ${isActive ? 'text-emerald-400' : 'text-slate-500'}`}>
-          {emoji} {name}
+    <div
+      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all duration-300 font-mono ${
+        isActive
+          ? 'border-emerald-500/60 bg-gradient-to-br from-emerald-950/40 via-cop-card to-slate-900 shadow-glow-green-sm'
+          : 'border-cop-border bg-cop-card/70'
+      }`}
+    >
+      <div
+        className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+          isActive ? 'bg-emerald-400 shadow-glow-green animate-pulse' : 'bg-slate-700'
+        }`}
+      />
+      <div className="min-w-0 flex-1">
+        <div className={`text-xs font-bold leading-none ${isActive ? 'text-emerald-300' : 'text-slate-400'}`}>
+          {flag} {name}
         </div>
-        <div className="text-[10px] font-mono text-slate-600">
+        <div className="text-[10px] text-slate-500 mt-1 tabular-nums">
           {sessionData?.open} – {sessionData?.close} UTC
         </div>
       </div>
       {isActive && (
-        <span className="ml-auto text-[9px] font-mono font-bold text-emerald-400 tracking-widest uppercase">
+        <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-600/50 uppercase tracking-wider">
           OPEN
         </span>
       )}
@@ -36,25 +39,23 @@ function SessionBadge({ name, sessionData, emoji }) {
 function HSHBanner({ hsh }) {
   if (!hsh?.hshActive) {
     return (
-      <div className="flex items-start gap-3 p-3 rounded-lg bg-cop-card border border-cop-border">
-        <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0">
-          <Home className="w-4 h-4 text-slate-500" />
+      <div className="flex items-start gap-3 p-3.5 rounded-xl bg-cop-card/70 border border-cop-border">
+        <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 text-slate-400">
+          <Home className="w-4 h-4" />
         </div>
-        <div className="flex-1">
-          <div className="text-xs font-bold font-mono text-slate-400 mb-1">HSH — Home Sweet Home</div>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-cop-border/30 rounded-full h-1.5">
-              <div
-                className="h-1.5 rounded-full bg-slate-600 transition-all duration-500"
-                style={{ width: `${hsh?.percentElapsed || 0}%` }}
-              />
-            </div>
-            <span className="text-[10px] font-mono text-slate-500 whitespace-nowrap">
-              {hsh?.timeToClose || '—'}
-            </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-bold font-mono text-slate-300">HSH — Home Sweet Home</span>
+            <span className="text-[10px] font-mono text-slate-400 tabular-nums">{hsh?.timeToClose || '—'}</span>
           </div>
-          <div className="text-[10px] font-mono text-slate-600 mt-1">
-            Candle {hsh?.percentElapsed || 0}% complete — No HSH signal
+          <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-cop-border/60">
+            <div
+              className="h-full bg-slate-600 rounded-full transition-all duration-500"
+              style={{ width: `${hsh?.percentElapsed || 0}%` }}
+            />
+          </div>
+          <div className="text-[10px] font-mono text-slate-500 mt-1.5">
+            Candle {hsh?.percentElapsed || 0}% selesai · Belum ada sinyal HSH aktif
           </div>
         </div>
       </div>
@@ -65,41 +66,49 @@ function HSHBanner({ hsh }) {
   const isHigh = hsh.hshSeverity === 'HIGH';
 
   return (
-    <div className={`p-3 rounded-lg border-2 ${
-      isCritical
-        ? 'border-red-500/70 bg-red-950/40 hsh-critical'
-        : isHigh
-        ? 'border-amber-500/60 bg-amber-950/30 hsh-high'
-        : 'border-yellow-600/50 bg-yellow-950/20'
-    }`}>
+    <div
+      className={`p-3.5 rounded-xl border-2 transition-all ${
+        isCritical
+          ? 'border-rose-500 bg-rose-950/40 hsh-critical shadow-glow-red'
+          : isHigh
+          ? 'border-amber-500/80 bg-amber-950/40 shadow-glow-gold'
+          : 'border-yellow-600/60 bg-yellow-950/30'
+      }`}
+    >
       <div className="flex items-start gap-3">
-        <div className={`flex-shrink-0 ${isCritical ? 'animate-flash' : 'animate-pulse'}`}>
-          <AlertTriangle className={`w-6 h-6 ${
-            isCritical ? 'text-red-400' : isHigh ? 'text-amber-400' : 'text-yellow-400'
-          }`} />
+        <div className={`flex-shrink-0 mt-0.5 ${isCritical ? 'animate-pulse' : ''}`}>
+          <AlertTriangle
+            className={`w-6 h-6 ${
+              isCritical ? 'text-rose-400' : isHigh ? 'text-amber-400' : 'text-yellow-400'
+            }`}
+          />
         </div>
-        <div className="flex-1">
-          <div className={`text-xs font-bold font-mono tracking-wider uppercase mb-1 ${
-            isCritical ? 'text-red-400' : isHigh ? 'text-amber-400' : 'text-yellow-400'
-          }`}>
-            🏠 HSH ACTIVE — {hsh.hshSeverity}
+        <div className="flex-1 min-w-0">
+          <div
+            className={`text-xs font-black font-mono tracking-wider uppercase mb-1 ${
+              isCritical ? 'text-rose-300' : isHigh ? 'text-amber-300' : 'text-yellow-300'
+            }`}
+          >
+            🏠 HSH AKTIF — {hsh.hshSeverity} (Kembali ke Rumah)
           </div>
-          <div className="text-xs font-mono text-slate-300 leading-relaxed">
+          <div className="text-xs font-mono text-slate-200 leading-relaxed">
             {hsh.hshMessage}
           </div>
-          <div className="mt-2 flex items-center gap-3">
-            <div className="flex-1 bg-cop-border/30 rounded-full h-2">
+          <div className="mt-2.5 flex items-center gap-3">
+            <div className="flex-1 bg-slate-900 rounded-full h-2 overflow-hidden border border-cop-border">
               <div
-                className={`h-2 rounded-full transition-all duration-500 ${
-                  isCritical ? 'bg-red-500' : isHigh ? 'bg-amber-500' : 'bg-yellow-500'
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isCritical ? 'bg-rose-500' : isHigh ? 'bg-amber-500' : 'bg-yellow-500'
                 }`}
                 style={{ width: `${hsh.percentElapsed || 0}%` }}
               />
             </div>
-            <span className={`text-[10px] font-mono font-bold whitespace-nowrap ${
-              isCritical ? 'text-red-400' : 'text-amber-400'
-            }`}>
-              ⏱ {hsh.timeToClose}
+            <span
+              className={`text-[10px] font-mono font-bold whitespace-nowrap tabular-nums ${
+                isCritical ? 'text-rose-400' : 'text-amber-400'
+              }`}
+            >
+              ⏱ Tersisa: {hsh.timeToClose}
             </span>
           </div>
         </div>
@@ -115,7 +124,7 @@ export default function SessionStatus({ data }) {
   useEffect(() => {
     const tick = () => {
       const now = new Date();
-      setLocalTime(now.toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Jakarta' }));
+      setLocalTime(now.toLocaleTimeString('id-ID', { hour12: false, timeZone: 'Asia/Jakarta' }));
       setUtcTime(now.toLocaleTimeString('en-US', { hour12: false, timeZone: 'UTC' }));
     };
     tick();
@@ -127,54 +136,38 @@ export default function SessionStatus({ data }) {
   const hsh = data?.hsh;
 
   return (
-    <div className="cop-panel h-full flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Globe className="w-4 h-4 text-cop-cyan" />
-          <h2 className="text-sm font-bold text-white">Session Status</h2>
-        </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
-          <Clock className="w-3 h-3" />
-          <span>{utcTime} UTC</span>
-          <span className="text-slate-700">|</span>
-          <span>{localTime} WIB</span>
-        </div>
-      </div>
+    <div className="cop-panel h-full flex flex-col justify-between space-y-3.5">
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+              <Globe className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white font-mono">Status Sesi Pasar Global</h2>
+              <p className="text-[10px] text-slate-400 font-mono">Jadwal Pasar & Hukum Rumah Idaman</p>
+            </div>
+          </div>
 
-      {/* Active Sessions */}
-      {session?.activeSessions?.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Active:</span>
-          {session.activeSessions.map((s) => (
-            <span key={s} className="cop-badge-green text-[10px]">
-              {s.toUpperCase()} SESSION
-            </span>
-          ))}
+          <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400">
+            <Clock className="w-3.5 h-3.5 text-cop-gold" />
+            <span className="tabular-nums font-semibold">{localTime} WIB</span>
+          </div>
         </div>
-      )}
 
-      {/* Session Cards */}
-      <div className="grid grid-cols-3 gap-2">
-        <SessionBadge
-          name="TOKYO"
-          emoji="🇯🇵"
-          sessionData={session?.sessions?.tokyo}
-        />
-        <SessionBadge
-          name="LONDON"
-          emoji="🇬🇧"
-          sessionData={session?.sessions?.london}
-        />
-        <SessionBadge
-          name="NEW YORK"
-          emoji="🇺🇸"
-          sessionData={session?.sessions?.newYork}
-        />
+        {/* Global Session Badges */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+          <SessionBadge name="TOKYO" flag="🇯🇵" sessionData={session?.sessions?.tokyo} />
+          <SessionBadge name="LONDON" flag="🇬🇧" sessionData={session?.sessions?.london} />
+          <SessionBadge name="NEW YORK" flag="🇺🇸" sessionData={session?.sessions?.newYork} />
+        </div>
       </div>
 
       {/* HSH Warning Banner */}
       <div>
-        <div className="section-title mb-2">Hukum Rumah Idaman (HSH)</div>
+        <div className="text-[10px] font-mono font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+          Hukum Rumah Idaman (Home Sweet Home)
+        </div>
         <HSHBanner hsh={hsh} />
       </div>
     </div>

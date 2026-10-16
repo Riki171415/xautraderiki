@@ -1,12 +1,12 @@
 /**
  * COP TAH Analytics Dashboard — Main App
- * Full-stack trading analytics for XAUUSD/PAXG on Binance
+ * Institutional Trading Analytics for XAUUSD/PAXG
  *
- * Architecture:
- *  - WebSocket (primary): Live data stream from backend
- *  - REST polling (fallback): Every 30s if WS unavailable
- *  - Rule Engine: JIKA, Perahu, Busur, RS Matrix, HSH, Lot Calc
- *  - Fractal Storytelling: Narrative generator per timeframe
+ * View Modes:
+ *  - 'dashboard': Executive Dashboard (OHL, RS Matrix, Pending Orders, Operational Status, Narrative)
+ *  - 'table': Multi-Timeframe Matrix Terminal (17-column Leak4Reg Matrix & 9-column RS)
+ *  - 'cycle': Market Cycle 12-Step Timeline & Sub-Alur Fraktal
+ *  - 'both': All-in-One Integrated View
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -23,26 +23,32 @@ import Leak4RegTable from './components/Leak4RegTable';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAnalysis } from './hooks/useAnalysis';
 import { resetTouches } from './hooks/useAnalysis';
-import { RefreshCw, AlertOctagon, CheckCircle, RotateCcw, Table, LayoutDashboard, Layers } from 'lucide-react';
-
-const API_BASE = 'http://localhost:3001/api';
+import {
+  RefreshCw,
+  AlertOctagon,
+  CheckCircle,
+  RotateCcw,
+  Table,
+  LayoutDashboard,
+  Layers,
+  Compass,
+  Radio,
+  ChevronDown
+} from 'lucide-react';
 
 export default function App() {
   const [symbol, setSymbol] = useState('XAUUSD');
   const [timeframe, setTimeframe] = useState('1h');
   const [broker, setBroker] = useState('EXNESS');
-  const [viewMode, setViewMode] = useState('both'); // 'table' | 'dashboard' | 'both'
+  // OPSI A: Executive Dashboard as default view mode!
+  const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard' | 'table' | 'cycle' | 'both'
   const [notification, setNotification] = useState(null);
 
   // ── Data Sources ───────────────────────────────────────────────────────────
-  // Primary: WebSocket
   const { data: wsData, liveTick, status: wsStatus, error: wsError, reconnectCount, isLoading: wsLoading, sendMessage, clearData } = useWebSocket();
-
-  // Fallback: REST API polling (every 30s)
   const { data: restData, loading, error: restError, lastUpdated, refetch } = useAnalysis(symbol, timeframe, broker, 30000);
 
-  // Merge: ONLY use wsData if it matches the currently selected symbol+timeframe+broker.
-  // Otherwise the auto-broadcast would override REST data for other timeframes or brokers.
+  // Merge data safely
   const wsMatches =
     Boolean(wsData) &&
     (wsData.symbol === symbol ||
@@ -52,11 +58,10 @@ export default function App() {
     (!wsData.broker || wsData.broker.id === broker);
   const data = wsMatches ? wsData : restData;
 
-  // When symbol/timeframe/broker changes: clear stale wsData immediately, notify WS, refetch REST
   useEffect(() => {
-    clearData();                                                   // wipe old WS data so it doesn't override
-    sendMessage({ type: 'subscribe', symbol, timeframe, broker }); // tell backend to push new broker/TF data
-    refetch();                                                     // immediately call REST API
+    clearData();
+    sendMessage({ type: 'subscribe', symbol, timeframe, broker });
+    refetch();
   }, [symbol, timeframe, broker]);
 
   // HSH Critical notification
@@ -69,19 +74,19 @@ export default function App() {
   // ── Handlers ───────────────────────────────────────────────────────────────
   const showNotification = useCallback((type, message) => {
     setNotification({ type, message, id: Date.now() });
-    setTimeout(() => setNotification(null), 6000);
+    setTimeout(() => setNotification(null), 5000);
   }, []);
 
   const handleRefresh = useCallback(() => {
     refetch();
-    showNotification('info', 'Analysis refreshed');
-  }, [refetch]);
+    showNotification('info', 'Analisis data berhasil diperbarui');
+  }, [refetch, showNotification]);
 
   const handleResetTouches = useCallback(async () => {
     await resetTouches();
     refetch();
-    showNotification('info', 'Touch detection reset');
-  }, [refetch]);
+    showNotification('info', 'Sensor sentuhan RS Matrix berhasil di-reset');
+  }, [refetch, showNotification]);
 
   const handleModalUpdate = useCallback(() => {
     refetch();
@@ -100,8 +105,8 @@ export default function App() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-cop-bg flex flex-col overflow-hidden">
-      {/* ── Header ── */}
+    <div className="min-h-screen bg-cop-bg flex flex-col overflow-hidden text-slate-100">
+      {/* ── Institutional Header ── */}
       <Header
         symbol={symbol}
         timeframe={timeframe}
@@ -117,159 +122,202 @@ export default function App() {
 
       {/* ── Notification Toast ── */}
       {notification && (
-        <div className={`fixed top-16 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-sm font-mono transition-all duration-300 max-w-md ${
-          notification.type === 'warning'
-            ? 'bg-red-950/90 border-red-600/60 text-red-300'
-            : 'bg-cop-surface border-cop-border text-slate-300'
-        }`}>
+        <div
+          className={`fixed top-16 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border text-xs font-mono backdrop-blur-xl transition-all duration-300 max-w-md animate-tick-flash ${
+            notification.type === 'warning'
+              ? 'bg-rose-950/90 border-rose-500/70 text-rose-200 shadow-glow-red'
+              : 'bg-cop-surface/95 border-amber-500/40 text-amber-200 shadow-glow-gold-sm'
+          }`}
+        >
           {notification.type === 'warning' ? (
-            <AlertOctagon className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <AlertOctagon className="w-4 h-4 text-rose-400 flex-shrink-0" />
           ) : (
             <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           )}
-          <span className="text-xs leading-relaxed">{notification.message}</span>
+          <span className="leading-relaxed">{notification.message}</span>
         </div>
       )}
 
       {/* ── Error Banner ── */}
       {(wsError || restError) && !data && (
-        <div className="bg-red-950/40 border-b border-red-800/40 px-6 py-2 flex items-center gap-2 text-xs font-mono text-red-400">
-          <AlertOctagon className="w-3.5 h-3.5" />
-          Connection error: {wsError || restError} — Retrying...
+        <div className="bg-rose-950/50 border-b border-rose-800/40 px-6 py-2 flex items-center gap-2 text-xs font-mono text-rose-300">
+          <AlertOctagon className="w-4 h-4 text-rose-400" />
+          Koneksi terganggu: {wsError || restError} — Menghubungkan ulang secara otomatis...
         </div>
       )}
 
-      {/* ── Toolbar Strip ── */}
-      <div className="flex items-center justify-between px-6 py-2 bg-cop-surface border-b border-cop-border">
+      {/* ── Institutional Toolbar Strip ── */}
+      <div className="flex items-center justify-between px-4 lg:px-6 py-2 bg-cop-surface/80 border-b border-cop-border/80 backdrop-blur-md flex-wrap gap-2">
+        {/* Left: Feed Telemetry */}
         <div className="flex items-center gap-2.5">
           {data && (
             <>
-              <span className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">Feed:</span>
-              <span className="text-[10px] font-mono font-bold text-cop-gold uppercase">
+              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Feed Aktif:</span>
+              <span className="text-[11px] font-mono font-bold text-cop-gold flex items-center gap-1.5 bg-amber-950/30 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {data.broker?.name || broker} ({data.broker?.server || 'Interbank CFD'})
               </span>
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-mono text-slate-400">
-                {data.symbol} · TF: <strong className="text-white">{data.timeframe}</strong> · Spread: <strong className="text-cop-cyan">{data.broker?.spreadLabel || '0.5 pip'}</strong>
+              <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
+                {data.symbol} · TF: <strong className="text-white">{data.timeframe}</strong> · Spread: <strong className="text-cop-cyan">{data.broker?.spreadLabel || '1.2 pips'}</strong>
               </span>
-              {liveTick?.price && (
-                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border ${
-                  liveTick.direction === 'UP'
-                    ? 'text-emerald-400 border-emerald-700/50 bg-emerald-950/40'
-                    : liveTick.direction === 'DOWN'
-                    ? 'text-red-400 border-red-700/50 bg-red-950/40'
-                    : 'text-slate-400 border-slate-700 bg-slate-900/40'
-                }`}>
-                  Live: ${liveTick.price.toFixed(data?.decimals ?? (broker !== 'BINANCE' ? 3 : 2))} {liveTick.direction === 'UP' ? '▲' : liveTick.direction === 'DOWN' ? '▼' : '●'}
-                </span>
-              )}
             </>
           )}
         </div>
+
+        {/* Right: View Mode Segmented Switcher & Quick Actions */}
         <div className="flex items-center gap-2">
-          {/* Mode Switcher: Table vs Dashboard vs Both */}
-          <div className="flex items-center gap-1 bg-cop-card p-0.5 rounded-lg border border-cop-border mr-2">
-            <button
-              onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
-                viewMode === 'table'
-                  ? 'bg-cyan-950 text-cyan-300 border border-cyan-500/80 font-bold shadow-md shadow-cyan-950/40'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-              title="Tampilan Tabel Matriks Multi-Timeframe COP TAH"
-            >
-              <Table className="w-3 h-3 text-cyan-400" />
-              <span>Mode Tabel Matriks</span>
-            </button>
+          {/* Segmented View Mode Controller */}
+          <div className="flex items-center gap-1 bg-cop-card/90 p-1 rounded-xl border border-cop-border shadow-sm">
             <button
               onClick={() => setViewMode('dashboard')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
                 viewMode === 'dashboard'
-                  ? 'bg-cop-blue text-white shadow font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-glow-gold-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
-              title="Tampilan Dashboard Modern Cards & Widgets"
+              title="Executive Dashboard (Tampilan Visual Utama)"
             >
-              <LayoutDashboard className="w-3 h-3" />
+              <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Dashboard</span>
             </button>
+
+            <button
+              onClick={() => setViewMode('table')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                viewMode === 'table'
+                  ? 'bg-cop-blue text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Multi-Timeframe Matrix Terminal"
+            >
+              <Table className="w-3.5 h-3.5" />
+              <span>Tabel Matriks</span>
+            </button>
+
+            <button
+              onClick={() => setViewMode('cycle')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                viewMode === 'cycle'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Siklus 12 Langkah & Sub-Alur Fraktal"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Market Cycle</span>
+            </button>
+
             <button
               onClick={() => setViewMode('both')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
                 viewMode === 'both'
-                  ? 'bg-amber-950 text-amber-300 border border-amber-600/80 font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-slate-700 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
-              title="Tampilkan Keduanya (Tabel Matriks + Dashboard)"
+              title="Tampilkan Semua Bagian Secara Lengkap"
             >
-              <Layers className="w-3 h-3 text-amber-400" />
-              <span>Gabungan</span>
+              <Layers className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Semua</span>
             </button>
           </div>
 
           <button
             onClick={handleResetTouches}
-            className="btn-ghost text-[10px]"
-            title="Reset touch detection"
+            className="btn-ghost text-[11px]"
+            title="Reset deteksi sentuhan level RS"
           >
-            <RotateCcw className="w-3 h-3" />
-            Reset Touches
-          </button>
-          <button
-            onClick={handleRefresh}
-            className="btn-ghost text-[10px]"
-          >
-            <RefreshCw className="w-3 h-3" />
-            Refresh
+            <RotateCcw className="w-3 h-3 text-slate-400" />
+            <span className="hidden md:inline">Reset RS</span>
           </button>
         </div>
       </div>
 
-      {/* ── Main Content ── */}
-      <main className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* ── Main Dashboard Workspace ── */}
+      <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
 
-        {/* ── COP TAH MULTI-TIMEFRAME MATRIX TABLE ── */}
-        {(viewMode === 'table' || viewMode === 'both') && (
-          <Leak4RegTable data={data} liveTick={liveTick} />
-        )}
-
-        {/* ── DASHBOARD PANELS ── */}
+        {/* ── VIEW 1: EXECUTIVE DASHBOARD (DEFAULT OPSI A) ── */}
         {(viewMode === 'dashboard' || viewMode === 'both') && (
-          <>
-            {/* ── TOP SECTION: OHL Metrics ── */}
+          <div className="space-y-5">
+            {/* 1. OHL Metrics & Intraday Range Bar */}
             <OHLPanel data={data} liveTick={liveTick} />
 
-            {/* ── MIDDLE SECTION: RS Matrix (full width) ── */}
-            <RSMatrix data={data} liveTick={liveTick} />
-
-            {/* ── MARKET CYCLE & SUB-ALUR CERITA (full width) ── */}
-            <MarketCycleAnalysis data={data} />
-
-            {/* ── BOTTOM SECTION: 2-column layout ── */}
-            <div className="grid grid-cols-2 gap-4">
-
-              {/* ── BOTTOM LEFT: Operational Status + Storyline ── */}
-              <div className="space-y-4">
-                <OperationalStatus data={data} />
-                <StorylineGenerator data={data} />
+            {/* 2. Dual Panel: RS Matrix + Order Execution Card */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              {/* Left Column (5/12): RS Matrix Order Flow Proximity */}
+              <div className="lg:col-span-5 flex flex-col">
+                <RSMatrix data={data} liveTick={liveTick} />
               </div>
 
-              {/* ── BOTTOM RIGHT: Pending Orders + Session/HSH ── */}
-              <div className="space-y-4">
+              {/* Right Column (7/12): Target & Pending Orders Signal Ticket */}
+              <div className="lg:col-span-7 flex flex-col">
                 <PendingOrders data={data} liveTick={liveTick} onModalUpdate={handleModalUpdate} />
-                <SessionStatus data={data} />
               </div>
             </div>
-          </>
+
+            {/* 3. Bottom Grid: Operational Status, Session Status & AI Storyline */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              <div className="lg:col-span-4">
+                <OperationalStatus data={data} />
+              </div>
+              <div className="lg:col-span-4">
+                <SessionStatus data={data} />
+              </div>
+              <div className="lg:col-span-4">
+                <StorylineGenerator data={data} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── VIEW 2: MULTI-TIMEFRAME MATRIX TERMINAL TABLE ── */}
+        {(viewMode === 'table' || viewMode === 'both') && (
+          <div className="space-y-4">
+            {viewMode === 'both' && (
+              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60">
+                <div className="w-2.5 h-2.5 rounded-full bg-cop-blue" />
+                <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
+                  Matriks Multi-Timeframe COP TAH
+                </h2>
+              </div>
+            )}
+            <Leak4RegTable data={data} liveTick={liveTick} />
+          </div>
+        )}
+
+        {/* ── VIEW 3: MARKET CYCLE & SUB-ALUR FRAKTAL ── */}
+        {(viewMode === 'cycle' || viewMode === 'both') && (
+          <div className="space-y-4">
+            {viewMode === 'both' && (
+              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60">
+                <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
+                  Analisis Siklus Pergerakan & Sub-Alur Fraktal
+                </h2>
+              </div>
+            )}
+            <MarketCycleAnalysis data={data} />
+          </div>
         )}
 
       </main>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-cop-border px-6 py-2 flex items-center justify-between text-[10px] font-mono text-slate-700">
-        <span>COP TAH Analytics Dashboard v1.0 — XAUUSD / PAXG · Binance</span>
-        <span>3 Core Theories · 5 Trading Laws · Multi-Timeframe Fractal Storytelling</span>
-        <span>⚡ Hukum JIKA · Perahu · Busur · RS Matrix · HSH</span>
+      {/* ── Terminal Footer ── */}
+      <footer className="border-t border-cop-border/80 px-4 lg:px-6 py-2.5 flex items-center justify-between text-[11px] font-mono text-slate-400 bg-cop-surface/90 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <span className="text-cop-gold font-bold">COP TAH Engine</span>
+          <span>·</span>
+          <span>Institutional Gold Terminal</span>
+        </div>
+        <div className="hidden sm:flex items-center gap-3 text-slate-400">
+          <span>3 Core Theories</span>
+          <span>·</span>
+          <span>5 Trading Laws</span>
+          <span>·</span>
+          <span className="text-emerald-400">Multi-TF Confluence</span>
+        </div>
+        <div className="text-slate-400">
+          Exness & Binance Interbank Feed
+        </div>
       </footer>
     </div>
   );

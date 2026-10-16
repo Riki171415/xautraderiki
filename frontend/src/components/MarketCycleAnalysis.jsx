@@ -40,42 +40,34 @@ export default function MarketCycleAnalysis({ data }) {
   const isStrong = displayPattern === 'STRONG';
   const activeStep = marketCycle?.currentStep || 4;
 
-  // Session icon helper
-  const getSessionIcon = (session) => {
-    if (session.includes('ASIA') || session.includes('Pagi')) return Sun;
-    if (session.includes('EROPA') || session.includes('Sore')) return Sunset;
-    if (session.includes('USA') || session.includes('Malam')) return Moon;
-    return Repeat;
-  };
-
   return (
-    <div className="cop-panel space-y-5">
+    <div className="cop-panel space-y-4">
       {/* ── Top Header & Tab Navigation ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-cop-border pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-cop-border pb-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500/20 to-cop-gold/10 border border-amber-500/30 text-cop-gold shadow-lg shadow-amber-950/20">
+          <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-cop-gold shadow-glow-gold-sm">
             <Compass className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-white tracking-wide">Analisis Pergerakan Market</h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cop-gold/15 text-cop-gold border border-cop-gold/40 font-semibold uppercase">
+              <h2 className="text-base font-extrabold text-white font-mono">Analisis Siklus Pasar & Alur Fraktal</h2>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/40 font-bold uppercase">
                 Metode COP TAH
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5 font-mono">
-              Siklus 12 Langkah Harian · Sub-Alur Fraktal Busur-Target · Matriks Keputusan Entry Aman
+            <p className="text-xs text-slate-400 font-mono mt-0.5">
+              12 Langkah Sesi Harian · Sub-Alur Pentangan Busur · Matriks Keputusan Entry Aman
             </p>
           </div>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-cop-card border border-cop-border self-start md:self-auto">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-cop-card border border-cop-border self-start md:self-auto shadow-sm">
           <button
             onClick={() => setActiveTab('cycle')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
               activeTab === 'cycle'
-                ? 'bg-cop-blue text-white shadow-md shadow-blue-900/30 font-bold'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-glow-gold-sm'
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -84,9 +76,9 @@ export default function MarketCycleAnalysis({ data }) {
           </button>
           <button
             onClick={() => setActiveTab('fractal')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
               activeTab === 'fractal'
-                ? 'bg-cop-blue text-white shadow-md shadow-blue-900/30 font-bold'
+                ? 'bg-cop-blue text-white shadow-md'
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -95,9 +87,9 @@ export default function MarketCycleAnalysis({ data }) {
           </button>
           <button
             onClick={() => setActiveTab('confluence')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
               activeTab === 'confluence'
-                ? 'bg-cop-blue text-white shadow-md shadow-blue-900/30 font-bold'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -113,19 +105,19 @@ export default function MarketCycleAnalysis({ data }) {
       {activeTab === 'cycle' && (
         <div className="space-y-4">
           {/* Status Bar: Pola Aktif & Toggle Mode */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-cop-card to-slate-900/80 border border-cop-border flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="p-4 rounded-xl bg-gradient-to-r from-cop-card to-slate-900 border border-cop-border flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div
                 className={`p-2.5 rounded-xl border flex items-center justify-center ${
                   marketCycle?.bias === 'BEARISH'
-                    ? 'bg-red-950/40 border-red-500/40 text-red-400'
-                    : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400'
+                    ? 'bg-rose-950/40 border-rose-500/40 text-rose-400 shadow-glow-red-sm'
+                    : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400 shadow-glow-green-sm'
                 }`}
               >
                 {marketCycle?.bias === 'BEARISH' ? (
-                  <ArrowDownRight className="w-5 h-5" />
+                  <ArrowDownRight className="w-5 h-5 stroke-[2.5]" />
                 ) : (
-                  <ArrowUpRight className="w-5 h-5" />
+                  <ArrowUpRight className="w-5 h-5 stroke-[2.5]" />
                 )}
               </div>
               <div>
@@ -134,15 +126,15 @@ export default function MarketCycleAnalysis({ data }) {
                     Status Pola Hari Ini:
                   </span>
                   <span
-                    className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
+                    className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded-full border ${
                       marketCycle?.marketType === 'STRONG'
-                        ? 'bg-purple-950/60 border-purple-500/60 text-purple-300'
-                        : 'bg-blue-950/60 border-blue-500/60 text-blue-300'
+                        ? 'bg-purple-950/70 border-purple-500/60 text-purple-300'
+                        : 'bg-blue-950/70 border-blue-500/60 text-blue-300'
                     }`}
                   >
                     {marketCycle?.label || 'MARKET NORMAL BEARISH'}
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/40 text-amber-300 border border-amber-600/30 font-bold">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-950/60 text-amber-300 border border-amber-600/40 font-bold">
                     Langkah {activeStep} / 12
                   </span>
                 </div>
@@ -156,14 +148,14 @@ export default function MarketCycleAnalysis({ data }) {
               </div>
             </div>
 
-            {/* Pattern Switcher (Auto / Normal / Strong) */}
-            <div className="flex items-center gap-2 self-start lg:self-auto bg-cop-surface p-1 rounded-lg border border-cop-border">
+            {/* Pattern Switcher */}
+            <div className="flex items-center gap-2 self-start lg:self-auto bg-cop-surface p-1 rounded-xl border border-cop-border">
               <span className="text-[10px] font-mono text-slate-500 px-2 uppercase">Lihat Pola:</span>
               <button
                 onClick={() => setCycleViewMode('auto')}
-                className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
                   cycleViewMode === 'auto'
-                    ? 'bg-cop-gold/20 text-cop-gold border border-cop-gold/40 font-bold'
+                    ? 'bg-amber-500/20 text-cop-gold border border-amber-500/50'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -171,9 +163,9 @@ export default function MarketCycleAnalysis({ data }) {
               </button>
               <button
                 onClick={() => setCycleViewMode('NORMAL')}
-                className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
                   cycleViewMode === 'NORMAL'
-                    ? 'bg-blue-950 text-blue-300 border border-blue-600/50 font-bold'
+                    ? 'bg-blue-950 text-blue-300 border border-blue-600/50'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -181,9 +173,9 @@ export default function MarketCycleAnalysis({ data }) {
               </button>
               <button
                 onClick={() => setCycleViewMode('STRONG')}
-                className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
                   cycleViewMode === 'STRONG'
-                    ? 'bg-purple-950 text-purple-300 border border-purple-600/50 font-bold'
+                    ? 'bg-purple-950 text-purple-300 border border-purple-600/50'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -192,117 +184,72 @@ export default function MarketCycleAnalysis({ data }) {
             </div>
           </div>
 
-          {/* Core Rule Comparison Banner */}
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-cop-border/80 flex items-start gap-3 text-xs leading-relaxed">
-            <Info className="w-4 h-4 text-cop-cyan flex-shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <span className="font-bold text-white font-mono">
-                {isStrong ? '⚡ Karakteristik Pasar STRONG:' : '📐 Karakteristik Pasar NORMAL:'}
-              </span>
-              <p className="text-slate-300 font-mono text-[11px]">
-                {isStrong ? (
-                  <>
-                    Pada pasar <strong className="text-purple-300">STRONG</strong>, harga High hari langsung dikunci di{' '}
-                    <strong className="text-amber-300">Sesi Pagi (ASIA)</strong> dan tidak tertembus lagi. Pasar Sore
-                    (Eropa) gagal membuat High baru (High Eropa &lt; High Asia), lalu langsung terjun mengejar Low baru
-                    tanpa koreksi signifikan.
-                  </>
-                ) : (
-                  <>
-                    Pada pasar <strong className="text-blue-300">NORMAL</strong>, setelah sesi Asia membentuk Low &
-                    High awal, <strong className="text-amber-300">Sesi Sore (EROPA)</strong> akan menembus High Asia
-                    untuk mengunci harga <strong className="text-emerald-300">HIGH cerita keseluruhan hari</strong>. Baru
-                    kemudian di <strong className="text-purple-300">Sesi USA</strong> harga ditekuk turun menembus Low
-                    Eropa untuk membentuk <strong className="text-red-300">LOW cerita keseluruhan hari</strong>.
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
-
           {/* 12-Step Grid Timeline */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Phase 1: Pasar Pagi ASIA (Steps 1-4) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/70 border border-cop-border flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between border-b border-cop-border/60 pb-2">
+            {/* Phase 1: ASIA (Steps 1-4) */}
+            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5">
+              <div className="flex items-center justify-between border-b border-cop-border pb-2">
                 <div className="flex items-center gap-2">
                   <Sun className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-bold text-white font-mono uppercase tracking-wide">
-                    1. Pasar Pagi (ASIA)
-                  </span>
+                  <span className="text-xs font-bold text-white font-mono uppercase">1. Pagi (ASIA)</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400 bg-cop-surface px-1.5 py-0.5 rounded border border-cop-border">
-                  06:00 - 14:00 WIB
-                </span>
+                <span className="text-[10px] font-mono text-slate-400">06:00 - 14:00 WIB</span>
               </div>
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2">
                 {marketCycle?.steps?.slice(0, 4).map((s) => (
                   <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
                 ))}
               </div>
             </div>
 
-            {/* Phase 2: Pasar Sore EROPA (Steps 5-7) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/70 border border-cop-border flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between border-b border-cop-border/60 pb-2">
+            {/* Phase 2: EROPA (Steps 5-7) */}
+            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5">
+              <div className="flex items-center justify-between border-b border-cop-border pb-2">
                 <div className="flex items-center gap-2">
                   <Sunset className="w-4 h-4 text-cop-cyan" />
-                  <span className="text-xs font-bold text-white font-mono uppercase tracking-wide">
-                    2. Pasar Sore (EROPA)
-                  </span>
+                  <span className="text-xs font-bold text-white font-mono uppercase">2. Sore (EROPA)</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400 bg-cop-surface px-1.5 py-0.5 rounded border border-cop-border">
-                  14:00 - 20:00 WIB
-                </span>
+                <span className="text-[10px] font-mono text-slate-400">14:00 - 20:00 WIB</span>
               </div>
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2">
                 {marketCycle?.steps?.slice(4, 7).map((s) => (
                   <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
                 ))}
               </div>
             </div>
 
-            {/* Phase 3: Pasar Malam USA (Steps 8-11) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/70 border border-cop-border flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between border-b border-cop-border/60 pb-2">
+            {/* Phase 3: USA (Steps 8-11) */}
+            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5">
+              <div className="flex items-center justify-between border-b border-cop-border pb-2">
                 <div className="flex items-center gap-2">
                   <Moon className="w-4 h-4 text-indigo-400" />
-                  <span className="text-xs font-bold text-white font-mono uppercase tracking-wide">
-                    3. Pasar Malam (USA)
-                  </span>
+                  <span className="text-xs font-bold text-white font-mono uppercase">3. Malam (USA)</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400 bg-cop-surface px-1.5 py-0.5 rounded border border-cop-border">
-                  20:00 - 04:00 WIB
-                </span>
+                <span className="text-[10px] font-mono text-slate-400">20:00 - 04:00 WIB</span>
               </div>
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2">
                 {marketCycle?.steps?.slice(7, 11).map((s) => (
                   <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
                 ))}
               </div>
             </div>
 
-            {/* Phase 4: Transisi & Siklus Mingguan (Step 12) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/70 border border-cop-border flex flex-col justify-between space-y-3">
-              <div className="flex items-center justify-between border-b border-cop-border/60 pb-2">
+            {/* Phase 4: Transisi (Step 12) */}
+            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5">
+              <div className="flex items-center justify-between border-b border-cop-border pb-2">
                 <div className="flex items-center gap-2">
                   <Repeat className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-bold text-white font-mono uppercase tracking-wide">
-                    4. Transisi Esok Hari
-                  </span>
+                  <span className="text-xs font-bold text-white font-mono uppercase">4. Transisi Esok</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400 bg-cop-surface px-1.5 py-0.5 rounded border border-cop-border">
-                  04:00 - 06:00 WIB
-                </span>
+                <span className="text-[10px] font-mono text-slate-400">04:00 - 06:00 WIB</span>
               </div>
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2">
                 {marketCycle?.steps?.slice(11, 12).map((s) => (
                   <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
                 ))}
-                <div className="p-3 rounded-lg bg-cop-surface/80 border border-cop-border text-[11px] font-mono text-slate-400 leading-relaxed mt-2">
-                  <span className="text-amber-400 font-bold block mb-1">💡 Catatan Kunci Siklus:</span>
-                  Cerita pergerakan ini berulang setiap hari secara harmonis hingga target High dan Low mingguan
-                  terpenuhi.
+                <div className="p-2.5 rounded-lg bg-cop-surface border border-cop-border text-[11px] font-mono text-slate-300 leading-relaxed">
+                  <span className="text-cop-gold font-bold block mb-1">💡 Siklus Harmonis:</span>
+                  Pola ini berulang secara fraktal setiap hari sampai High dan Low mingguan terisi sempurna.
                 </div>
               </div>
             </div>
@@ -315,113 +262,37 @@ export default function MarketCycleAnalysis({ data }) {
          ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'fractal' && (
         <div className="space-y-4">
-          {/* Fundamental Golden Rule */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-amber-950/40 via-cop-card to-slate-900 border border-amber-600/40">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-cop-gold uppercase tracking-wider mb-2">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <span>Hukum Dasar Sub-Alur Cerita COP TAH</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-lg bg-cop-surface border border-emerald-500/30 flex items-center justify-between">
-                <div>
-                  <span className="text-slate-400 text-[10px] block uppercase">Jika Trend Utama NAIK:</span>
-                  <span className="text-emerald-400 font-bold text-sm">Hukum Jika UP</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500" />
-                <div className="text-right">
-                  <span className="text-slate-400 text-[10px] block uppercase">Arah Pentangan Busur:</span>
-                  <span className="text-amber-400 font-bold text-sm">Hukum Busur DOWN 🏹</span>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+            <div className="p-3.5 rounded-xl bg-cop-card border border-emerald-500/40 flex items-center justify-between">
+              <div>
+                <span className="text-slate-400 text-[10px] block uppercase">Jika Trend Utama NAIK:</span>
+                <span className="text-emerald-400 font-bold text-sm">Hukum Jika UP</span>
               </div>
+              <ChevronRight className="w-4 h-4 text-slate-500" />
+              <div className="text-right">
+                <span className="text-slate-400 text-[10px] block uppercase">Arah Pentangan Busur:</span>
+                <span className="text-cop-gold font-bold text-sm">Hukum Busur DOWN 🏹</span>
+              </div>
+            </div>
 
-              <div className="p-3 rounded-lg bg-cop-surface border border-red-500/30 flex items-center justify-between">
-                <div>
-                  <span className="text-slate-400 text-[10px] block uppercase">Jika Trend Utama TURUN:</span>
-                  <span className="text-red-400 font-bold text-sm">Hukum Jika DOWN</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500" />
-                <div className="text-right">
-                  <span className="text-slate-400 text-[10px] block uppercase">Arah Pentangan Busur:</span>
-                  <span className="text-amber-400 font-bold text-sm">Hukum Busur UP 🏹</span>
-                </div>
+            <div className="p-3.5 rounded-xl bg-cop-card border border-rose-500/40 flex items-center justify-between">
+              <div>
+                <span className="text-slate-400 text-[10px] block uppercase">Jika Trend Utama TURUN:</span>
+                <span className="text-rose-400 font-bold text-sm">Hukum Jika DOWN</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-500" />
+              <div className="text-right">
+                <span className="text-slate-400 text-[10px] block uppercase">Arah Pentangan Busur:</span>
+                <span className="text-cop-gold font-bold text-sm">Hukum Busur UP 🏹</span>
               </div>
             </div>
           </div>
 
-          {/* Active Timeframe Focus Indicator */}
-          {subAlurCerita?.activeSchedule && (
-            <div className="p-4 rounded-xl bg-cop-card border border-cop-border space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">
-                    Timeframe Aktif Anda:
-                  </span>
-                  <span className="text-xs font-mono font-bold text-white px-2 py-0.5 rounded bg-cop-blue/20 border border-cop-blue/40">
-                    {subAlurCerita.activeSchedule.name}
-                  </span>
-                  <span
-                    className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
-                      subAlurCerita.activeSchedule.currentPhase === 'BUSUR'
-                        ? 'bg-amber-950/60 border-amber-500/60 text-amber-300 animate-pulse'
-                        : 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300'
-                    }`}
-                  >
-                    Fase Saat Ini: {subAlurCerita.activeSchedule.currentPhase}
-                  </span>
-                </div>
-                <span className="text-[11px] font-mono text-slate-400">
-                  {subAlurCerita.activeSchedule.progress}
-                </span>
-              </div>
-
-              {/* Progress split bar */}
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div
-                  className={`p-3 rounded-lg border transition-all ${
-                    subAlurCerita.activeSchedule.isCurrentBusur
-                      ? 'bg-amber-950/30 border-amber-500/60 shadow-lg shadow-amber-950/20'
-                      : 'bg-cop-surface/40 border-cop-border/60 opacity-60'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-amber-400">🏹 FASE 1: BUSUR (Pentangan)</span>
-                    {subAlurCerita.activeSchedule.isCurrentBusur && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500 text-black font-bold">
-                        AKTIF
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-200">{subAlurCerita.activeSchedule.busurRule}</div>
-                  <div className="text-[10px] text-slate-400 mt-1">Waktu: {subAlurCerita.activeSchedule.busurTime}</div>
-                </div>
-
-                <div
-                  className={`p-3 rounded-lg border transition-all ${
-                    !subAlurCerita.activeSchedule.isCurrentBusur
-                      ? 'bg-emerald-950/30 border-emerald-500/60 shadow-lg shadow-emerald-950/20'
-                      : 'bg-cop-surface/40 border-cop-border/60 opacity-60'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-emerald-400">🎯 FASE 2: TARGET & HSH</span>
-                    {!subAlurCerita.activeSchedule.isCurrentBusur && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500 text-black font-bold">
-                        AKTIF
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-slate-200">{subAlurCerita.activeSchedule.targetRule}</div>
-                  <div className="text-[10px] text-slate-400 mt-1">Waktu: {subAlurCerita.activeSchedule.targetTime}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Full Fractal Timetable across all 7 Timeframes */}
+          {/* Full Fractal Timetable across 7 Timeframes */}
           <div className="overflow-x-auto rounded-xl border border-cop-border">
             <table className="w-full text-left font-mono text-xs border-collapse">
               <thead>
-                <tr className="bg-cop-card/80 border-b border-cop-border text-slate-400 uppercase text-[10px] tracking-wider">
+                <tr className="bg-cop-card text-slate-400 uppercase text-[10px] tracking-wider border-b border-cop-border">
                   <th className="py-2.5 px-3">Timeframe</th>
                   <th className="py-2.5 px-3">Hukum Jika</th>
                   <th className="py-2.5 px-3">Fase 1: Busur (Pentangan)</th>
@@ -438,10 +309,10 @@ export default function MarketCycleAnalysis({ data }) {
                     </td>
                     <td className="py-2.5 px-3">
                       <span
-                        className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
+                        className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
                           sched.jika === 'UP'
                             ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/40'
-                            : 'bg-red-950/60 text-red-300 border border-red-600/40'
+                            : 'bg-rose-950/60 text-rose-300 border border-rose-600/40'
                         }`}
                       >
                         JIKA {sched.jika}
@@ -476,136 +347,45 @@ export default function MarketCycleAnalysis({ data }) {
       )}
 
       {/* ──────────────────────────────────────────────────────────────────────────
-          TAB 3: KORELASI TF BESAR & TF KECIL (KEPUTUSAN ENTRY AMAN)
+          TAB 3: KORELASI TF BESAR & TF KECIL
          ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'confluence' && (
         <div className="space-y-4">
-          {/* Confluence Narrative Card */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* TF Besar Card */}
-            <div className="p-4 rounded-xl bg-cop-card border border-cop-border space-y-3">
-              <div className="flex items-center justify-between border-b border-cop-border/60 pb-2">
-                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-cop-blue" />
-                  Timeframe Besar (HTF)
-                </span>
-                <span className="text-xs font-mono font-bold text-cop-gold px-2 py-0.5 rounded bg-cop-surface border border-cop-border">
-                  {multiTfDecision?.htf?.timeframe || 'D1'}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div className="p-2 rounded bg-cop-surface border border-cop-border/50">
-                  <span className="text-[10px] text-slate-500 block">HUKUM JIKA:</span>
-                  <span
-                    className={`font-bold ${
-                      multiTfDecision?.htf?.jika === 'UP' ? 'text-emerald-400' : 'text-red-400'
-                    }`}
-                  >
-                    JIKA {multiTfDecision?.htf?.jika || 'UP'}
-                  </span>
-                </div>
-                <div className="p-2 rounded bg-cop-surface border border-cop-border/50">
-                  <span className="text-[10px] text-slate-500 block">HUKUM MOVE:</span>
-                  <span className="font-bold text-amber-400">{multiTfDecision?.htf?.move || 'NRL DWN'}</span>
-                </div>
-              </div>
-
-              {/* Levels TF Besar */}
-              <div className="space-y-1 text-[11px] font-mono pt-1">
-                <div className="flex justify-between text-slate-400">
-                  <span>Resistance R1 HTF:</span>
-                  <span className="text-orange-400 font-bold">${multiTfDecision?.htf?.r1 || '—'}</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Pivot HTF:</span>
-                  <span className="text-white font-bold">${multiTfDecision?.htf?.pivot || '—'}</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Support S1 HTF:</span>
-                  <span className="text-pink-400 font-bold">${multiTfDecision?.htf?.s1 || '—'}</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Low Before HTF:</span>
-                  <span className="text-red-400 font-bold">${multiTfDecision?.htf?.lowBefore || '—'}</span>
-                </div>
+            <div className="p-4 rounded-xl bg-cop-card border border-cop-border space-y-2.5">
+              <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-cop-gold" />
+                Timeframe Besar (HTF): <strong className="text-white">{multiTfDecision?.htf?.timeframe || 'D1'}</strong>
+              </span>
+              <div className="text-xs font-mono text-slate-300 leading-relaxed">
+                JIKA: <strong className="text-emerald-400">{multiTfDecision?.htf?.jika || 'UP'}</strong> · MOVE: <strong className="text-cop-gold">{multiTfDecision?.htf?.move || 'NRL DWN'}</strong>
               </div>
             </div>
 
-            {/* TF Kecil Card */}
-            <div className="p-4 rounded-xl bg-cop-card border border-cop-border space-y-3">
-              <div className="flex items-center justify-between border-b border-cop-border/60 pb-2">
-                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-cop-cyan" />
-                  Timeframe Kecil (LTF)
-                </span>
-                <span className="text-xs font-mono font-bold text-cop-cyan px-2 py-0.5 rounded bg-cop-surface border border-cop-border">
-                  {multiTfDecision?.ltf?.timeframe || '1h'}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div className="p-2 rounded bg-cop-surface border border-cop-border/50">
-                  <span className="text-[10px] text-slate-500 block">HUKUM JIKA:</span>
-                  <span
-                    className={`font-bold ${
-                      multiTfDecision?.ltf?.jika === 'UP' ? 'text-emerald-400' : 'text-red-400'
-                    }`}
-                  >
-                    JIKA {multiTfDecision?.ltf?.jika || 'DOWN'}
-                  </span>
-                </div>
-                <div className="p-2 rounded bg-cop-surface border border-cop-border/50">
-                  <span className="text-[10px] text-slate-500 block">HUKUM MOVE:</span>
-                  <span className="font-bold text-amber-400">{multiTfDecision?.ltf?.move || 'NRL DWN'}</span>
-                </div>
-              </div>
-
-              {/* Status Alur Cerita Sinkron */}
-              <div className="p-3 rounded-lg bg-cop-surface/80 border border-cop-border text-xs font-mono leading-relaxed text-slate-300">
-                <span className="text-cop-gold font-bold block mb-1">🔗 Sinkronisasi Alur Cerita:</span>
-                {multiTfDecision?.correlationStatus ||
-                  'Menghubungkan alur cerita pentangan Busur TF Besar dengan pergerakan candle TF Kecil.'}
+            <div className="p-4 rounded-xl bg-cop-card border border-cop-border space-y-2.5">
+              <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-cop-cyan" />
+                Timeframe Kecil (LTF): <strong className="text-white">{multiTfDecision?.ltf?.timeframe || '1H'}</strong>
+              </span>
+              <div className="text-xs font-mono text-slate-300 leading-relaxed">
+                JIKA: <strong className="text-rose-400">{multiTfDecision?.ltf?.jika || 'DOWN'}</strong> · MOVE: <strong className="text-cop-gold">{multiTfDecision?.ltf?.move || 'NRL DWN'}</strong>
               </div>
             </div>
           </div>
 
-          {/* Decision Box (Keputusan Entry Aman) */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-cop-card via-slate-900 to-cop-card border border-cop-border space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-cop-border/60 pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <span className="text-sm font-bold text-white font-mono">Keputusan Entry yang Relatif Aman</span>
-              </div>
-              <div
-                className={`text-xs font-mono font-bold px-3 py-1 rounded-lg border self-start sm:self-auto ${
-                  multiTfDecision?.signalColor === 'red'
-                    ? 'bg-red-950/80 border-red-500 text-red-300'
-                    : multiTfDecision?.signalColor === 'green'
-                    ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
-                    : 'bg-amber-950/80 border-amber-500 text-amber-300'
-                }`}
-              >
-                {multiTfDecision?.safeEntryAction || 'STANDBY / WAIT'}
-              </div>
-            </div>
-
-            {/* Guardrails (3 Pagar Pengaman) */}
-            <div>
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block mb-2">
-                3 Pagar Pengaman COP TAH (Batas Toleransi Entry):
-              </span>
-              <div className="space-y-2">
-                {multiTfDecision?.guardrails?.map((guard, idx) => (
-                  <div
-                    key={idx}
-                    className="p-2.5 rounded-lg bg-cop-surface border border-cop-border/70 flex items-start gap-2.5 text-xs font-mono text-slate-300"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-cop-cyan flex-shrink-0 mt-0.5" />
-                    <span>{guard}</span>
-                  </div>
-                ))}
-              </div>
+          {/* 3 Pagar Pengaman */}
+          <div className="p-4 rounded-xl bg-cop-card border border-cop-border space-y-2.5">
+            <span className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              3 Pagar Pengaman COP TAH (Batas Toleransi Entry)
+            </span>
+            <div className="space-y-1.5">
+              {multiTfDecision?.guardrails?.map((guard, idx) => (
+                <div key={idx} className="p-2.5 rounded-lg bg-cop-surface border border-cop-border text-xs font-mono text-slate-300 flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <span>{guard}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -614,50 +394,47 @@ export default function MarketCycleAnalysis({ data }) {
   );
 }
 
-/**
- * StepCard Component — Individual step in 12-step daily market cycle
- */
 function StepCard({ step, isActive }) {
   const isCompleted = step.status === 'completed';
 
   return (
     <div
-      className={`p-2.5 rounded-lg border transition-all ${
+      className={`p-2.5 rounded-xl border transition-all ${
         isActive
-          ? 'bg-amber-950/30 border-amber-500/80 shadow-md shadow-amber-950/30 ring-1 ring-amber-500/30'
+          ? 'bg-amber-950/40 border-amber-500/80 shadow-glow-gold-sm ring-1 ring-amber-500/30'
           : isCompleted
-          ? 'bg-cop-surface/40 border-cop-border/60 opacity-80'
-          : 'bg-cop-surface/20 border-cop-border/30 opacity-60'
+          ? 'bg-cop-surface/50 border-cop-border/60'
+          : 'bg-cop-surface/20 border-cop-border/30 opacity-70'
       }`}
     >
       <div className="flex items-center justify-between gap-1.5 mb-1">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <span
             className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold ${
               isActive
-                ? 'bg-amber-500 text-black animate-pulse'
+                ? 'bg-amber-500 text-slate-950 font-black animate-pulse'
                 : isCompleted
-                ? 'bg-emerald-900/60 text-emerald-400 border border-emerald-600/40'
+                ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/50'
                 : 'bg-slate-800 text-slate-400'
             }`}
           >
             {step.step}
           </span>
           <span
-            className={`text-xs font-mono font-semibold line-clamp-1 ${
-              isActive ? 'text-amber-300 font-bold' : isCompleted ? 'text-slate-300' : 'text-slate-400'
+            className={`text-xs font-mono font-bold line-clamp-1 ${
+              isActive ? 'text-amber-300' : isCompleted ? 'text-slate-200' : 'text-slate-400'
             }`}
           >
             {step.title}
           </span>
         </div>
         {isActive && (
-          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase">
-            Aktif
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 uppercase">
+            AKTIF
           </span>
         )}
       </div>
-      <p className="text-[11px] font-mono text-slate-400 leading-snug line-clamp-3 pl-6">{step.desc}</p>
+      <p className="text-[11px] font-mono text-slate-400 leading-snug line-clamp-2 pl-7">{step.desc}</p>
     </div>
   );
 }
