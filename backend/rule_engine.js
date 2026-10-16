@@ -799,27 +799,14 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     const track = direct === 'NEUTRAL' || move === 'FLAT' ? 'WAIT' : direct === move ? `TARGET ${move}` : `BUSUR ${move}`;
 
     // RANGES in points
-    const rangeN = Math.round(Math.abs(highN - lowN) * 100);
-    const rangeB = Math.round(Math.abs(highB - lowB) * 100);
-    const diff = rangeN - rangeB;
-    const rangeD = diff >= 0 ? `+ ${diff}` : `- ${Math.abs(diff)}`;
-
-    // Calculate touched levels for this timeframe
+    const rangeN = Number((highN-lowN).toFixed(decimals));
+    const rangeB = Number((highB-lowB).toFixed(decimals));
+    const diff = rangeN-rangeB;
+    const rangeD = `${diff>=0?'+':'-'} ${Math.abs(diff).toFixed(decimals)}`;
+    const crossed = level => lowN<=level && highN>=level;
     const touchedLevels = {
-      res4: Boolean(highN >= r4B || currentPrice >= r4B),
-      res3: Boolean(highN >= r3B || currentPrice >= r3B),
-      res2: Boolean(highN >= r2B || currentPrice >= r2B),
-      res1: Boolean(highN >= r1B || currentPrice >= r1B),
-      pivot: Boolean(
-        (highN >= pivotB && lowN <= pivotB) ||
-        Math.abs(currentPrice - pivotB) <= 1.5 ||
-        (openN <= pivotB && highN >= pivotB) ||
-        (openN >= pivotB && lowN <= pivotB)
-      ),
-      sup1: Boolean(lowN <= s1B || currentPrice <= s1B),
-      sup2: Boolean(lowN <= s2B || currentPrice <= s2B),
-      sup3: Boolean(lowN <= s3B || currentPrice <= s3B),
-      sup4: Boolean(lowN <= s4B || currentPrice <= s4B),
+      res4:crossed(r4B),res3:crossed(r3B),res2:crossed(r2B),res1:crossed(r1B),
+      pivot:crossed(pivotB),sup1:crossed(s1B),sup2:crossed(s2B),sup3:crossed(s3B),sup4:crossed(s4B),
     };
 
     const touchedKeys = Object.keys(touchedLevels).filter((k) => touchedLevels[k]);

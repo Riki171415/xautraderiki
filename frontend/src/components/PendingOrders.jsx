@@ -40,27 +40,10 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
   const liveDist = currentPrice && entryPrice ? Math.abs(currentPrice - entryPrice).toFixed(decimals) : busur?.distToEntry || '0.000';
 
   // Institutional Touch Detection
-  const isEntryTouched = Boolean(
-    isBuy
-      ? (currentPrice && entryPrice && currentPrice <= entryPrice) || (ohlcv_N?.low !== undefined && ohlcv_N.low <= entryPrice)
-      : (currentPrice && entryPrice && currentPrice >= entryPrice) || (ohlcv_N?.high !== undefined && ohlcv_N.high >= entryPrice)
-  );
-
-  const isTp1Touched = Boolean(
-    busur?.tp1 && (
-      isBuy
-        ? (currentPrice && currentPrice >= busur.tp1) || (ohlcv_N?.high !== undefined && ohlcv_N.high >= busur.tp1)
-        : (currentPrice && currentPrice <= busur.tp1) || (ohlcv_N?.low !== undefined && ohlcv_N.low <= busur.tp1)
-    )
-  );
-
-  const isTp2Touched = Boolean(
-    busur?.tp2 && (
-      isBuy
-        ? (currentPrice && currentPrice >= busur.tp2) || (ohlcv_N?.high !== undefined && ohlcv_N.high >= busur.tp2)
-        : (currentPrice && currentPrice <= busur.tp2) || (ohlcv_N?.low !== undefined && ohlcv_N.low <= busur.tp2)
-    )
-  );
+  const crossed = level => Number.isFinite(level) && ohlcv_N?.low<=level && ohlcv_N?.high>=level;
+  const isEntryTouched = crossed(entryPrice);
+  const isTp1Touched = crossed(busur?.tp1);
+  const isTp2Touched = crossed(busur?.tp2);
 
   const handleModalSubmit = async (e) => {
     e.preventDefault();
@@ -90,10 +73,10 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
       `Asset: ${data.symbol || 'XAUUSD'} · Server: ${broker?.name || 'Exness'} (${broker?.server || 'MT5Real36'})\n` +
       `Action: ${busur.action} @ ${busur.entryPrice?.toFixed(decimals)}\n` +
       `────────────────────────────────\n` +
-      `Target TP1 (Pivot): ${busur.tp1?.toFixed(decimals)} (+${busur.tp1Points} pts | Est +$${busur.estProfitTp1})\n` +
-      `Target TP2 (Busur): ${busur.tp2?.toFixed(decimals)} (+${busur.tp2Points} pts | Est +$${busur.estProfitTp2})\n` +
+      `Target TP1 (Pivot): ${busur.tp1?.toFixed(decimals)} (+${busur.tp1Points} satuan harga | Est +$${busur.estProfitTp1})\n` +
+      `Target TP2 (Busur): ${busur.tp2?.toFixed(decimals)} (+${busur.tp2Points} satuan harga | Est +$${busur.estProfitTp2})\n` +
       `Target TP3 (Runner): ${busur.tp3?.toFixed(decimals)} (Trailing Stop)\n` +
-      `Stop Loss (SL): ${busur.stopLoss?.toFixed(decimals)} (-${busur.slPoints} pts | Est -$${busur.estLossSl})\n` +
+      `Stop Loss (SL): ${busur.stopLoss?.toFixed(decimals)} (-${busur.slPoints} satuan harga | Est -$${busur.estLossSl})\n` +
       `Risk/Reward: ${busur.riskReward}\n` +
       `Rekomendasi Lot: ${lotCalc?.lot || '0.40'} Lot (Modal $${userModal?.toLocaleString() || '10,000'})`;
 
@@ -164,7 +147,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
                 {busur?.action} @ ${busur?.entryPrice?.toFixed(decimals) || '—'}
               </span>
               <span className="text-[11px] font-mono text-slate-300">
-                Jarak: <strong className="text-cop-gold font-bold tabular-nums">{liveDist} pts</strong>
+                Jarak: <strong className="text-cop-gold font-bold tabular-nums">{liveDist} satuan harga</strong>
               </span>
             </div>
 
@@ -259,13 +242,13 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
               <span className="font-semibold text-emerald-300">Target Pivot (Amankan Sebagian)</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-[10px] text-emerald-400 font-semibold tabular-nums">+{busur?.tp1Points} pts</span>
+              <span className="text-[10px] text-emerald-400 font-semibold tabular-nums">+{busur?.tp1Points} satuan harga</span>
               <span className="text-[10px] text-slate-400 tabular-nums">(+$${busur?.estProfitTp1})</span>
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-emerald-400 tabular-nums">${busur?.tp1?.toFixed(decimals) || '—'}</span>
                 {isTp1Touched && (
                   <span className="text-[8px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
-                    ✓ HIT
+                    ✓ LEVEL TERSENTUH
                   </span>
                 )}
               </div>
@@ -281,13 +264,13 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
               <span className="font-bold text-emerald-300">Target Utama (Hukum Busur)</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-[10px] text-emerald-400 font-bold tabular-nums">+{busur?.tp2Points} pts</span>
+              <span className="text-[10px] text-emerald-400 font-bold tabular-nums">+{busur?.tp2Points} satuan harga</span>
               <span className="text-[10px] text-emerald-300 font-bold tabular-nums">(+$${busur?.estProfitTp2})</span>
               <div className="flex items-center gap-1.5">
                 <span className="font-black text-emerald-300 tabular-nums">${busur?.tp2?.toFixed(decimals) || '—'}</span>
                 {isTp2Touched && (
                   <span className="text-[8px] bg-purple-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
-                    ✓ HIT
+                    ✓ LEVEL TERSENTUH
                   </span>
                 )}
               </div>
@@ -303,7 +286,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
               <span className="font-semibold text-rose-300">Batas Proteksi Risiko (Stop Loss)</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-[10px] text-rose-400 font-semibold tabular-nums">-{busur?.slPoints} pts</span>
+              <span className="text-[10px] text-rose-400 font-semibold tabular-nums">-{busur?.slPoints} satuan harga</span>
               <span className="text-[10px] text-rose-300 tabular-nums">(-$${busur?.estLossSl})</span>
               <span className="font-bold text-rose-400 tabular-nums">${busur?.stopLoss?.toFixed(decimals) || '—'}</span>
             </div>
@@ -317,7 +300,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
           <div className="flex items-center justify-between">
             <span className="font-black flex items-center gap-2 text-white">
               <Zap className="w-4 h-4 text-cop-gold animate-bounce" />
-              <span>SIMULASI TIKET ORDER AKTIF & TERSIMPAN</span>
+              <span>PRATINJAU PLAN · TIDAK ADA ORDER DIKIRIM</span>
             </span>
             <button
               onClick={() => setOrderExecuted(false)}
@@ -346,9 +329,9 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
           </div>
           <div className="flex items-center justify-between text-[10px] text-slate-300 pt-0.5">
             <span>
-              Status: <strong className="text-emerald-400 font-semibold">Simulasi Berjalan</strong> · Jarak ke Entry: <strong className="text-cop-gold font-bold tabular-nums">{liveDist} pts</strong>
+              Status: <strong className="text-emerald-400 font-semibold">Simulasi Berjalan</strong> · Jarak ke Entry: <strong className="text-cop-gold font-bold tabular-nums">{liveDist} satuan harga</strong>
             </span>
-            <span className="text-slate-400">Modal Terproteksi</span>
+            <span className="text-slate-400">Belum ada transaksi</span>
           </div>
         </div>
       )}
@@ -357,7 +340,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
       <div className="grid grid-cols-2 gap-2.5">
         <button
           onClick={handleExecuteOrder}
-          disabled={!isBuy && !isSell}
+          disabled={true}
           className={`py-2.5 px-4 rounded-xl font-bold text-xs font-mono tracking-wider transition-all duration-200 border flex items-center justify-center gap-2 shadow-sm ${
             orderExecuted
               ? 'bg-emerald-600 text-white border-emerald-400 shadow-glow-green animate-pulse'

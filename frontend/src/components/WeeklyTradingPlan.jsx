@@ -131,7 +131,7 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
   const hshTp2 = pivot;
   // Target 3: HSH Koreksi Dalam — Menguji batas Support S1 (atau R1 jika bearish)
   const hshTp3 = isWeeklyUp ? sup1 : res1;
-  // Stop Loss HSH: Di atas R2 + buffer 10 pts
+  // Stop Loss HSH: Di atas R2 + buffer 10 satuan harga
   const hshSl = isWeeklyUp ? res2 + 10 : sup2 - 10;
 
   const hshTp1Pts = Math.abs(hshEntryPrimary - hshTp1).toFixed(decimals);
@@ -239,19 +239,19 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
       `──────────────────────────────────────────────\n` +
       `🟢 SKENARIO A: BUY LIMIT (MENGIKUTI TREN 1W DI S1)\n` +
       `• Aksi: ${trendAction} @ $${trendEntry.toFixed(decimals)} (Support S1)\n` +
-      `• Target 1 (Pivot): $${trendTp1.toFixed(decimals)} (+${trendTp1Pts} pts | Est +$${trendProfitTp1})\n` +
-      `• Target 2 (Resistance R1): $${trendTp2.toFixed(decimals)} (+${trendTp2Pts} pts | Est +$${trendProfitTp2})\n` +
+      `• Target 1 (Pivot): $${trendTp1.toFixed(decimals)} (+${trendTp1Pts} satuan harga | Est +$${trendProfitTp1})\n` +
+      `• Target 2 (Resistance R1): $${trendTp2.toFixed(decimals)} (+${trendTp2Pts} satuan harga | Est +$${trendProfitTp2})\n` +
       `• Target 3 (Resistance R2): $${trendTp3.toFixed(decimals)}\n` +
-      `• Stop Loss (SL): $${trendSl.toFixed(decimals)} (-${trendSlPts} pts | Est -$${trendLossSl})\n` +
+      `• Stop Loss (SL): $${trendSl.toFixed(decimals)} (-${trendSlPts} satuan harga | Est -$${trendLossSl})\n` +
       `• Risk / Reward Ratio: 1 : ${trendRr}\n` +
       `──────────────────────────────────────────────\n` +
       `🔴 SKENARIO B (2 ARAH): SELL HSH REVERSAL (JIKA TARGET TERCAPAI)\n` +
       `• Syarat: Target R1 ($${res1.toFixed(decimals)}) / R2 ($${res2.toFixed(decimals)}) tercapai & ada penolakan harga\n` +
       `• Aksi: ${hshAction} @ $${hshEntryPrimary.toFixed(decimals)} s/d $${hshEntrySecondary.toFixed(decimals)}\n` +
-      `• Target 1 (HSH Pulang ke Open Pekan): $${hshTp1.toFixed(decimals)} (+${hshTp1Pts} pts | Est +$${hshProfitTp1})\n` +
-      `• Level tambahan RS (bukan rumah HSH): $${hshTp2.toFixed(decimals)} (+${hshTp2Pts} pts | Est +$${hshProfitTp2})\n` +
-      `• Target 3 (Koreksi Dalam ke Support S1): $${hshTp3.toFixed(decimals)} (+${hshTp3Pts} pts | Est +$${hshProfitTp3})\n` +
-      `• Stop Loss SELL: $${hshSl.toFixed(decimals)} (-${hshSlPts} pts | Est -$${hshLossSl})\n` +
+      `• Target 1 (HSH Pulang ke Open Pekan): $${hshTp1.toFixed(decimals)} (+${hshTp1Pts} satuan harga | Est +$${hshProfitTp1})\n` +
+      `• Level tambahan RS (bukan rumah HSH): $${hshTp2.toFixed(decimals)} (+${hshTp2Pts} satuan harga | Est +$${hshProfitTp2})\n` +
+      `• Target 3 (Koreksi Dalam ke Support S1): $${hshTp3.toFixed(decimals)} (+${hshTp3Pts} satuan harga | Est +$${hshProfitTp3})\n` +
+      `• Stop Loss SELL: $${hshSl.toFixed(decimals)} (-${hshSlPts} satuan harga | Est -$${hshLossSl})\n` +
       `• Risk / Reward Ratio: 1 : ${hshRr}\n` +
       `──────────────────────────────────────────────\n` +
       `🌐 SINKRONISASI DATA GLOBAL:\n` +
@@ -452,7 +452,7 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
                     )}
                   </div>
                   <div className="text-sm font-black text-emerald-300 tabular-nums">${trendTp1.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-slate-300">+{trendTp1Pts} pts (+${trendProfitTp1})</span>
+                  <span className="text-[9px] text-slate-300">+{trendTp1Pts} satuan harga (+${trendProfitTp1})</span>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border transition-all ${
@@ -467,13 +467,13 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
                     )}
                   </div>
                   <div className="text-sm font-black text-emerald-300 tabular-nums">${trendTp2.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-emerald-400 font-bold">+{trendTp2Pts} pts (+${trendProfitTp2})</span>
+                  <span className="text-[9px] text-emerald-400 font-bold">+{trendTp2Pts} satuan harga (+${trendProfitTp2})</span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-700/60">
                   <span className="text-[10px] text-rose-400 font-bold block mb-0.5">STOP LOSS (S2)</span>
                   <div className="text-sm font-black text-rose-300 tabular-nums">${trendSl.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-rose-300">-{trendSlPts} pts (-${trendLossSl})</span>
+                  <span className="text-[9px] text-rose-300">-{trendSlPts} satuan harga (-${trendLossSl})</span>
                 </div>
               </div>
 
@@ -538,7 +538,7 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
                     )}
                   </div>
                   <div className="text-sm font-black text-rose-300 tabular-nums">${hshTp1.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-slate-300">+{hshTp1Pts} pts (+${hshProfitTp1})</span>
+                  <span className="text-[9px] text-slate-300">+{hshTp1Pts} satuan harga (+${hshProfitTp1})</span>
                 </div>
 
                 <div className={`p-2.5 rounded-xl border transition-all ${
@@ -553,19 +553,19 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
                     )}
                   </div>
                   <div className="text-sm font-black text-rose-300 tabular-nums">${hshTp2.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-rose-400 font-bold">+{hshTp2Pts} pts (+${hshProfitTp2})</span>
+                  <span className="text-[9px] text-rose-400 font-bold">+{hshTp2Pts} satuan harga (+${hshProfitTp2})</span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-700/80">
                   <span className="text-[10px] text-rose-300 font-bold block mb-0.5">STOP LOSS SELL (SL)</span>
                   <div className="text-sm font-black text-rose-200 tabular-nums">${hshSl.toFixed(decimals)}</div>
-                  <span className="text-[9px] text-rose-300">-{hshSlPts} pts (-${hshLossSl})</span>
+                  <span className="text-[9px] text-rose-300">-{hshSlPts} satuan harga (-${hshLossSl})</span>
                 </div>
               </div>
 
               {/* Footer Info */}
               <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border text-xs flex items-center justify-between text-slate-300">
-                <span>🎯 TP 3 Koreksi Penuh: <strong className="text-white">${hshTp3.toFixed(decimals)}</strong> (Support S1 / +{hshTp3Pts} pts)</span>
+                <span>🎯 TP 3 Koreksi Penuh: <strong className="text-white">${hshTp3.toFixed(decimals)}</strong> (Support S1 / +{hshTp3Pts} satuan harga)</span>
                 <span className="text-slate-400 text-[11px]">Waktu Eksekusi: <strong className="text-rose-400">Kamis Sesi NY - Jumat</strong></span>
               </div>
             </div>
@@ -662,7 +662,7 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
                   <td className="py-2.5 px-3 font-bold text-emerald-400">R1: ${res1.toFixed(decimals)}</td>
                   <td className="py-2.5 px-3 font-bold text-amber-300">${pivot.toFixed(decimals)}</td>
                   <td className="py-2.5 px-3 text-[11px] text-slate-400">
-                    Jika R1 disentuh, data harga mengunci target & memicu pembalikan HSH kembali ke Open Pekan (${openN.toFixed(decimals)}).
+                    Jika R1 disentuh, data harga menunjukkan sentuhan level; pantau kemungkinan HSH kembali ke Open Pekan (${openN.toFixed(decimals)}).
                   </td>
                 </tr>
 

@@ -80,6 +80,7 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
     activeSession:active?.name || 'TRANSISI',currentStep:activeStep?.step ?? null,
     activeStepTitle:activeStep?.title || 'Menunggu data sesi',activeStepDesc:description,
     totalSteps:12,steps,sessions,evidence,description,source,
+    previousUsa:{...previousUsa,name:'USA sebelumnya',hours:'20:00–04:00 WIB',hshOpen:previousUsa.coverage && previousUsa.status==='completed'?previousUsa.open:null},
     tradingDay:new Date(anchor+7*HOUR).toISOString().slice(0,10),
     wibTime:`${String(local.getUTCHours()).padStart(2,'0')}:${String(local.getUTCMinutes()).padStart(2,'0')} WIB`,
     sessionConvention:'Jendela metode COP TAH tetap dalam WIB; bukan jam bursa/DST. Hari siklus dimulai pukul 06:00 WIB.',

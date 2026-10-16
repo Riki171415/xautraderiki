@@ -41,3 +41,15 @@ test('no data remains unavailable, never defaults to normal bearish',()=>{
 test('neutral daily bias does not create a bullish or bearish signal',()=>{
  const c=fixture();c.daily.close=100;assert.equal(analyzeMarketSessions(c).bias,'NEUTRAL');assert.equal(analyzeMarketSessions(c).marketType,'WAITING');
 });
+
+test('Europe gets the actual previous completed USA open, never upcoming USA',()=>{
+ const c=fixture('strongBear',anchor+12*H);
+ const previous=Array.from({length:8},(_,i)=>[anchor-(10-i)*H,75+i,100,70,80,1]);
+ c.hourly=[...previous,...c.hourly];
+ const r=analyzeMarketSessions(c);
+ assert.equal(r.activeSession,'EROPA');assert.equal(r.previousUsa.hshOpen,75);
+ assert.equal(r.previousUsa.start,anchor-10*H);assert.equal(r.previousUsa.status,'completed');
+});
+test('previous USA with missing bars cannot invent an HSH open',()=>{
+ const r=analyzeMarketSessions(fixture('strongBear',anchor+12*H));assert.equal(r.previousUsa.hshOpen,null);
+});

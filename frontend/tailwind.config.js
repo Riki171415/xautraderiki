@@ -5,17 +5,17 @@ export default {
     extend: {
       colors: {
         // Deep obsidian & slate surfaces
-        'cop-bg': '#070a13',
-        'cop-surface': '#0c1222',
-        'cop-card': '#111a30',
-        'cop-card-hover': '#162340',
-        'cop-border': '#1c2b4a',
+        'cop-bg': '#0a0e14',
+        'cop-surface': '#10161f',
+        'cop-card': '#151d28',
+        'cop-card-hover': '#1b2735',
+        'cop-border': '#2a3543',
         'cop-border-subtle': '#141e33',
         'cop-accent': '#1e335a',
         
         // Brand & Trading Accents
-        'cop-gold': '#f59e0b',
-        'cop-gold-light': '#fbbf24',
+        'cop-gold': '#cba86c',
+        'cop-gold-light': '#e6cd9c',
         'cop-gold-dark': '#b45309',
         
         // Bullish (Naik / Buy)

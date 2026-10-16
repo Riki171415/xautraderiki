@@ -472,53 +472,25 @@ async function fetchBrokerOHLCV(brokerId = 'EXNESS', marketSymbol = 'XAUUSD', ti
 // Aggregate London Market Session (07:00–16:00 UTC / 14:00–23:00 WIB)
 // Candle N represents active/latest London session candles
 // Candle B represents previous session (e.g. yesterday's London session or earlier session)
-function aggregateLondonSession(ohlcv1h) {
-  if (!Array.isArray(ohlcv1h) || ohlcv1h.length < 4) return null;
-  const now = new Date();
-  const todayDateStr = now.toISOString().slice(0, 10);
-  const todayCandles = ohlcv1h.filter((c) => new Date(c[0]).toISOString().slice(0, 10) === todayDateStr);
-  const todayLondonCandles = todayCandles.filter((c) => {
-    const h = new Date(c[0]).getUTCHours();
-    return h >= 7 && h <= 16;
-  });
-
-  const yesterday = new Date(now.getTime() - 86400000);
-  const yesterdayDateStr = yesterday.toISOString().slice(0, 10);
-  const yesterdayLondonCandles = ohlcv1h.filter((c) => {
-    const dStr = new Date(c[0]).toISOString().slice(0, 10);
-    const h = new Date(c[0]).getUTCHours();
-    return dStr === yesterdayDateStr && h >= 7 && h <= 16;
-  });
-
-  let candleBCandles = yesterdayLondonCandles;
-  if (!candleBCandles || candleBCandles.length === 0) {
-    candleBCandles = todayCandles.filter((c) => new Date(c[0]).getUTCHours() < 7);
-  }
-  if (!candleBCandles || candleBCandles.length === 0) {
-    candleBCandles = ohlcv1h.slice(-16, -8);
-  }
-
-  let candleNCandles = todayLondonCandles;
-  if (!candleNCandles || candleNCandles.length === 0) {
-    candleNCandles = todayCandles.length > 0 ? todayCandles : ohlcv1h.slice(-8);
-  }
-
-  const agg = (arr) => {
-    if (!arr || arr.length === 0) return null;
-    return {
-      open: arr[0][1],
-      high: Math.max(...arr.map((c) => c[2])),
-      low: Math.min(...arr.map((c) => c[3])),
-      close: arr[arr.length - 1][4],
-      volume: arr.reduce((acc, c) => acc + (c[5] || 0), 0),
-      timestamp: arr[0][0],
-    };
+function aggregateLondonSession(rows) {
+  // Matrix MARKET uses the same fixed EROPA window as the session cycle: 07:00–13:00 UTC.
+  const now=Date.now(),day=86400000,hour=3600000;
+  const utcDay=Math.floor(now/day)*day;
+  const aggregate = start => {
+    const expected=[];
+    for(let t=start;t<start+6*hour && t<=now;t+=hour) expected.push(t);
+    const bars=rows.filter(r=>r[0]>=start && r[0]<start+6*hour && r[0]<=now);
+    if(!expected.length || expected.some(t=>!bars.some(r=>r[0]===t))) return null;
+    return {timestamp:start,open:bars[0][1],high:Math.max(...bars.map(r=>r[2])),low:Math.min(...bars.map(r=>r[3])),close:bars.at(-1)[4],volume:bars.reduce((v,r)=>v+r[5],0)};
   };
-
-  const ohlcv_N = agg(candleNCandles);
-  const ohlcv_B = agg(candleBCandles);
-  if (ohlcv_N && ohlcv_B) return { ohlcv_N, ohlcv_B };
-  return null;
+  if(!Array.isArray(rows)) return null;
+  const start=utcDay+7*hour;
+  if(now<start) return null;
+  const n=aggregate(start);
+  // Search actual previous trading session; do not substitute Asia or arbitrary slices.
+  let previous=null;
+  for(let i=1;i<=4 && !previous;i++) previous=aggregate(start-i*day);
+  return n && previous?{ohlcv_N:n,ohlcv_B:previous}:null;
 }
 
 // Multi-Timeframe Cache for Leak 4 REG Table (TTL: 30s)
@@ -650,6 +622,7 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
     }
 
     // Detailed COP TAH Method Rationale (Mengapa Entry di Sini?)
+    if (jika.trend === 'NEUTRAL') return {tf,name,style,category,currentPrice,openN:ohlcv_N.open,openB:ohlcv_B.open,highN:ohlcv_N.high,lowN:ohlcv_N.low,jika,perahu,rs,busur,hsh,warnings:['JIKA NEUTRAL: Open N sama dengan Open B. Tidak ada skenario BUY/SELL.'],coptahRationale:{whyEntryHere:'WAIT: belum ada arah JIKA.',hshRole:`HSH = Open N ${ohlcv_N.open}`},globalMacroStoryline:{}};
     const isActionBuy = busur.action === 'BUY LIMIT';
     const coptahRationale = {
       whyEntryHere: isActionBuy
@@ -741,11 +714,10 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     // ── Run the Rule Engine ──────────────────────────────────────────────────
     const jika = calcHukumJIKA(ohlcv_N, ohlcv_B);
     const perahu = calcHukumPerahu(ohlcv_N, ohlcv_B);
-    const rsMatrix = calcRSMatrix(ohlcv_B, touchedLevels);
-
-    // Update touch detection with current price
-    touchedLevels = updateTouchDetection(rsMatrix, ohlcv_N.close, 2.0);
-    const rsMatrixUpdated = calcRSMatrix(ohlcv_B, touchedLevels);
+    const rsMatrix = calcRSMatrix(ohlcv_B, {});
+    const periodTouches = Object.fromEntries(Object.entries(rsMatrix.levels).map(([key,level]) =>
+      [key,ohlcv_N.low<=level.value && ohlcv_N.high>=level.value]));
+    const rsMatrixUpdated = calcRSMatrix(ohlcv_B, periodTouches);
 
     // Lot calculation (3 Core Theories)
     const lotCalc = calcLotSize(userModal);
@@ -1000,6 +972,19 @@ app.get('/api/yearly-history', async (req, res) => {
   }
 });
 
+app.get('/api/mt5/history', (req,res) => {
+  try {
+    const rows=getExnessCandles(mt5State,'1M');
+    const candles=rows.map((r,i)=> {
+      const n={timestamp:r[0],open:r[1],high:r[2],low:r[3],close:r[4],volume:r[5]};
+      const p=rows[i-1];
+      const b=p?{open:p[1],high:p[2],low:p[3],close:p[4]}:null;
+      return {...n,date:new Date(r[0]).toISOString().slice(0,7),jika:b?calcHukumJIKA(n,b):null,perahu:b?calcHukumPerahu(n,b):null,forming:i===rows.length-1};
+    });
+    res.json({success:true,source:`MT5 Exness ${mt5State.symbol}`,candles});
+  } catch(error) {res.status(503).json({success:false,error:error.message});}
+});
+
 // ─── Historical XAUUSD Data Endpoints (2000–2026) ─────────────────────────────
 
 // Paginated & Filterable Historical Monthly Candles with COP TAH Classifications
@@ -1177,16 +1162,6 @@ app.post('/api/mt5/tick', async (req, res) => {
     BROKERS.EXNESS.spreadLabel = mt5State.spreadLabel;
     BROKERS.EXNESS.isDirectMT5 = true;
 
-    // Update touch detection if rsMatrix exists
-    if (lastAnalysis && lastAnalysis.rsMatrix) {
-      touchedLevels = updateTouchDetection(lastAnalysis.rsMatrix, livePrice, 2.0);
-      Object.keys(touchedLevels).forEach((k) => {
-        if (lastAnalysis.rsMatrix.levels[k]) {
-          lastAnalysis.rsMatrix.levels[k].touched = touchedLevels[k];
-        }
-      });
-    }
-
     // Broadcast tick directly to clients watching Exness
     const tickPayload = JSON.stringify({
       type: 'tick',
@@ -1202,7 +1177,6 @@ app.post('/api/mt5/tick', async (req, res) => {
         spread: mt5State.spreadLabel,
         direction,
         isDirectMT5: true,
-        touchedLevels,
         timestamp: Date.now(),
       },
     });

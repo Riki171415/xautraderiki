@@ -208,11 +208,11 @@ export default function App() {
     {
       id: 'history',
       pillarNum: '7',
-      title: 'Historis (2000–2026)',
+      title: 'Historis Exness',
       shortTitle: '7. Historis',
       icon: Database,
-      badge: '26+ Thn',
-      desc: 'Dataset Historis 317+ Bulan (2000–2026) Berbasis 5 Hukum COP TAH'
+      badge: 'MN1',
+      desc: 'Riwayat bulanan asli sesuai ketersediaan terminal Exness'
     }
   ];
 
@@ -228,7 +228,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-cop-bg flex flex-col overflow-hidden text-slate-100">
+    <div className="premium-app min-h-screen bg-cop-bg flex flex-col overflow-hidden text-slate-100">
       {/* ── 1. Institutional Header ── */}
       <Header
         symbol={symbol}
@@ -271,6 +271,8 @@ export default function App() {
 
       {/* ── 2. WORKFLOW NAVIGATION BAR (6 PILAR UTAMA COP TAH) ── */}
       <div className="workflow-nav bg-cop-surface/95 border-b border-cop-border/80 backdrop-blur-md px-4 lg:px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap">
+        <div className="sidebar-brand"><div className="sidebar-monogram">CT<span>•</span></div><div><strong>COP TAH</strong><small>GOLD ANALYTICS</small></div></div>
+        <div className="sidebar-caption">WORKSPACE</div>
         {/* Left: 6 Pilar Workflow Controller */}
         <div className="flex items-center gap-1.5 p-1 bg-cop-card/90 rounded-2xl border border-cop-border shadow-sm flex-wrap">
           {WORKFLOW_PILLARS.map((p) => {
@@ -281,28 +283,12 @@ export default function App() {
                 key={p.id}
                 aria-current={viewMode === p.id ? 'page' : undefined}
                 onClick={() => setViewMode(p.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
-                  isActive
-                    ? p.id === 'dashboard'
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                      : p.id === 'entries'
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-glow-gold font-black'
-                      : p.id === 'weekly'
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-glow-green-sm'
-                      : p.id === 'cycle'
-                      ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-glow-gold-sm'
-                      : p.id === 'table'
-                      ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-md'
-                      : p.id === 'global'
-                      ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-md'
-                      : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-glow-gold font-black'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`}
+                className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
                 title={p.desc}
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? '' : 'text-slate-400'}`} />
-                <span className="hidden sm:inline">{p.title}</span>
-                <span className="sm:hidden">{p.shortTitle}</span>
+                <span className="hidden sm:inline nav-label">{p.title}</span>
+                <span className="sm:hidden nav-label">{p.shortTitle.replace(/^\d+\. /, '')}</span>
               </button>
             );
           })}
@@ -322,6 +308,7 @@ export default function App() {
           </button>
         </div>
 
+        <div className="sidebar-footnote"><span className="sidebar-status-dot"/> EXNESS DATA<span>H4 COMPASS</span></div>
         {/* Right: Quick Action Reset RS & Market Telemetry Pill */}
         <div className="flex items-center gap-2.5 font-mono text-xs">
           <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-cop-card border border-cop-border text-[11px]">
@@ -345,7 +332,7 @@ export default function App() {
       </div>
 
       <div className="workspace-summary" role="status" aria-live="polite">
-        <div><span className="workspace-eyebrow">WORKSPACE / {symbol} / {timeframe}</span>
+        <div><span className="workspace-eyebrow">GOLD INTELLIGENCE <span className="mx-2">/</span> {symbol} <span className="mx-2">/</span> {timeframe}</span>
           <h1>{WORKFLOW_PILLARS.find(p => p.id === viewMode)?.title || 'Semua Bagian'}</h1>
           <p>{WORKFLOW_PILLARS.find(p => p.id === viewMode)?.desc || 'Seluruh analisis dalam satu tampilan'}</p>
         </div>
@@ -360,6 +347,7 @@ export default function App() {
       <main className="workspace-main flex-1 p-4 lg:p-6 space-y-6">
         <H4CompassPanel analysis={data?.h4Compass} decimals={data?.decimals} selected={timeframe} onSelect={setTimeframe} />
         <HSHOverview data={data} liveTick={liveTick} onSelect={setTimeframe} />
+        <details className="data-notes"><summary>Informasi sumber data & perhitungan</summary><p className="text-[11px] text-slate-400 leading-relaxed mt-2">Basis harga: Bid Exness. Perbedaan waktu snapshot dapat menyebabkan selisih sesaat antar-panel. Angka estimasi uang/lot pada plan masih memakai rumus metode, belum divalidasi terhadap ukuran kontrak dan mata uang akun; jangan dianggap sebagai profit/rugi akun. Level tersentuh bukan bukti transaksi atau profit.</p></details>
         {(viewMode === 'candles' || viewMode === 'all') && (
           <CandlestickChart data={data} liveTick={liveTick} symbol={symbol} timeframe={timeframe} broker={broker} />
         )}

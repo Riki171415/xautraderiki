@@ -56,7 +56,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
   if (!data) return null;
 
   const { entryRecommendations = [], broker, userModal = 10000, lotCalc, decimals = 3 } = data;
-  const currentPrice = liveTick?.bid || data?.ohlcv_N?.close || 4184.25;
+  const currentPrice = liveTick?.bid || data?.ohlcv_N?.close || NaN;
 
   // Selected recommendation object
   const currentRec = entryRecommendations.find((r) => r.tf === selectedTf) || entryRecommendations[0];
@@ -76,23 +76,10 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
   const isCopied = copiedTf === currentRec.tf;
 
   // Institutional Touch Detection for Entry Signal & TP Targets
-  const isEntryTouched = Boolean(
-    isBuy
-      ? (currentPrice <= entryPrice || (currentRec.lowN !== undefined && currentRec.lowN <= entryPrice))
-      : (currentPrice >= entryPrice || (currentRec.highN !== undefined && currentRec.highN >= entryPrice))
-  );
-
-  const isTp1Touched = Boolean(
-    isBuy
-      ? (currentPrice >= tp1Price || (currentRec.highN !== undefined && currentRec.highN >= tp1Price))
-      : (currentPrice <= tp1Price || (currentRec.lowN !== undefined && currentRec.lowN <= tp1Price))
-  );
-
-  const isTp2Touched = Boolean(
-    isBuy
-      ? (currentPrice >= tp2Price || (currentRec.highN !== undefined && currentRec.highN >= tp2Price))
-      : (currentPrice <= tp2Price || (currentRec.lowN !== undefined && currentRec.lowN <= tp2Price))
-  );
+  const crossed = level => Number.isFinite(level) && currentRec.lowN<=level && currentRec.highN>=level;
+  const isEntryTouched = crossed(entryPrice);
+  const isTp1Touched = crossed(tp1Price);
+  const isTp2Touched = crossed(tp2Price);
 
   const handleCopyPlan = async (rec) => {
     const text =
@@ -102,9 +89,9 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
       `──────────────────────────────────────────────\n` +
       `🎯 TIKET EKSEKUSI HUKUM BUSUR:\n` +
       `• Aksi: ${rec.busur.action} @ $${rec.busur.entryPrice.toFixed(decimals)}\n` +
-      `• Target TP1 (Pivot): $${rec.busur.tp1.toFixed(decimals)} (+${rec.busur.tp1Points} pts | Est +$${rec.busur.estProfitTp1})\n` +
-      `• Target TP2 (Hukum Busur): $${rec.busur.tp2.toFixed(decimals)} (+${rec.busur.tp2Points} pts | Est +$${rec.busur.estProfitTp2})\n` +
-      `• Stop Loss: $${rec.busur.stopLoss.toFixed(decimals)} (-${rec.busur.slPoints} pts | Est -$${rec.busur.estLossSl})\n` +
+      `• Target TP1 (Pivot): $${rec.busur.tp1.toFixed(decimals)} (+${rec.busur.tp1Points} satuan harga | Est +$${rec.busur.estProfitTp1})\n` +
+      `• Target TP2 (Hukum Busur): $${rec.busur.tp2.toFixed(decimals)} (+${rec.busur.tp2Points} satuan harga | Est +$${rec.busur.estProfitTp2})\n` +
+      `• Stop Loss: $${rec.busur.stopLoss.toFixed(decimals)} (-${rec.busur.slPoints} satuan harga | Est -$${rec.busur.estLossSl})\n` +
       `• Risk/Reward: ${rec.busur.riskReward}\n` +
       `• Rekomendasi Lot: ${lotCalc?.lot || '0.40'} Lot (Modal $${userModal.toLocaleString()})\n` +
       `──────────────────────────────────────────────\n` +
@@ -223,7 +210,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                     </span>
                   ) : (
                     <span className="text-[9px] text-slate-500 font-mono">
-                      {Math.abs(currentPrice - recEntry).toFixed(0)} pts
+                      {Math.abs(currentPrice - recEntry).toFixed(0)} satuan harga
                     </span>
                   )}
                 </div>
@@ -350,7 +337,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] border border-slate-700">
                           <Clock className="w-3 h-3 text-cop-cyan" />
-                          <span>Sisa {recDist} pts</span>
+                          <span>Sisa {recDist} satuan harga</span>
                         </span>
                       )}
                     </td>
@@ -359,33 +346,33 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                       <div className="flex items-center justify-center gap-1">
                         {touchedTp1 && (
                           <span className="text-[8px] bg-emerald-500 text-slate-950 px-1.5 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
-                            ✓ HIT
+                            ✓ LEVEL TERSENTUH
                           </span>
                         )}
                         <span className={touchedTp1 ? 'text-emerald-300 font-black' : 'text-slate-300 font-bold'}>
                           ${recTp1.toFixed(decimals)}
                         </span>
                       </div>
-                      <span className="text-[9px] text-emerald-400">+{rec.busur.tp1Points} pts</span>
+                      <span className="text-[9px] text-emerald-400">+{rec.busur.tp1Points} satuan harga</span>
                     </td>
 
                     <td className="py-2.5 px-3 tabular-nums">
                       <div className="flex items-center justify-center gap-1">
                         {touchedTp2 && (
                           <span className="text-[8px] bg-purple-500 text-slate-950 px-1.5 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
-                            🏆 HIT
+                            LEVEL TERSENTUH
                           </span>
                         )}
                         <span className={touchedTp2 ? 'text-purple-300 font-black' : 'text-slate-300 font-bold'}>
                           ${recTp2.toFixed(decimals)}
                         </span>
                       </div>
-                      <span className="text-[9px] text-cop-gold">+{rec.busur.tp2Points} pts</span>
+                      <span className="text-[9px] text-cop-gold">+{rec.busur.tp2Points} satuan harga</span>
                     </td>
 
                     <td className="py-2.5 px-3 tabular-nums">
                       <span className="text-rose-400 font-bold">${rec.busur.stopLoss.toFixed(decimals)}</span>
-                      <div className="text-[9px] text-slate-400">-{rec.busur.slPoints} pts</div>
+                      <div className="text-[9px] text-slate-400">-{rec.busur.slPoints} satuan harga</div>
                     </td>
 
                     <td className="py-2.5 px-2">
@@ -488,7 +475,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                   <span>🏆 TARGET UTAMA TP2 TERCAPAI LENGKAP</span>
                 </div>
                 <span className="text-xs bg-purple-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
-                  SELESAI (+{currentRec.busur.tp2Points} pts)
+                  SELESAI (+{currentRec.busur.tp2Points} satuan harga)
                 </span>
               </div>
             ) : isTp1Touched ? (
@@ -521,7 +508,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                   <span>Menunggu Koreksi Sentuhan Harga:</span>
                 </div>
                 <span className="text-xs font-black text-cop-gold tabular-nums bg-cop-bg px-2.5 py-1 rounded-lg border border-cop-border">
-                  Sisa {distToEntry} pts ke Titik Entry
+                  Sisa {distToEntry} satuan harga ke Titik Entry
                 </span>
               </div>
             )}
@@ -549,7 +536,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                 </div>
                 <div className="bg-cop-surface/80 p-2 rounded-xl border border-cop-border/60">
                   <span className="text-[10px] text-slate-400 block">Jarak ke Entry</span>
-                  <span className="font-bold text-emerald-400 tabular-nums">{distToEntry} pts</span>
+                  <span className="font-bold text-emerald-400 tabular-nums">{distToEntry} satuan harga</span>
                 </div>
                 <div className="bg-cop-surface/80 p-2 rounded-xl border border-cop-border/60">
                   <span className="text-[10px] text-slate-400 block">Usia Periode</span>
@@ -609,7 +596,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                     <span className="text-sm font-black text-emerald-300 tabular-nums">${currentRec.busur.tp1.toFixed(decimals)}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-emerald-400 block font-bold">+{currentRec.busur.tp1Points} pts</span>
+                    <span className="text-[10px] text-emerald-400 block font-bold">+{currentRec.busur.tp1Points} satuan harga</span>
                     <span className="text-[10px] text-slate-400">(+${currentRec.busur.estProfitTp1})</span>
                   </div>
                 </div>
@@ -621,7 +608,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                     <span className="text-sm font-black text-emerald-300 tabular-nums">${currentRec.busur.tp2.toFixed(decimals)}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-emerald-300 font-black block">+{currentRec.busur.tp2Points} pts</span>
+                    <span className="text-[10px] text-emerald-300 font-black block">+{currentRec.busur.tp2Points} satuan harga</span>
                     <span className="text-[10px] text-emerald-400 font-bold">(+${currentRec.busur.estProfitTp2})</span>
                   </div>
                 </div>
@@ -642,7 +629,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                     <span className="text-sm font-black text-rose-300 tabular-nums">${currentRec.busur.stopLoss.toFixed(decimals)}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-rose-400 block font-bold">-{currentRec.busur.slPoints} pts</span>
+                    <span className="text-[10px] text-rose-400 block font-bold">-{currentRec.busur.slPoints} satuan harga</span>
                     <span className="text-[10px] text-rose-300">(-${currentRec.busur.estLossSl})</span>
                   </div>
                 </div>

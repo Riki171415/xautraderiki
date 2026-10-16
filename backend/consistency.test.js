@@ -9,3 +9,10 @@ for(const open of [90,100,110]) test(`matrix uses canonical rules for open ${ope
  const rs=calcRSMatrix(b);
  for(const [field,key] of [['res1','r1'],['res2','r2'],['res3','r3'],['res4','r4'],['sup1','s1'],['sup2','s2'],['sup3','s3'],['sup4','s4'],['pivot','pivot']]) assert.equal(m.rsColumns[0][field],rs[key].toFixed(3));
 });
+
+test('range units are raw price and touches require actual traversal',()=>{
+ const n={open:200,high:210,low:190,close:205},b={open:100,high:110,low:90,close:100};
+ const m=calcLeak4RegMatrix({'4h':{ohlcv_N:n,ohlcv_B:b}},205);
+ assert.equal(m.tableRows[0].rangeN,20);
+ assert.equal(m.rsColumns[0].touchedLevels.res1,false);
+});

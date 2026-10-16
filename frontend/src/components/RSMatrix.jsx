@@ -129,7 +129,7 @@ export default function RSMatrix({ data, liveTick }) {
 
             {closestLevel && (
               <div className="text-[10px] text-slate-400 hidden sm:block">
-                Level Terdekat: <strong className="text-white">{LEVEL_CONFIG[closestLevel.key]?.label}</strong> ({closestLevel.value.toFixed(decimals)}) · Selisih: <strong className="text-cop-gold tabular-nums">{closestLevel.dist.toFixed(decimals)} pts</strong>
+                Level Terdekat: <strong className="text-white">{LEVEL_CONFIG[closestLevel.key]?.label}</strong> ({closestLevel.value.toFixed(decimals)}) · Selisih: <strong className="text-cop-gold tabular-nums">{closestLevel.dist.toFixed(decimals)} satuan harga</strong>
               </div>
             )}
           </div>
@@ -216,7 +216,7 @@ export default function RSMatrix({ data, liveTick }) {
                   </span>
                 ) : isTouched ? (
                   <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-emerald-300 bg-emerald-950/90 px-1.5 py-0.2 rounded border border-emerald-500/70 flex items-center gap-0.5">
-                    ✓ HIT
+                    ✓ LEVEL TERSENTUH
                   </span>
                 ) : null}
               </div>

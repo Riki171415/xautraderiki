@@ -78,8 +78,8 @@ export default function OHLPanel({ data, liveTick }) {
   const { current: N, previous: B, diff } = ohlComparison;
 
   const isMatchingTick = Boolean(liveTick?.price && (!liveTick.broker || !broker || liveTick.broker === broker.id));
-  const activeClose = isMatchingTick ? liveTick.price : N?.close;
-  const activeDiffClose = isMatchingTick && B?.close ? liveTick.price - B.close : diff?.close;
+  const activeClose = isMatchingTick ? liveTick.bid : N?.close;
+  const activeDiffClose = isMatchingTick && B?.close ? liveTick.bid - B.close : diff?.close;
 
   const trendUp = jika?.trend === 'UP';
   const trendDown = jika?.trend === 'DOWN';
