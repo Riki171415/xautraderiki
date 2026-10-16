@@ -84,7 +84,7 @@ const BASE_YEARLY_DATA = {
     busurS1: 'Ujian Busur Bawah ke $1,716 (Krisis Perbankan SVB Maret)',
     targetS2: 'Breakout All-Time High ke $2,095 (Desember)',
     hsh: 'Ditutup kokoh di $2,028 di atas level psikologis $2,000.',
-    narrative: 'Tahun transisi besar. Ujian busur bawah selesai cepat di $1,716. Konflik geopolitik Timur Tengah dan ekspektasi pelonggaran The Fed melontarkan harga menembus All-Time High ke $2,095. Lilin ditutup kokoh di $2,028 menandai awal siklus Bullish baru.',
+    narrative: 'Tahun transisi besar. Ujian busur bawah selesai cepat di $1,716. Konflik geopolitik Timur Tengah dan ekspektasi pelonggaran The Fed melontarkan harga menembus All-Time High ke $2,095. Data tahunan ditutup kokoh di $2,028 menandai awal siklus Bullish baru.',
     playbook: 'Konfirmasi Big Boat Break Up menandakan akumulasi institusi telah selesai, bersiap untuk ekspansi super di tahun-tahun berikutnya.',
   },
   2024: {
@@ -144,7 +144,7 @@ const BASE_YEARLY_DATA = {
     busurS1: 'Busur S1 Selesai di Low $3,945 (Q1)',
     targetS2: 'Target S2 Tercapai di Rekor High $5,651 (Q3)',
     hsh: '⚠️ HSH ALERT AKTIF: Waktu sudah 83% (Oktober). Tarikan magnetik HSH aktif kembali mendekati Open $4,337!',
-    narrative: 'POSISI KITA SAAT INI (DATA REAL MARKET)! Emas dibuka pada $4,337, menarik busur bawah ke $3,945 di Semester 1, lalu melontarkan anak panah menembus rekor High $5,651 di Semester 2. Saat ini lilin tahunan memasuki Kuartal 4 (83% durasi) dan magnet Hukum HSH aktif menarik harga kembali mendekati area keseimbangan Open $4,337, bergerak di sekitar level $4,185.',
+    narrative: 'POSISI KITA SAAT INI (DATA REAL MARKET)! Emas dibuka pada $4,337, menarik busur bawah ke $3,945 di Semester 1, lalu melontarkan anak panah menembus rekor High $5,651 di Semester 2. Saat ini data tahunan memasuki Kuartal 4 (83% durasi) dan magnet Hukum HSH aktif menarik harga kembali mendekati area keseimbangan Open $4,337, bergerak di sekitar level $4,185.',
     playbook: 'PERINGATAN KRITIKAL: Waktu tahunan sudah memasuki Q4 (83%). Waspada tarikan magnet HSH ke Open $4,337. Jangan hold Buy swing tanpa proteksi!',
   },
   2027: {
@@ -258,7 +258,7 @@ export default function GlobalStoryline({ data, liveTick }) {
       range: Math.round(real1YHigh - real1YLow),
       jikaDesc: `Open 2026 ($${Math.round(real1YOpen).toLocaleString()}) > Open 2025 ($${Math.round(real1YOpenB).toLocaleString()}) — JIKA UP SUPER STRONG`,
       perahuDesc: `Harga live saat ini diuji di $${real1YClose.toFixed(2)}, High $${real1YHigh.toFixed(2)}, Low $${real1YLow.toFixed(2)}.`,
-      narrative: `POSISI REAL MARKET SAAT INI! Emas tahun 2026 dibuka pada level $${Math.round(real1YOpen).toLocaleString()} (di atas Open 2025 $${Math.round(real1YOpenB).toLocaleString()}). Sesuai Hukum JIKA UP, Semester 1 menarik busur ke Low $${Math.round(real1YLow).toLocaleString()}, disusul lonjakan Target Semester 2 ke rekor High $${Math.round(real1YHigh).toLocaleString()}. Saat ini lilin tahunan memasuki Kuartal 4 (83% durasi) dan magnet Hukum HSH aktif menarik harga kembali mendekati area keseimbangan Open $${Math.round(real1YOpen).toLocaleString()}, saat ini bergerak di level $${real1YClose.toFixed(2)}.`,
+      narrative: `POSISI REAL MARKET SAAT INI! Emas tahun 2026 dibuka pada level $${Math.round(real1YOpen).toLocaleString()} (di atas Open 2025 $${Math.round(real1YOpenB).toLocaleString()}). Sesuai Hukum JIKA UP, Semester 1 menarik busur ke Low $${Math.round(real1YLow).toLocaleString()}, disusul lonjakan Target Semester 2 ke rekor High $${Math.round(real1YHigh).toLocaleString()}. Saat ini data tahunan memasuki Kuartal 4 (83% durasi) dan magnet Hukum HSH aktif menarik harga kembali mendekati area keseimbangan Open $${Math.round(real1YOpen).toLocaleString()}, saat ini bergerak di level $${real1YClose.toFixed(2)}.`,
     };
   }
 
@@ -391,7 +391,7 @@ export default function GlobalStoryline({ data, liveTick }) {
               <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mt-1">
                 <span>Rentang Tahunan: <strong className="text-cop-gold tabular-nums">{selected.range} pts</strong></span>
                 <span className="text-slate-600">·</span>
-                <span className="text-[11px] text-slate-400">{selected.status === 'LIVE_CURRENT' ? '🟢 Sinkronisasi Real-Time MT5 / Binance Feed' : selected.status === 'HISTORICAL' ? 'Data Lilin Pasar Nyata' : 'Proyeksi Fraktal COP TAH'}</span>
+                <span className="text-[11px] text-slate-400">{selected.status === 'LIVE_CURRENT' ? '🟢 Sinkronisasi Real-Time MT5 / Binance Feed' : selected.status === 'HISTORICAL' ? 'Data Riwayat Pasar Nyata' : 'Proyeksi Fraktal COP TAH'}</span>
               </div>
             </div>
 
