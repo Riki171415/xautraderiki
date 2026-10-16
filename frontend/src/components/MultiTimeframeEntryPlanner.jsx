@@ -1,10 +1,14 @@
 /**
  * MultiTimeframeEntryPlanner — Rekomendasi Titik Entry Multi-Timeframe (5m, 15m, 30m, 1h, 4h, 1d)
  * Berdasarkan Konsep 3 Core Theories & 5 Hukum COP TAH dengan Peringatan & Rambu-Rambu Lengkap.
- * Semua titik entry 100% sinkron dengan data riil pada Tabel Matriks Support & Resistance.
+ *
+ * TAMPILAN PER TIMEFRAME (FOCUSED VIEW):
+ * Dirancang khusus agar pengguna tidak pusing dengan 6 kartu sekaligus dalam satu layar.
+ * Pengguna dapat memilih satu timeframe fokus dengan navigasi tab cepat dan melihat seluruh tiket,
+ * rambu-rambu, kalkulasi risiko, dan status sentuhan harga secara luas dan tertata elegan.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Compass,
   Target,
@@ -23,17 +27,69 @@ import {
   Shield,
   Layers,
   Sparkles,
-  Info
+  Info,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
+  DollarSign
 } from 'lucide-react';
 
 export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
-  const [selectedTfFilter, setSelectedTfFilter] = useState('ALL');
+  // Available timeframes in chronological order
+  const TF_ORDER = ['5m', '15m', '30m', '1h', '4h', '1d'];
+
+  // Initialize selected timeframe from current active timeframe or default to '1h'
+  const initialTf = data?.timeframe && TF_ORDER.includes(data.timeframe) ? data.timeframe : '1h';
+  const [selectedTf, setSelectedTf] = useState(initialTf);
   const [copiedTf, setCopiedTf] = useState(null);
+
+  // Sync if header timeframe changes and matches available TF
+  useEffect(() => {
+    if (data?.timeframe && TF_ORDER.includes(data.timeframe)) {
+      setSelectedTf(data.timeframe);
+    }
+  }, [data?.timeframe]);
 
   if (!data) return null;
 
   const { entryRecommendations = [], broker, userModal = 10000, lotCalc, decimals = 3 } = data;
   const currentPrice = liveTick?.price || data?.ohlcv_N?.close || 4184.25;
+
+  // Selected recommendation object
+  const currentRec = entryRecommendations.find((r) => r.tf === selectedTf) || entryRecommendations[0];
+
+  if (!currentRec) return null;
+
+  const currentIndex = TF_ORDER.indexOf(selectedTf);
+  const prevTf = currentIndex > 0 ? TF_ORDER[currentIndex - 1] : null;
+  const nextTf = currentIndex < TF_ORDER.length - 1 ? TF_ORDER[currentIndex + 1] : null;
+
+  const isBuy = currentRec.busur.action === 'BUY LIMIT';
+  const isSell = currentRec.busur.action === 'SELL LIMIT';
+  const entryPrice = currentRec.busur.entryPrice;
+  const tp1Price = currentRec.busur.tp1;
+  const tp2Price = currentRec.busur.tp2;
+  const distToEntry = Math.abs(currentPrice - entryPrice).toFixed(decimals);
+  const isCopied = copiedTf === currentRec.tf;
+
+  // Institutional Touch Detection for Entry Signal & TP Targets
+  const isEntryTouched = Boolean(
+    isBuy
+      ? (currentPrice <= entryPrice || (currentRec.lowN !== undefined && currentRec.lowN <= entryPrice))
+      : (currentPrice >= entryPrice || (currentRec.highN !== undefined && currentRec.highN >= entryPrice))
+  );
+
+  const isTp1Touched = Boolean(
+    isBuy
+      ? (currentPrice >= tp1Price || (currentRec.highN !== undefined && currentRec.highN >= tp1Price))
+      : (currentPrice <= tp1Price || (currentRec.lowN !== undefined && currentRec.lowN <= tp1Price))
+  );
+
+  const isTp2Touched = Boolean(
+    isBuy
+      ? (currentPrice >= tp2Price || (currentRec.highN !== undefined && currentRec.highN >= tp2Price))
+      : (currentPrice <= tp2Price || (currentRec.lowN !== undefined && currentRec.lowN <= tp2Price))
+  );
 
   const handleCopyPlan = async (rec) => {
     const text =
@@ -57,13 +113,9 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
     setTimeout(() => setCopiedTf(null), 2500);
   };
 
-  const filteredRecs = selectedTfFilter === 'ALL'
-    ? entryRecommendations
-    : entryRecommendations.filter((r) => r.tf === selectedTfFilter);
-
   return (
     <div className="cop-panel space-y-5 font-mono">
-      {/* ── 1. Top Header ── */}
+      {/* ── 1. Top Header & Live Telemetry ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-cop-border pb-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -71,7 +123,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
               <Target className="w-5 h-5" />
             </div>
             <h2 className="text-base font-extrabold text-white tracking-tight">
-              Saran Titik Entry Multi-Timeframe (5m, 15m, 30m, 1h, 4h, 1d)
+              Saran Titik Entry Multi-Timeframe (Tampilan Per Timeframe)
             </h2>
             <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-950 text-blue-300 border border-blue-500/50 uppercase">
               100% Sesuai Data Tabel
@@ -81,7 +133,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
             </span>
           </div>
           <p className="text-xs text-slate-400">
-            Panduan entry bertingkat dari scalping mikro hingga swing harian dengan rambu peringatan Hukum JIKA, Perahu, Busur, dan HSH.
+            Pilih timeframe di bawah untuk fokus pada satu rencana trading secara mendalam, rapi, dan tanpa distraksi.
           </p>
         </div>
 
@@ -102,276 +154,378 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
         </div>
       </div>
 
-      {/* ── 2. Timeframe Filter Strip ── */}
-      <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
-        <div className="flex items-center gap-1.5 p-1 bg-cop-surface rounded-xl border border-cop-border text-xs flex-wrap">
-          <button
-            onClick={() => setSelectedTfFilter('ALL')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              selectedTfFilter === 'ALL'
-                ? 'bg-amber-500 text-slate-950 shadow-glow-gold-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Semua Timeframe (6 TF)
-          </button>
-          {entryRecommendations.map((rec) => (
-            <button
-              key={rec.tf}
-              onClick={() => setSelectedTfFilter(rec.tf)}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                selectedTfFilter === rec.tf
-                  ? rec.jika.trend === 'UP'
-                    ? 'bg-emerald-600 text-white shadow-glow-green-sm'
-                    : 'bg-rose-600 text-white shadow-glow-red-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <span>{rec.name}</span>
-              <span className={`text-[9px] px-1 py-0.2 rounded font-black ${rec.jika.trend === 'UP' ? 'bg-emerald-950 text-emerald-300' : 'bg-rose-950 text-rose-300'}`}>
-                {rec.jika.trend}
-              </span>
-            </button>
-          ))}
+      {/* ── 2. Timeframe Selector Pills (Pilih Satu Timeframe Fokus) ── */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs text-slate-400">
+          <span className="flex items-center gap-1.5 font-bold text-white uppercase text-[11px] tracking-wider">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-cop-gold" />
+            Pilih Timeframe Analisis:
+          </span>
+          <span className="text-[11px] text-slate-400 hidden sm:inline">
+            Klik tombol timeframe untuk mengganti tampilan
+          </span>
         </div>
 
-        <div className="text-[11px] text-slate-400 flex items-center gap-2">
-          <Info className="w-3.5 h-3.5 text-cop-gold" />
-          <span>Titik entry diambil langsung dari level Support (S1) atau Resistance (R1) pada tabel.</span>
-        </div>
-      </div>
+        {/* 6 Segmented Buttons */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          {entryRecommendations.map((rec) => {
+            const isActive = selectedTf === rec.tf;
+            const recIsBuy = rec.busur.action === 'BUY LIMIT';
+            const recEntry = rec.busur.entryPrice;
+            const recTouched = Boolean(
+              recIsBuy
+                ? (currentPrice <= recEntry || (rec.lowN !== undefined && rec.lowN <= recEntry))
+                : (currentPrice >= recEntry || (rec.highN !== undefined && rec.highN >= recEntry))
+            );
 
-      {/* ── 3. Cards Grid (Multi-Timeframe Recommendations) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {filteredRecs.map((rec) => {
-          const isBuy = rec.busur.action === 'BUY LIMIT';
-          const isSell = rec.busur.action === 'SELL LIMIT';
-          const entryPrice = rec.busur.entryPrice;
-          const tp1Price = rec.busur.tp1;
-          const tp2Price = rec.busur.tp2;
-          const distToEntry = Math.abs(currentPrice - entryPrice).toFixed(decimals);
-          const isCopied = copiedTf === rec.tf;
+            return (
+              <button
+                key={rec.tf}
+                onClick={() => setSelectedTf(rec.tf)}
+                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-start justify-between text-left relative overflow-hidden ${
+                  isActive
+                    ? 'border-amber-400 bg-gradient-to-b from-amber-500/20 via-cop-card to-slate-900 shadow-glow-gold scale-[1.02]'
+                    : 'border-cop-border/80 bg-cop-surface/80 hover:bg-cop-card hover:border-slate-600'
+                }`}
+              >
+                {/* Active Indicator Top Bar */}
+                {isActive && (
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-amber-400 shadow-glow-gold" />
+                )}
 
-          // Institutional Touch Detection for Entry Signal & TP Targets
-          const isEntryTouched = isBuy
-            ? (currentPrice <= entryPrice || (rec.lowN !== undefined && rec.lowN <= entryPrice))
-            : (currentPrice >= entryPrice || (rec.highN !== undefined && rec.highN >= entryPrice));
-
-          const isTp1Touched = isBuy
-            ? (currentPrice >= tp1Price || (rec.highN !== undefined && rec.highN >= tp1Price))
-            : (currentPrice <= tp1Price || (rec.lowN !== undefined && rec.lowN <= tp1Price));
-
-          const isTp2Touched = isBuy
-            ? (currentPrice >= tp2Price || (rec.highN !== undefined && rec.highN >= tp2Price))
-            : (currentPrice <= tp2Price || (rec.lowN !== undefined && rec.lowN <= tp2Price));
-
-          return (
-            <div
-              key={rec.tf}
-              className={`cop-card p-4 rounded-2xl border-2 flex flex-col justify-between space-y-4 transition-all duration-300 backdrop-blur-md shadow-card-elevated ${
-                isEntryTouched
-                  ? 'border-amber-400 bg-gradient-to-b from-amber-950/30 via-cop-card to-slate-900 shadow-glow-gold'
-                  : isBuy
-                  ? 'border-emerald-500/50 bg-gradient-to-b from-emerald-950/20 via-cop-card to-slate-900 shadow-glow-green-sm'
-                  : 'border-rose-500/50 bg-gradient-to-b from-rose-950/20 via-cop-card to-slate-900 shadow-glow-red-sm'
-              }`}
-            >
-              <div className="space-y-3.5">
-                {/* Header Card: TF Name & Category */}
-                <div className="flex items-center justify-between border-b border-cop-border/60 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded-lg border font-black text-xs ${
-                      isBuy
-                        ? 'bg-emerald-950/80 border-emerald-500/80 text-emerald-300'
-                        : 'bg-rose-950/80 border-rose-500/80 text-rose-300'
-                    }`}>
-                      {rec.tf.toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-black text-white">{rec.name} · {rec.style}</h3>
-                      <p className="text-[10px] text-slate-400">{rec.category}</p>
-                    </div>
-                  </div>
-
-                  <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className={`text-xs font-black uppercase ${isActive ? 'text-amber-300' : 'text-slate-300'}`}>
+                    {rec.tf}
+                  </span>
+                  <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${
                     rec.jika.trend === 'UP'
-                      ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300'
-                      : 'bg-rose-950/90 border-rose-500 text-rose-300'
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-600/40'
+                      : 'bg-rose-950 text-rose-300 border-rose-600/40'
                   }`}>
-                    JIKA {rec.jika.trend} · {rec.perahu.pattern}
+                    {rec.jika.trend}
                   </span>
                 </div>
 
-                {/* INDIKATOR STATUS SENTUHAN SINYAL ENTRY & TARGET */}
-                {isTp2Touched ? (
-                  <div className="p-2.5 rounded-xl bg-purple-950/70 border-2 border-purple-400 shadow-glow-purple flex items-center justify-between text-xs font-mono">
-                    <div className="flex items-center gap-2 text-purple-200 font-black">
-                      <Sparkles className="w-4 h-4 text-purple-300" />
-                      <span>🏆 TARGET UTAMA TP2 TERCAPAI</span>
-                    </div>
-                    <span className="text-[10px] bg-purple-500 text-slate-950 px-2 py-0.5 rounded font-black shadow-sm">
-                      SELESAI (+{rec.busur.tp2Points} pts)
-                    </span>
-                  </div>
-                ) : isTp1Touched ? (
-                  <div className="p-2.5 rounded-xl bg-emerald-950/70 border-2 border-emerald-400 shadow-glow-green-sm flex items-center justify-between text-xs font-mono">
-                    <div className="flex items-center gap-2 text-emerald-200 font-black">
-                      <Target className="w-4 h-4 text-emerald-300" />
-                      <span>🎯 TARGET PIVOT TP1 TERCAPAI</span>
-                    </div>
-                    <span className="text-[10px] bg-emerald-500 text-slate-950 px-2 py-0.5 rounded font-black shadow-sm">
-                      AMANKAN SEBAGIAN
-                    </span>
-                  </div>
-                ) : isEntryTouched ? (
-                  <div className="p-2.5 rounded-xl bg-amber-500/25 border-2 border-amber-400 text-amber-200 font-black shadow-glow-gold flex items-center justify-between text-xs font-mono animate-pulse">
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
-                      </span>
-                      <span>⚡ HARGA TERSENTUH (SINYAL ENTRY TERPICU)</span>
-                    </div>
-                    <span className="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black shadow-sm">
-                      ORDER AKTIF
-                    </span>
-                  </div>
-                ) : (
-                  <div className="p-2 rounded-xl bg-slate-900/90 border border-slate-700/80 text-slate-300 flex items-center justify-between text-xs font-mono">
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <Clock className="w-3.5 h-3.5 text-cop-cyan" />
-                      <span>Menunggu Sentuhan Harga:</span>
-                    </div>
-                    <span className="text-[11px] font-bold text-cop-gold tabular-nums">
-                      Sisa {distToEntry} pts
-                    </span>
-                  </div>
-                )}
-
-                {/* KOTAK INDIKATOR LOKASI HARGA SAAT INI */}
-                <div className="p-3 rounded-xl bg-slate-950/90 border-2 border-amber-500/60 space-y-1.5 shadow-sm">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-cop-gold animate-ping" />
-                      <strong className="text-white">Kotak Posisi Harga Live:</strong>
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black tabular-nums">
-                      ${currentPrice.toFixed(decimals)}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-[10px] pt-1 border-t border-slate-800">
-                    <span className="text-slate-400">
-                      Open N: <strong className="text-white">${rec.openN.toFixed(decimals)}</strong>
-                    </span>
-                    <span className="text-slate-400 text-right">
-                      Pivot: <strong className="text-cop-gold">${rec.rs.pivot.toFixed(decimals)}</strong>
-                    </span>
-                    <span className="text-slate-400">
-                      Jarak ke Entry: <strong className="text-emerald-400 font-bold tabular-nums">{distToEntry} pts</strong>
-                    </span>
-                    <span className="text-slate-400 text-right">
-                      Usia Periode: <strong className="text-cop-cyan">{rec.hsh.percentElapsed}%</strong>
-                    </span>
-                  </div>
+                <div className="text-[11px] font-bold text-white truncate w-full">
+                  {rec.name}
                 </div>
 
-                {/* Tiket Eksekusi Saran Entry (Hukum Busur) */}
-                <div className="p-3.5 rounded-xl bg-cop-surface/80 border border-cop-border space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                      Tiket Pending Order (Data Riil)
+                <div className="flex items-center justify-between w-full mt-2 pt-1.5 border-t border-slate-800 text-[10px]">
+                  <span className={`font-semibold ${recIsBuy ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {recIsBuy ? 'BUY' : 'SELL'} @ ${rec.busur.entryPrice.toFixed(decimals > 2 ? 1 : 2)}
+                  </span>
+                  {recTouched ? (
+                    <span className="text-[8px] bg-emerald-500 text-slate-950 px-1 py-0.2 rounded font-black flex items-center gap-0.5 animate-pulse shadow-sm">
+                      <Zap className="w-2.5 h-2.5" /> HIT
                     </span>
-                    <span className="text-[11px] font-bold text-cop-gold">
-                      R:R {rec.busur.riskReward}
+                  ) : (
+                    <span className="text-[9px] text-slate-500 font-mono">
+                      {Math.abs(currentPrice - recEntry).toFixed(0)} pts
                     </span>
-                  </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-                  {/* ENTRY ROW DENGAN TANDA TERSENTUH */}
-                  <div className={`flex items-center justify-between p-2 rounded-lg border text-xs transition-all ${
-                    isEntryTouched
-                      ? 'bg-amber-500/20 border-amber-400 shadow-glow-gold-sm font-bold'
-                      : 'bg-cop-card border-cop-border'
+      {/* ── 3. Focused Cockpit View (Hanya Menampilkan 1 Timeframe Terpilih) ── */}
+      <div className="bg-gradient-to-br from-cop-card via-cop-surface to-cop-card border-2 border-cop-border rounded-3xl p-5 lg:p-6 shadow-2xl space-y-6">
+        {/* Navigation Bar between Timeframes */}
+        <div className="flex items-center justify-between border-b border-cop-border/60 pb-3 flex-wrap gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => prevTf && setSelectedTf(prevTf)}
+              disabled={!prevTf}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-cop-border bg-cop-bg text-slate-300 hover:bg-cop-card disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>{prevTf ? `TF ${prevTf.toUpperCase()}` : 'Batas Awal'}</span>
+            </button>
+
+            <button
+              onClick={() => nextTf && setSelectedTf(nextTf)}
+              disabled={!nextTf}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-cop-border bg-cop-bg text-slate-300 hover:bg-cop-card disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <span>{nextTf ? `TF ${nextTf.toUpperCase()}` : 'Batas Akhir'}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">Sedang Ditampilkan:</span>
+            <span className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-glow-gold-sm">
+              Timeframe {currentRec.name} ({currentRec.style})
+            </span>
+          </div>
+        </div>
+
+        {/* 2-Column Institutional Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* ── KOLOM KIRI (7 Kolom): Status, Posisi Harga & Tiket Order ── */}
+          <div className="lg:col-span-7 space-y-4">
+            {/* Header Sinyal & Kategori */}
+            <div className="flex items-center justify-between border-b border-cop-border/60 pb-3 flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl border-2 font-black text-sm ${
+                  isBuy
+                    ? 'bg-emerald-950 border-emerald-500 text-emerald-300 shadow-glow-green-sm'
+                    : 'bg-rose-950 border-rose-500 text-rose-300 shadow-glow-red-sm'
+                }`}>
+                  {currentRec.tf.toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">{currentRec.name} · {currentRec.style}</h3>
+                  <p className="text-xs text-slate-400">{currentRec.category}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-black px-3 py-1 rounded-full border shadow-sm ${
+                  currentRec.jika.trend === 'UP'
+                    ? 'bg-emerald-950 border-emerald-500 text-emerald-300 shadow-glow-green-sm'
+                    : 'bg-rose-950 border-rose-500 text-rose-300 shadow-glow-red-sm'
+                }`}>
+                  HUKUM JIKA {currentRec.jika.trend} · {currentRec.perahu.pattern}
+                </span>
+              </div>
+            </div>
+
+            {/* BANNER STATUS SENTUHAN HARGA & TARGET (BESAR & JELAS) */}
+            {isTp2Touched ? (
+              <div className="p-3.5 rounded-2xl bg-purple-950/70 border-2 border-purple-400 shadow-glow-purple flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center gap-2.5 text-purple-200 font-black text-sm">
+                  <Sparkles className="w-5 h-5 text-purple-300 animate-spin" />
+                  <span>🏆 TARGET UTAMA TP2 TERCAPAI LENGKAP</span>
+                </div>
+                <span className="text-xs bg-purple-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
+                  SELESAI (+{currentRec.busur.tp2Points} pts)
+                </span>
+              </div>
+            ) : isTp1Touched ? (
+              <div className="p-3.5 rounded-2xl bg-emerald-950/70 border-2 border-emerald-400 shadow-glow-green-sm flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center gap-2.5 text-emerald-200 font-black text-sm">
+                  <Target className="w-5 h-5 text-emerald-300 animate-pulse" />
+                  <span>🎯 TARGET PIVOT TP1 TERCAPAI</span>
+                </div>
+                <span className="text-xs bg-emerald-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
+                  AMANKAN SEBAGIAN
+                </span>
+              </div>
+            ) : isEntryTouched ? (
+              <div className="p-3.5 rounded-2xl bg-amber-500/25 border-2 border-amber-400 text-amber-200 font-black shadow-glow-gold flex items-center justify-between text-xs font-mono animate-pulse">
+                <div className="flex items-center gap-2.5">
+                  <span className="relative flex h-3.5 w-3.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500" />
+                  </span>
+                  <span className="text-sm">⚡ HARGA TERSENTUH (SINYAL ENTRY TERPICU)!</span>
+                </div>
+                <span className="text-xs bg-amber-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
+                  ORDER AKTIF
+                </span>
+              </div>
+            ) : (
+              <div className="p-3 rounded-2xl bg-slate-900 border border-slate-700/80 text-slate-300 flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <Clock className="w-4 h-4 text-cop-cyan" />
+                  <span>Menunggu Koreksi Sentuhan Harga:</span>
+                </div>
+                <span className="text-xs font-black text-cop-gold tabular-nums bg-cop-bg px-2.5 py-1 rounded-lg border border-cop-border">
+                  Sisa {distToEntry} pts ke Titik Entry
+                </span>
+              </div>
+            )}
+
+            {/* KOTAK INDIKATOR LOKASI HARGA LIVE */}
+            <div className="p-4 rounded-2xl bg-slate-950/90 border-2 border-amber-500/60 space-y-2 shadow-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300 flex items-center gap-2 text-xs font-bold">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cop-gold animate-ping" />
+                  <span>Kotak Lokasi Harga Live Terkini:</span>
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-black text-sm tabular-nums shadow-sm">
+                  ${currentPrice.toFixed(decimals)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-2 border-t border-slate-800">
+                <div className="bg-cop-surface/80 p-2 rounded-xl border border-cop-border/60">
+                  <span className="text-[10px] text-slate-400 block">Open N ({currentRec.tf})</span>
+                  <span className="font-bold text-white tabular-nums">${currentRec.openN.toFixed(decimals)}</span>
+                </div>
+                <div className="bg-cop-surface/80 p-2 rounded-xl border border-cop-border/60">
+                  <span className="text-[10px] text-slate-400 block">Pivot Gravitasi</span>
+                  <span className="font-bold text-cop-gold tabular-nums">${currentRec.rs.pivot.toFixed(decimals)}</span>
+                </div>
+                <div className="bg-cop-surface/80 p-2 rounded-xl border border-cop-border/60">
+                  <span className="text-[10px] text-slate-400 block">Jarak ke Entry</span>
+                  <span className="font-bold text-emerald-400 tabular-nums">{distToEntry} pts</span>
+                </div>
+                <div className="bg-cop-surface/80 p-2 rounded-xl border border-cop-border/60">
+                  <span className="text-[10px] text-slate-400 block">Usia Periode</span>
+                  <span className="font-bold text-cop-cyan">{currentRec.hsh.percentElapsed}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* TIKET EKSEKUSI PENDING ORDER (DATA RIIL TABEL) */}
+            <div className="p-4 rounded-2xl bg-cop-surface/90 border-2 border-cop-border space-y-3 shadow-md">
+              <div className="flex items-center justify-between border-b border-cop-border/60 pb-2">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <Target className="w-4 h-4 text-cop-gold" />
+                  Tiket Pending Order Resmi (Data Riil Matriks)
+                </span>
+                <span className="text-xs font-bold text-cop-gold bg-cop-card px-2.5 py-0.5 rounded-lg border border-cop-border">
+                  R:R {currentRec.busur.riskReward}
+                </span>
+              </div>
+
+              {/* Baris Entry */}
+              <div className={`flex items-center justify-between p-3 rounded-xl border text-sm transition-all ${
+                isEntryTouched
+                  ? 'bg-amber-500/20 border-amber-400 shadow-glow-gold-sm font-bold'
+                  : 'bg-cop-card border-cop-border'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded ${
+                    isBuy ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'
                   }`}>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[9px] font-black px-1.5 py-0.2 rounded ${
-                        isBuy ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'
-                      }`}>
-                        {rec.busur.action}
-                      </span>
-                      <span className="text-slate-300 font-semibold">{isBuy ? 'Support S1' : 'Resistance R1'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-black text-white tabular-nums">
-                        ${entryPrice.toFixed(decimals)}
-                      </span>
-                      {isEntryTouched ? (
-                        <span className="text-[9px] font-black px-2 py-0.5 rounded bg-emerald-500 text-slate-950 flex items-center gap-1 animate-pulse shadow-sm">
-                          <CheckCircle2 className="w-3 h-3" /> TERSENTUH
-                        </span>
-                      ) : (
-                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                          MENUNGGU
-                        </span>
-                      )}
-                    </div>
+                    {currentRec.busur.action}
+                  </span>
+                  <span className="text-slate-200 font-bold">{isBuy ? 'Support S1' : 'Resistance R1'}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-base font-black text-white tabular-nums">
+                    ${entryPrice.toFixed(decimals)}
+                  </span>
+                  {isEntryTouched ? (
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded bg-emerald-500 text-slate-950 flex items-center gap-1 animate-pulse shadow-md">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> TERSENTUH
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                      MENUNGGU
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 4 Kotak Target TP1, TP2, Runner & Stop Loss */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-1">
+                {/* TP 1 */}
+                <div className="p-2.5 rounded-xl bg-emerald-950/20 border border-emerald-800/40 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-emerald-400 font-bold block">TP 1 (Pivot Amankan)</span>
+                    <span className="text-sm font-black text-emerald-300 tabular-nums">${currentRec.busur.tp1.toFixed(decimals)}</span>
                   </div>
-
-                  {/* TP1 & TP2 & SL Grid */}
-                  <div className="space-y-1 text-xs">
-                    <div className="flex items-center justify-between px-2 py-1 rounded bg-cop-card/50 text-[11px]">
-                      <span className="text-emerald-400 font-semibold">TP 1 (Pivot Amankan Sebagian):</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-slate-400 tabular-nums">(+${rec.busur.estProfitTp1})</span>
-                        <span className="font-bold text-emerald-300 tabular-nums">${rec.busur.tp1.toFixed(decimals)}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between px-2 py-1 rounded bg-emerald-950/30 border border-emerald-600/40 text-[11px]">
-                      <span className="text-emerald-300 font-bold">TP 2 (Target Utama Busur):</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-emerald-400 font-black tabular-nums">(+${rec.busur.estProfitTp2})</span>
-                        <span className="font-black text-emerald-300 tabular-nums">${rec.busur.tp2.toFixed(decimals)}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between px-2 py-1 rounded bg-rose-950/30 border border-rose-600/40 text-[11px]">
-                      <span className="text-rose-400 font-semibold">Stop Loss (Batas Risiko):</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-rose-300 tabular-nums">(-${rec.busur.estLossSl})</span>
-                        <span className="font-bold text-rose-300 tabular-nums">${rec.busur.stopLoss.toFixed(decimals)}</span>
-                      </div>
-                    </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-emerald-400 block font-bold">+{currentRec.busur.tp1Points} pts</span>
+                    <span className="text-[10px] text-slate-400">(+${currentRec.busur.estProfitTp1})</span>
                   </div>
                 </div>
 
-                {/* RAMBU-RAMBU & WARNING COP TAH */}
-                <div className="p-3 rounded-xl bg-slate-950/80 border border-amber-600/40 space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Rambu-Rambu & Peringatan ({rec.tf})</span>
+                {/* TP 2 */}
+                <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/60 shadow-glow-green-sm flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-emerald-300 font-black block">TP 2 (Target Utama Busur)</span>
+                    <span className="text-sm font-black text-emerald-300 tabular-nums">${currentRec.busur.tp2.toFixed(decimals)}</span>
                   </div>
-                  <div className="space-y-1.5 text-[11px] leading-relaxed text-slate-300">
-                    {rec.warnings.map((w, idx) => (
-                      <div key={idx} className="flex items-start gap-1.5 p-1.5 rounded-lg bg-cop-surface/60 border border-cop-border/40">
-                        <span className="text-amber-400 font-black">•</span>
-                        <span>{w}</span>
-                      </div>
-                    ))}
+                  <div className="text-right">
+                    <span className="text-[10px] text-emerald-300 font-black block">+{currentRec.busur.tp2Points} pts</span>
+                    <span className="text-[10px] text-emerald-400 font-bold">(+${currentRec.busur.estProfitTp2})</span>
+                  </div>
+                </div>
+
+                {/* TP 3 Runner */}
+                <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-purple-300 font-bold block">TP 3 (Runner Trailing)</span>
+                    <span className="text-sm font-bold text-white tabular-nums">${currentRec.busur.tp3.toFixed(decimals)}</span>
+                  </div>
+                  <span className="text-[10px] text-purple-400 font-mono">Trailing SL</span>
+                </div>
+
+                {/* Stop Loss */}
+                <div className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-600/50 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-rose-400 font-bold block">Stop Loss (Batas Risiko)</span>
+                    <span className="text-sm font-black text-rose-300 tabular-nums">${currentRec.busur.stopLoss.toFixed(decimals)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-rose-400 block font-bold">-{currentRec.busur.slPoints} pts</span>
+                    <span className="text-[10px] text-rose-300">(-${currentRec.busur.estLossSl})</span>
                   </div>
                 </div>
               </div>
 
               {/* Copy Plan Action Button */}
               <button
-                onClick={() => handleCopyPlan(rec)}
-                className="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 border border-cop-border"
+                onClick={() => handleCopyPlan(currentRec)}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 border border-cop-border shadow-sm mt-2"
               >
                 {isCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-cop-gold" />}
-                <span>{isCopied ? `Plan ${rec.name} Tersalin!` : `Salin Skenario ${rec.name}`}</span>
+                <span>{isCopied ? `Plan ${currentRec.name} Berhasil Disalin!` : `Salin Tiket Skenario ${currentRec.name}`}</span>
               </button>
             </div>
-          );
-        })}
+          </div>
+
+          {/* ── KOLOM KANAN (5 Kolom): Rambu-Rambu & Peringatan Lengkap COP TAH ── */}
+          <div className="lg:col-span-5 space-y-4">
+            {/* Box Rambu-Rambu Keselamatan */}
+            <div className="p-4 rounded-2xl bg-slate-950/90 border-2 border-amber-600/50 space-y-3 shadow-lg">
+              <div className="flex items-center gap-2 text-xs font-black text-amber-300 uppercase tracking-wider border-b border-amber-900/50 pb-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                <span>Rambu-Rambu & Peringatan Wajib ({currentRec.tf.toUpperCase()})</span>
+              </div>
+
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Patuhi rambu-rambu di bawah ini sebelum mengeksekusi order pada timeframe ini untuk menghindari jebakan likuiditas:
+              </p>
+
+              <div className="space-y-2 text-xs leading-relaxed text-slate-200">
+                {currentRec.warnings.map((w, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-2.5 p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border/60 hover:border-amber-500/40 transition-colors"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 text-[10px] font-black border border-amber-500/40">
+                      {idx + 1}
+                    </span>
+                    <span className="text-[11px]">{w}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Box Edukasi Karakteristik Timeframe */}
+            <div className="p-4 rounded-2xl bg-cop-surface border border-cop-border space-y-2.5 text-xs">
+              <span className="text-cop-gold font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-cop-gold" />
+                Karakteristik Timeframe {currentRec.name}:
+              </span>
+
+              <div className="space-y-2 text-[11px] text-slate-300 pt-1">
+                <div className="p-2 rounded-lg bg-cop-bg border border-cop-border/50">
+                  <strong className="text-white block mb-0.5">Fungsi Utama:</strong>
+                  {currentRec.category} — {currentRec.style}.
+                </div>
+
+                <div className="p-2 rounded-lg bg-cop-bg border border-cop-border/50">
+                  <strong className="text-white block mb-0.5">Ketahanan Risiko:</strong>
+                  Maksimal kerugian terukur ${currentRec.busur.estLossSl} dengan rasio reward ${currentRec.busur.estProfitTp2} (R:R {currentRec.busur.riskReward}).
+                </div>
+
+                <div className="p-2 rounded-lg bg-cop-bg border border-cop-border/50">
+                  <strong className="text-white block mb-0.5">Sinkronisasi Tabel:</strong>
+                  Titik masuk ${entryPrice.toFixed(decimals)} sinkron 100% dengan kolom {isBuy ? 'SUP_1' : 'RES_1'} pada Matriks Support & Resistance.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
