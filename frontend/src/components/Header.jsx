@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import { useState, useEffect } from 'react';
 import {
   Activity,
@@ -49,7 +50,7 @@ export default function Header({
 
   // Check existing MT5 status on mount
   useEffect(() => {
-    fetch('http://localhost:3001/api/mt5/status')
+    fetch(`${API_BASE}/mt5/status`)
       .then((r) => r.json())
       .then((json) => {
         if (json?.account || json?.state?.account) {
@@ -68,7 +69,7 @@ export default function Header({
     setLinkingAccount(true);
     setLinkError(null);
     try {
-      const res = await fetch('http://localhost:3001/api/mt5/login', {
+      const res = await fetch(`${API_BASE}/mt5/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -96,7 +97,7 @@ export default function Header({
   };
 
   const handleDisconnectAccount = async () => {
-    await fetch('http://localhost:3001/api/mt5/disconnect', { method: 'POST' });
+    await fetch(`${API_BASE}/mt5/disconnect`, { method: 'POST' });
     setLinkedAccount(null);
     if (onRefresh) onRefresh();
   };
@@ -106,7 +107,7 @@ export default function Header({
     if (!syncPriceInput || isNaN(syncPriceInput)) return;
     setSyncing(true);
     try {
-      const res = await fetch('http://localhost:3001/api/mt5/sync', {
+      const res = await fetch(`${API_BASE}/mt5/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ price: parseFloat(syncPriceInput) }),
@@ -193,7 +194,7 @@ export default function Header({
         {/* ── Live Institutional Ticker (Center Stage) ── */}
         {liveTick?.price && (
           <div
-            className={`flex items-center gap-3 px-3.5 py-1.5 rounded-xl border backdrop-blur-md transition-all duration-300 shadow-card-elevated ${
+            className={`calm-ticker flex items-center gap-3 px-3.5 py-1.5 rounded-xl border backdrop-blur-md transition-all duration-300 shadow-card-elevated ${
               liveTick.direction === 'UP'
                 ? 'bg-emerald-950/40 border-emerald-500/50 shadow-glow-green-sm'
                 : liveTick.direction === 'DOWN'
@@ -229,7 +230,7 @@ export default function Header({
 
             <div className="flex items-baseline gap-1.5">
               <span
-                className={`text-lg font-black font-mono tracking-tight tabular-nums transition-colors duration-200 ${
+                className={`calm-price text-lg font-black font-mono tracking-tight tabular-nums transition-colors duration-200 ${
                   liveTick.direction === 'UP'
                     ? 'text-emerald-300'
                     : liveTick.direction === 'DOWN'
@@ -387,7 +388,7 @@ export default function Header({
             }`}
           >
             {isConnected ? <Wifi className="w-3.5 h-3.5 text-emerald-400" /> : <WifiOff className="w-3.5 h-3.5 text-rose-400" />}
-            <span>{isConnected ? 'LIVE FEED' : 'RECONNECTING'}</span>
+            <span>{isConnected ? 'TERHUBUNG' : 'MENGHUBUNGKAN'}</span>
           </div>
 
           {/* Time & Session Clock */}

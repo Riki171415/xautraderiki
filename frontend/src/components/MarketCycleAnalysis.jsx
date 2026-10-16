@@ -91,7 +91,7 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
   const hshEntryPrimary = isDailyUp ? dRes1 : dSup1;
   const hshEntrySecondary = isDailyUp ? dRes2 : dSup2;
   const hshTp1 = dOpen; // Pulang ke Open Hari Ini
-  const hshTp2 = dPivot; // Pulang ke Pivot Gravitasi Harian
+  const hshTp2 = dPivot; // Level RS tambahan, bukan rumah HSH
   const hshTp3 = isDailyUp ? dSup1 : dRes1; // Koreksi ke Lantai Busur
   const hshSl = isDailyUp ? dRes2 + 10 : dSup2 - 10;
 
@@ -99,7 +99,7 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
   const hshTp2Pts = Math.abs(hshEntryPrimary - hshTp2).toFixed(decimals);
   const hshTp3Pts = Math.abs(hshEntryPrimary - hshTp3).toFixed(decimals);
   const hshSlPts = Math.abs(hshSl - hshEntryPrimary).toFixed(decimals);
-  const hshRr = parseFloat(hshSlPts) > 0 ? (parseFloat(hshTp2Pts) / parseFloat(hshSlPts)).toFixed(2) : '2.80';
+  const hshRr = parseFloat(hshSlPts) > 0 ? (parseFloat(hshTp1Pts) / parseFloat(hshSlPts)).toFixed(2) : '2.80';
 
   const hshProfitTp1 = (parseFloat(lot) * parseFloat(hshTp1Pts) * 10).toFixed(2);
   const hshProfitTp2 = (parseFloat(lot) * parseFloat(hshTp2Pts) * 10).toFixed(2);
@@ -622,7 +622,7 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                     </h3>
                   </div>
                   <p className="text-xs text-rose-200/90 mt-1">
-                    Jika Target R1 (${dRes1.toFixed(decimals)}) atau R2 (${dRes2.toFixed(decimals)}) disentuh di sesi USA malam & muncul rejection wick, harga ditarik HSH pulang ke Open D1 & Pivot!
+                    Jika Target R1 (${dRes1.toFixed(decimals)}) atau R2 (${dRes2.toFixed(decimals)}) disentuh di sesi USA malam & muncul rejection wick, harga ditarik HSH pulang ke Open N D1. Pivot merupakan level RS terpisah.
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
@@ -667,7 +667,7 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                   isHshTp2Touched ? 'bg-rose-950/70 border-rose-400 shadow-glow-red-sm' : 'bg-rose-950/50 border-rose-500/70 shadow-glow-red-sm'
                 }`}>
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[10px] text-rose-300 font-black">TP 2 (PIVOT HARIAN)</span>
+                    <span className="text-[10px] text-rose-300 font-black">RS TAMBAHAN (PIVOT)</span>
                     {isHshTp2Touched && (
                       <span className="text-[8px] bg-rose-400 text-white font-black px-1.5 py-0.2 rounded shadow-sm">
                         ✓ HIT

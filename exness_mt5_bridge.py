@@ -82,18 +82,18 @@ def main():
     print("=" * 60)
     print(f"Mulai streaming tick {SYMBOL} setiap 1.0 detik...\n")
 
-    # Pastikan simbol aktif di Market Watch
-    if not mt5.symbol_select(SYMBOL, True):
-        # Coba simbol varian Exness seperti XAUUSDm
-        alt_sym = "XAUUSDm"
-        if mt5.symbol_select(alt_sym, True):
-            target_symbol = alt_sym
-        else:
-            print(f"[WARNING] Simbol {SYMBOL} tidak ditemukan. Menggunakan {SYMBOL}")
-            target_symbol = SYMBOL
-    else:
-        target_symbol = SYMBOL
+    # Resolve the exact broker symbol, including Standard Cent suffixes.
+    candidates = [SYMBOL, 'XAUUSDm', 'XAUUSDc']
+    candidates += [item.name for item in (mt5.symbols_get('*XAUUSD*') or [])]
+    target_symbol = next((name for name in dict.fromkeys(candidates) if mt5.symbol_select(name, True)), None)
+    if not target_symbol:
+        print('[ERROR] Simbol emas tidak tersedia pada akun MT5 ini.')
+        mt5.shutdown()
+        return
+    digits = mt5.symbol_info(target_symbol).digits
+    print(f'[OK] Broker symbol: {target_symbol}, digits: {digits}')
 
+    loaded_timeframes = set()
     while True:
         try:
             # Ambil live tick
@@ -102,41 +102,29 @@ def main():
                 time.sleep(1)
                 continue
 
+            if time.time() - tick.time > 10:
+                time.sleep(1)
+                continue
             bid = float(tick.bid)
             ask = float(tick.ask)
-            price = round((bid + ask) / 2.0, 2)
-            spread = round(ask - bid, 2)
+            price = round((bid + ask) / 2.0, digits)
+            spread = round(ask - bid, digits)
 
-            # Ambil candle H1 untuk analisis
-            rates = mt5.copy_rates_from_pos(target_symbol, mt5.TIMEFRAME_H1, 0, 30)
-            candles_list = []
-            ohlcv_N = None
-            ohlcv_B = None
-
-            if rates is not None and len(rates) >= 2:
-                for r in rates:
-                    ts = int(r['time']) * 1000
-                    candles_list.append([ts, float(r['open']), float(r['high']), float(r['low']), float(r['close']), int(r['tick_volume'])])
-
-                # Candle N (terakhir) dan Candle B (sebelumnya)
-                last_r = rates[-1]
-                prev_r = rates[-2]
-                ohlcv_N = {
-                    "open": float(last_r['open']),
-                    "high": float(last_r['high']),
-                    "low": float(last_r['low']),
-                    "close": float(last_r['close']),
-                    "volume": int(last_r['tick_volume']),
-                    "timestamp": int(last_r['time']) * 1000,
-                }
-                ohlcv_B = {
-                    "open": float(prev_r['open']),
-                    "high": float(prev_r['high']),
-                    "low": float(prev_r['low']),
-                    "close": float(prev_r['close']),
-                    "volume": int(prev_r['tick_volume']),
-                    "timestamp": int(prev_r['time']) * 1000,
-                }
+            # Keep every native timeframe tied to the exact broker instrument.
+            timeframes = {}
+            for tf, mt5_tf in TIMEFRAME_MAP.items():
+                count = 120 if tf == '1M' else 50
+                rates = mt5.copy_rates_from_pos(target_symbol, mt5_tf, 0, count)
+                if rates is not None and len(rates) >= 2:
+                    if tf not in loaded_timeframes:
+                        print(f'[READY] {tf}: {len(rates)} bars', flush=True)
+                        loaded_timeframes.add(tf)
+                    timeframes[tf] = [
+                        [int(r['time']) * 1000, float(r['open']), float(r['high']),
+                         float(r['low']), float(r['close']), int(r['tick_volume'])]
+                        for r in rates
+                    ]
+            candles_list = timeframes.get('1h', [])
 
             payload = {
                 "broker": "EXNESS",
@@ -148,13 +136,15 @@ def main():
                 "price": price,
                 "spread": spread,
                 "timeframe": "1h",
-                "ohlcv_N": ohlcv_N,
-                "ohlcv_B": ohlcv_B,
+                "timeframes": timeframes,
+                "digits": digits,
+                "tickTimestamp": int(tick.time_msc),
                 "candles": candles_list,
                 "timestamp": int(time.time() * 1000),
             }
 
-            resp = requests.post(BACKEND_URL, json=payload, timeout=2)
+            resp = requests.post(BACKEND_URL, json=payload, timeout=5)
+            resp.raise_for_status()
             if resp.status_code == 200:
                 print(f"[STREAM] {server_name} | {target_symbol}: Bid={bid:.2f} Ask={ask:.2f} Mid={price:.2f} Spread={spread:.2f} -> OK", end="\r")
 

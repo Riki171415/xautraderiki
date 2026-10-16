@@ -127,7 +127,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
   // Target HSH:
   // Target 1: HSH Cepat — Pulang ke Open Pekan Ini (Open N)
   const hshTp1 = openN;
-  // Target 2: HSH Magnetik — Pulang ke Pivot Mingguan & Open Bulan ($4,165.09)
+  // Level RS tambahan setelah skenario HSH; rumah HSH hanya Open N
   const hshTp2 = pivot;
   // Target 3: HSH Koreksi Dalam — Menguji batas Support S1 (atau R1 jika bearish)
   const hshTp3 = isWeeklyUp ? sup1 : res1;
@@ -138,7 +138,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
   const hshTp2Pts = Math.abs(hshEntryPrimary - hshTp2).toFixed(decimals);
   const hshTp3Pts = Math.abs(hshEntryPrimary - hshTp3).toFixed(decimals);
   const hshSlPts = Math.abs(hshSl - hshEntryPrimary).toFixed(decimals);
-  const hshRr = parseFloat(hshSlPts) > 0 ? (parseFloat(hshTp2Pts) / parseFloat(hshSlPts)).toFixed(2) : '2.80';
+  const hshRr = parseFloat(hshSlPts) > 0 ? (parseFloat(hshTp1Pts) / parseFloat(hshSlPts)).toFixed(2) : '2.80';
 
   const hshProfitTp1 = (parseFloat(lot) * parseFloat(hshTp1Pts) * 10).toFixed(2);
   const hshProfitTp2 = (parseFloat(lot) * parseFloat(hshTp2Pts) * 10).toFixed(2);
@@ -215,7 +215,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
       step: '04',
       day: 'JUMAT',
       title: 'Eksekusi Pembalikan HSH',
-      action: `SELL HSH Reversal pulang ke Open ($${openN.toFixed(decimals)}) & Pivot ($${pivot.toFixed(decimals)})`,
+      action: `SELL HSH Reversal pulang ke Open N ($${openN.toFixed(decimals)})`,
       desc: 'Penolakan di target memicu gaya gravitasi HSH. Kunci semua profit sebelum sesi malam usai.',
       active: dayIndex === 5,
       done: false,
@@ -249,7 +249,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
       `• Syarat: Target R1 ($${res1.toFixed(decimals)}) / R2 ($${res2.toFixed(decimals)}) tercapai & ada penolakan harga\n` +
       `• Aksi: ${hshAction} @ $${hshEntryPrimary.toFixed(decimals)} s/d $${hshEntrySecondary.toFixed(decimals)}\n` +
       `• Target 1 (HSH Pulang ke Open Pekan): $${hshTp1.toFixed(decimals)} (+${hshTp1Pts} pts | Est +$${hshProfitTp1})\n` +
-      `• Target 2 (HSH Magnetik Pivot & Open Bulan): $${hshTp2.toFixed(decimals)} (+${hshTp2Pts} pts | Est +$${hshProfitTp2})\n` +
+      `• Level tambahan RS (bukan rumah HSH): $${hshTp2.toFixed(decimals)} (+${hshTp2Pts} pts | Est +$${hshProfitTp2})\n` +
       `• Target 3 (Koreksi Dalam ke Support S1): $${hshTp3.toFixed(decimals)} (+${hshTp3Pts} pts | Est +$${hshProfitTp3})\n` +
       `• Stop Loss SELL: $${hshSl.toFixed(decimals)} (-${hshSlPts} pts | Est -$${hshLossSl})\n` +
       `• Risk / Reward Ratio: 1 : ${hshRr}\n` +
@@ -545,7 +545,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
                   isHshTp2Touched ? 'bg-rose-950/70 border-rose-400 shadow-glow-red-sm' : 'bg-rose-950/50 border-rose-500/70 shadow-glow-red-sm'
                 }`}>
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[10px] text-rose-300 font-black">TP 2 (PIVOT/OPEN BLN)</span>
+                    <span className="text-[10px] text-rose-300 font-black">RS TAMBAHAN (PIVOT)</span>
                     {isHshTp2Touched && (
                       <span className="text-[8px] bg-rose-400 text-white font-black px-1.5 py-0.2 rounded shadow-sm">
                         ✓ HIT

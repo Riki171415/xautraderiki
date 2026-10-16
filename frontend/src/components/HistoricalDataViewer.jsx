@@ -39,7 +39,7 @@ import {
   Target
 } from 'lucide-react';
 
-const API_BASE = 'http://localhost:3001';
+import { SERVER_BASE as API_BASE } from '../config';
 
 export default function HistoricalDataViewer({ liveTick }) {
   const [summary, setSummary] = useState(null);

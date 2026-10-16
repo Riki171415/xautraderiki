@@ -30,3 +30,13 @@ Thumbs.db
 # Temporary / Cache
 .eslintcache
 .cache/
+
+# Local Android toolchain, build intermediates and signing keys
+.android-tools/
+android-tablet/build/
+android-tablet/keys/
+installers/*.apk.idsig
+
+# Python bytecode
+__pycache__/
+*.pyc

@@ -342,6 +342,8 @@ function calcHukumHSH(ohlcv_N, timeframeMs, openTimestamp, customRemainingMs = n
     remainingSeconds,
     timeToClose: formattedTime,
     openPrice: open,
+    targetPrice: open,
+    targetType: 'OPEN_N',
     currentClose: close,
     extensionRatio: Math.round(extensionRatio * 100),
   };
@@ -855,7 +857,8 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
   const rsColumns = [];
 
   for (const def of rowDefs) {
-    const pair = tfCandlesMap[def.key] || tfCandlesMap['1h'] || {};
+    const pair = tfCandlesMap[def.key];
+    if (!pair?.ohlcv_N || !pair?.ohlcv_B) continue;
     const N = pair.ohlcv_N || { open: currentPrice, high: currentPrice, low: currentPrice, close: currentPrice };
     const B = pair.ohlcv_B || N;
 

@@ -6,6 +6,8 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
+const { DIRECT_TIMEFRAMES, validCandles, getExnessCandles } = require('./mt5_data');
 const WebSocket = require('ws');
 const ccxt = require('ccxt');
 
@@ -63,6 +65,7 @@ let mt5State = {
   spreadLabel: '1.2 pips ($0.12)',
   lastTickTime: 0,
   candles: null,
+  timeframes: {},
 };
 
 // ─── Symbol Resolution for Binance ─────────────────────────────────────────────
@@ -161,6 +164,9 @@ function getCandleTimeInfo(candle, timeframe) {
     const month = date.getUTCMonth();
     const qStartMonth = Math.floor(month / 3) * 3;
     closeTs = Date.UTC(year, qStartMonth + 3, 1, 0, 0, 0);
+  } else if (timeframe === '6M') {
+    const date = new Date(openTs);
+    closeTs = Date.UTC(date.getUTCFullYear(), Math.floor(date.getUTCMonth() / 6) * 6 + 6, 1);
   } else if (timeframe === '1M') {
     const date = new Date(openTs);
     const year = date.getUTCFullYear();
@@ -433,11 +439,7 @@ async function fetchBrokerOHLCV(brokerId = 'EXNESS', marketSymbol = 'XAUUSD', ti
   const broker = BROKERS[bKey] || BROKERS.EXNESS;
   const decimals = broker.decimals || 3;
 
-  // Direct MT5 Feed from Exness-MT5Real36 (if EA or bridge is active)
-  if (bKey === 'EXNESS' && mt5State.connected && Array.isArray(mt5State.candles) && mt5State.candles.length >= 2) {
-    console.log(`[MT5 Direct] Using official Exness-MT5Real36 candles (${mt5State.candles.length} bars)`);
-    return mt5State.candles;
-  }
+  if (bKey === 'EXNESS') return getExnessCandles(mt5State, timeframe);
 
   if (broker.id === 'BINANCE') {
     try {
@@ -527,7 +529,7 @@ let multiTfCandlesCache = {
 
 async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
   const now = Date.now();
-  if (now - multiTfCandlesCache.lastFetch < 30000 && Object.keys(multiTfCandlesCache.data).length >= 8) {
+  if (multiTfCandlesCache.key === `${brokerId}|${marketSymbol}` && now - multiTfCandlesCache.lastFetch < 5000 && Object.keys(multiTfCandlesCache.data).length >= 8) {
     return { ...multiTfCandlesCache.data };
   }
 
@@ -571,11 +573,9 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
   const marketSession = aggregateLondonSession(ohlcv1hRaw);
   if (marketSession) {
     res['market'] = marketSession;
-  } else if (res['1h']) {
-    res['market'] = res['1h'];
   }
 
-  multiTfCandlesCache = { data: res, annualCandles: multiTfCandlesCache.annualCandles, lastFetch: now };
+  multiTfCandlesCache = { key: `${brokerId}|${marketSymbol}`, data: res, annualCandles: multiTfCandlesCache.annualCandles, lastFetch: now };
   return { ...res };
 }
 
@@ -592,7 +592,7 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
   ];
 
   const dailyHtf = multiTfMap['1d'];
-  const dailyJika = dailyHtf ? calcHukumJIKA(dailyHtf.ohlcv_N, dailyHtf.ohlcv_B) : { trend: 'UP' };
+  const dailyJika = dailyHtf ? calcHukumJIKA(dailyHtf.ohlcv_N, dailyHtf.ohlcv_B) : { trend: 'UNAVAILABLE' };
 
   return targetTfs.map(({ tf, name, style, category }) => {
     const candleData = multiTfMap[tf];
@@ -631,10 +631,10 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
     }
 
     // 4. Rambu HSH (Home Sweet Home Warning)
-    if (hsh.percentElapsed >= 75) {
+    if (hsh.hshActive) {
       warnings.push(`🏠 Rambu HSH: Usia candle telah mencapai ${hsh.percentElapsed}%. Gaya magnetik HSH aktif — waspadai pembalikan harga pulang ke Open N ($${ohlcv_N.open.toFixed(decimals)}). Segera amankan profit!`);
     } else {
-      warnings.push(`⏳ Rambu HSH: Usia candle baru berjalan ${hsh.percentElapsed}%. Fase ekspansi busur masih berlangsung aktif.`);
+      warnings.push(`⏳ Rambu HSH: Usia candle baru berjalan ${hsh.percentElapsed}%. HSH belum memenuhi seluruh syarat; rumah tetap Open N.`);
     }
 
     // 5. Rambu Fraktal & Hierarki Waktu
@@ -659,7 +659,7 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
         : `Anti-FOMO: Dilarang entry SELL di bawah Pivot ($${busur.tp1.toFixed(decimals)}). Wajib sabar menanti harga menguji atap R1.`,
       jikaRole: `Open N ($${ohlcv_N.open.toFixed(decimals)}) ${ohlcv_N.open >= ohlcv_B.open ? '≥' : '<'} Open B ($${ohlcv_B.open.toFixed(decimals)}) ➔ Arah perahu ${jika.direction}. Level ${isActionBuy ? 'S1' : 'R1'} sebagai pijakan dermaga.`,
       perahuRole: `${perahu.status}: ${perahu.description}`,
-      hshRole: `Pivot ($${busur.tp1.toFixed(decimals)}) adalah "Rumah Idaman" tempat magnet harga menyeimbangkan pesanan. Kunci profit TP1 di Pivot sebelum runner ke TP2 ($${busur.tp2.toFixed(decimals)}).`,
+      hshRole: `Rumah Idaman (HSH) adalah Open N ($${ohlcv_N.open.toFixed(decimals)}). Pivot ($${rs.pivot.toFixed(decimals)}) adalah level RS terpisah, bukan target rumah HSH.`,
       riskRewardRatio: busur.riskReward,
     };
 
@@ -819,17 +819,6 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       }
     }
 
-    if (!htfData) {
-      htfData = {
-        timeframe: htfTf,
-        jika: { trend: 'UP' },
-        perahu: { pattern: 'NRL DWN' },
-        rsMatrix: rsMatrixUpdated,
-        ohlcv_N,
-        ohlcv_B,
-      };
-    }
-
     const ltfData = {
       timeframe,
       jika,
@@ -909,6 +898,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       timeframe,
       broker,
       decimals,
+      dataSource: broker.id === 'EXNESS' ? (['3M','6M','1Y'].includes(timeframe) ? 'MT5 Exness · agregasi kalender candle MN1' : 'MT5 Exness · ' + mt5State.symbol + ' · ' + timeframe) : 'Binance / data referensi eksternal',
       timestamp: Date.now(),
       candles: candles.slice(-10), // send last 10 candles for mini chart
       ohlcv_N,
@@ -1087,9 +1077,9 @@ app.get('/api/symbols', (req, res) => {
 // OHLCV data for mini chart
 app.get('/api/ohlcv', async (req, res) => {
   try {
-    const { symbol = 'XAUUSD', timeframe = '1h', limit = 50 } = req.query;
+    const { symbol = 'XAUUSD', timeframe = '1h', broker = 'EXNESS', limit = 50 } = req.query;
     const { marketSymbol } = resolveBinanceMarket(symbol);
-    const ohlcv = await fetchOHLCVData(marketSymbol, timeframe);
+    const ohlcv = await fetchBrokerOHLCV(broker, marketSymbol, timeframe);
     res.json({ success: true, data: ohlcv });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -1112,9 +1102,28 @@ app.post('/api/mt5/tick', async (req, res) => {
       ohlcv_N,
       ohlcv_B,
       candles,
+      timeframes,
+      digits,
     } = req.body;
 
-    const livePrice = Number(price || ((Number(bid) + Number(ask)) / 2).toFixed(3));
+    const livePrice = Number(price ?? ((Number(bid) + Number(ask)) / 2).toFixed(3));
+    if (!Number.isFinite(livePrice) || livePrice <= 0 || (bid != null && (!Number.isFinite(Number(bid)) || Number(bid) <= 0)) || (ask != null && (!Number.isFinite(Number(ask)) || Number(ask) <= 0))) {
+      return res.status(400).json({ success: false, error: 'Invalid MT5 quote' });
+    }
+    const receivedAt = Date.now();
+    const snapshots = {};
+    if (timeframes != null) {
+      if (typeof timeframes !== 'object' || Array.isArray(timeframes)) return res.status(400).json({success:false,error:'Invalid timeframe map'});
+      for (const [tf, rows] of Object.entries(timeframes)) {
+        if (!DIRECT_TIMEFRAMES.includes(tf) || !validCandles(rows)) return res.status(400).json({success:false,error:`Invalid Exness candles: ${tf}`});
+        snapshots[tf] = {candles: rows, updatedAt: receivedAt};
+      }
+    } else if (candles != null) {
+      if (!DIRECT_TIMEFRAMES.includes(timeframe) || !validCandles(candles)) return res.status(400).json({success:false,error:'Invalid Exness candles'});
+      snapshots[timeframe] = {candles, updatedAt: receivedAt};
+    }
+    const sameSession = mt5State.account === account && mt5State.server === server && mt5State.symbol === symbol;
+    const nextTimeframes = {...(sameSession ? mt5State.timeframes : {}), ...snapshots};
     const numBid = Number(bid || (livePrice - 0.06).toFixed(3));
     const numAsk = Number(ask || (livePrice + 0.06).toFixed(3));
     const numSpread = Number(spread || (numAsk - numBid).toFixed(3));
@@ -1127,6 +1136,7 @@ app.post('/api/mt5/tick', async (req, res) => {
 
     mt5State = {
       connected: true,
+      timeframes: nextTimeframes,
       broker: 'EXNESS',
       server,
       account,
@@ -1138,9 +1148,11 @@ app.post('/api/mt5/tick', async (req, res) => {
       spreadLabel: `${spreadPts} pips ($${numSpread.toFixed(2)})`,
       lastTickTime: Date.now(),
       candles: Array.isArray(candles) && candles.length > 0 ? candles : mt5State.candles,
-      timeframe,
+      timeframe: Array.isArray(candles) && candles.length > 0 ? timeframe : mt5State.timeframe,
     };
 
+    multiTfCandlesCache.lastFetch = 0;
+    if (Number.isInteger(digits) && digits >= 0 && digits <= 8) BROKERS.EXNESS.decimals = digits;
     BROKERS.EXNESS.server = server;
     BROKERS.EXNESS.spread = numSpread;
     BROKERS.EXNESS.spreadLabel = mt5State.spreadLabel;
@@ -1162,6 +1174,8 @@ app.post('/api/mt5/tick', async (req, res) => {
       data: {
         broker: 'EXNESS',
         brokerName: 'Exness',
+        symbol: 'XAUUSD',
+        source: 'MT5 bridge',
         server,
         price: livePrice,
         bid: numBid,
@@ -1198,6 +1212,7 @@ app.get('/api/mt5/status', (req, res) => {
     price: mt5State.price,
     spread: mt5State.spreadLabel,
     lastTickTime: mt5State.lastTickTime,
+    timeframes: Object.fromEntries(Object.entries(mt5State.timeframes || {}).map(([tf, snapshot]) => [tf, { bars: snapshot.candles.length, updatedAt: snapshot.updatedAt, fresh: Date.now() - snapshot.updatedAt < 15000 }])),
   });
 });
 
@@ -1351,7 +1366,6 @@ wss.on('connection', (ws, req) => {
         const newSymbol = msg.symbol || 'XAUUSD';
         const newTimeframe = msg.timeframe || '1h';
         const newBroker = (msg.broker || ws.broker || 'EXNESS').toUpperCase();
-        const changed = newSymbol !== ws.symbol || newTimeframe !== ws.timeframe || newBroker !== ws.broker;
 
         ws.symbol = newSymbol;
         ws.timeframe = newTimeframe;
@@ -1359,7 +1373,7 @@ wss.on('connection', (ws, req) => {
         console.log(`[WS] Client subscribed to ${ws.broker} ${ws.symbol} ${ws.timeframe}`);
 
         // If timeframe/symbol/broker changed, immediately fetch fresh data for this client only
-        if (changed) {
+        {
           try {
             ws.send(JSON.stringify({ type: 'loading', message: `Fetching ${ws.broker} ${ws.symbol} ${ws.timeframe}...` }));
             const result = await runAnalysis(ws.symbol, ws.timeframe, ws.broker);
@@ -1454,106 +1468,52 @@ const liveCache = {
   OCTA: { basePrice: 0, lastFetch: 0 },
 };
 
+let tickerBusy = false;
 async function broadcastLiveTicks() {
-  let openClients = 0;
-  wss.clients.forEach((c) => {
-    if (c.readyState === WebSocket.OPEN) openClients++;
-  });
-  if (openClients === 0) return;
-
-  const activeBrokers = new Set();
-  wss.clients.forEach((c) => {
-    if (c.readyState === WebSocket.OPEN) {
-      activeBrokers.add((c.broker || 'EXNESS').toUpperCase());
-    }
-  });
-
-  const now = Date.now();
-
-  for (const bId of activeBrokers) {
-    const broker = BROKERS[bId] || BROKERS.EXNESS;
-    try {
-      // If Exness is actively streaming from MT5 Real, let MT5 handler do the broadcast
-      if (bId === 'EXNESS' && mt5State.connected && Date.now() - mt5State.lastTickTime < 6000) {
-        continue;
-      }
-
-      const cache = liveCache[bId] || { basePrice: 0, lastFetch: 0 };
-      let base = cache.basePrice;
-
-      // Refresh base spot price if cache older than 1.2 seconds or empty
-      if (now - cache.lastFetch > 1200 || base === 0) {
-        if (bId === 'BINANCE') {
-          try {
-            const t = await exchange.fetchTicker('XAU/USDT:USDT');
-            base = t.last || t.close;
-          } catch (e) {
-            try {
-              const t2 = await exchange.fetchTicker('PAXG/USDT');
-              base = t2.last || t2.close;
-            } catch (e2) {
-              base = base || 4175.50;
-            }
-          }
-        } else {
-          // EXNESS, FBS, OCTA: Pure London Physical Spot Gold in Real Time
-          base = await getTrueSpotGoldPrice();
-        }
-        liveCache[bId] = { basePrice: base, lastFetch: now };
-      }
-
-      // Generate realistic 1-second micro-tick variance (sub-pip variance ±0.01 to ±0.02)
-      const decimals = broker.decimals || (bId === 'BINANCE' ? 2 : 3);
-      const jitter = (Math.random() - 0.49) * 0.04;
-      const livePrice = Number((base + jitter).toFixed(decimals));
-      const halfSpread = (broker.spread || 0.12) / 2;
-      const bid = Number((livePrice - halfSpread).toFixed(decimals));
-      const ask = Number((livePrice + halfSpread).toFixed(decimals));
-
-      const prev = lastBrokerPrices[bId] || livePrice;
-      const direction = livePrice > prev ? 'UP' : livePrice < prev ? 'DOWN' : 'SAME';
-      lastBrokerPrices[bId] = livePrice;
-
-      // Dynamic touch detection update with live tick
-      if (lastAnalysis && lastAnalysis.rsMatrix) {
-        touchedLevels = updateTouchDetection(lastAnalysis.rsMatrix, livePrice, 2.0);
-        Object.keys(touchedLevels).forEach((k) => {
-          if (lastAnalysis.rsMatrix.levels[k]) {
-            lastAnalysis.rsMatrix.levels[k].touched = touchedLevels[k];
-          }
+  if (tickerBusy) return;
+  tickerBusy = true;
+  try {
+    const symbols = new Set();
+    wss.clients.forEach(c => {
+      if (c.readyState === WebSocket.OPEN && c.broker === 'BINANCE') symbols.add(c.symbol);
+    });
+    for (const symbol of symbols) {
+      try {
+        const { marketSymbol } = resolveBinanceMarket(symbol);
+        const quote = await exchange.fetchTicker(marketSymbol);
+        const price = Number(quote.last ?? quote.close);
+        if (!Number.isFinite(price) || price <= 0) continue;
+        const timestamp = Number(quote.timestamp) || Date.now();
+        if (Date.now() - timestamp > 10000) continue;
+        const previous = lastBrokerPrices[symbol] || price;
+        lastBrokerPrices[symbol] = price;
+        const payload = JSON.stringify({ type: 'tick', data: {
+          broker: 'BINANCE', symbol, source: marketSymbol, price,
+          bid: quote.bid, ask: quote.ask, decimals: 2,
+          direction: price > previous ? 'UP' : price < previous ? 'DOWN' : 'SAME',
+          timestamp,
+        }});
+        wss.clients.forEach(c => {
+          if (c.readyState === WebSocket.OPEN && c.broker === 'BINANCE' && c.symbol === symbol) c.send(payload);
         });
-      }
-
-      const tickPayload = JSON.stringify({
-        type: 'tick',
-        data: {
-          broker: bId,
-          brokerName: broker.name,
-          server: broker.server,
-          decimals,
-          price: livePrice,
-          bid,
-          ask,
-          spread: broker.spreadLabel,
-          direction,
-          touchedLevels,
-          timestamp: Date.now(),
-        },
-      });
-
-      wss.clients.forEach((c) => {
-        if (c.readyState === WebSocket.OPEN && (c.broker || 'BINANCE').toUpperCase() === bId) {
-          c.send(tickPayload);
-        }
-      });
-    } catch (e) {
-      // Ignore temporary tick fetch hiccup
+      } catch (error) { console.warn(`[Ticker] ${symbol}: ${error.message}`); }
     }
-  }
+  } finally { tickerBusy = false; }
 }
-
-// Tick loop: broadcasts every 1.0s (realtime per detik)
 setInterval(broadcastLiveTicks, 1000);
+let analysisBusy = false;
+setInterval(async () => {
+  if (analysisBusy) return;
+  analysisBusy = true;
+  try { await autoRefresh(); } finally { analysisBusy = false; }
+}, 15000);
+
+app.get('/download/tablet.apk', (req, res) => {
+  res.download(path.join(__dirname, '../installers/COP-TAH-Exness-Tablet.apk'));
+});
+
+// Built dashboard shares the API/WebSocket origin for tablet access.
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // ─── Start Server ──────────────────────────────────────────────────────────────
 server.listen(PORT, () => {

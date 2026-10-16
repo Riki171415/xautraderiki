@@ -13,6 +13,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import OHLPanel from './components/OHLPanel';
+import CandlestickChart from './components/CandlestickChart';
 import RSMatrix from './components/RSMatrix';
 import OperationalStatus from './components/OperationalStatus';
 import StorylineGenerator from './components/StorylineGenerator';
@@ -49,7 +50,8 @@ import {
   Shield,
   Split,
   Target,
-  Database
+  Database,
+  CandlestickChart as CandlestickIcon
 } from 'lucide-react';
 
 export default function App() {
@@ -62,9 +64,13 @@ export default function App() {
   const [notification, setNotification] = useState(null);
 
   // ── Data Sources ───────────────────────────────────────────────────────────
-  const { data: wsData, liveTick, status: wsStatus, error: wsError, reconnectCount, isLoading: wsLoading, sendMessage } = useWebSocket();
+  const { data: wsData, liveTick: rawTick, status: wsStatus, error: wsError, reconnectCount, isLoading: wsLoading, sendMessage } = useWebSocket();
   const { data: restData, loading, error: restError, lastUpdated, refetch } = useAnalysis(symbol, timeframe, broker, 30000);
 
+  const [clock, setClock] = useState(Date.now());
+  useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 1000); return () => clearInterval(timer); }, []);
+  const tickAge = rawTick ? Math.max(0, Math.floor((clock - rawTick.timestamp) / 1000)) : null;
+  const liveTick = rawTick?.broker === broker && rawTick?.symbol === symbol && tickAge < 10 ? rawTick : null;
   const wsMatches =
     Boolean(wsData) &&
     (wsData.symbol === symbol ||
@@ -72,13 +78,12 @@ export default function App() {
       (symbol === 'XAUUSD' && wsData.symbol?.includes('XAU'))) &&
     wsData.timeframe === timeframe &&
     (!wsData.broker || wsData.broker.id === broker);
-  const data = wsMatches ? wsData : restData;
+  const data = wsMatches && (!restData || wsData.timestamp >= restData.timestamp) ? wsData : restData;
 
   // Subscribe to live feed (Stale-While-Revalidate: do NOT blank out screen)
   useEffect(() => {
     sendMessage({ type: 'subscribe', symbol, timeframe, broker });
-    refetch();
-  }, [symbol, timeframe, broker]);
+  }, [symbol, timeframe, broker, sendMessage]);
 
   // HSH Critical notification
   useEffect(() => {
@@ -93,9 +98,9 @@ export default function App() {
     setTimeout(() => setNotification(null), 5000);
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    refetch();
-    showNotification('info', 'Analisis data berhasil diperbarui');
+  const handleRefresh = useCallback(async () => {
+    const result = await refetch();
+    showNotification(result ? 'info' : 'warning', result ? 'Analisis berhasil diperbarui' : 'Pembaruan gagal. Periksa koneksi sumber data.');
   }, [refetch, showNotification]);
 
   const handleResetTouches = useCallback(async () => {
@@ -127,7 +132,7 @@ export default function App() {
   }, [symbol, showNotification]);
 
   // ── Current Telemetry Quick Stats ──────────────────────────────────────────
-  const currentPrice = liveTick?.price || data?.ohlcv_N?.close || 4185.0;
+  const currentPrice = liveTick?.price ?? data?.ohlcv_N?.close ?? null;
   const weeklyRow = data?.leak4RegMatrix?.tableRows?.find(
     (r) => r.timeframe === '1w' || r.label?.includes('WEEK') || r.label?.includes('1w')
   );
@@ -144,6 +149,14 @@ export default function App() {
       icon: Zap,
       badge: 'Live',
       desc: 'OHL Intraday, Tangga RS, Tiket Order & Telemetri Pasar'
+    },
+    {
+      id: 'candles',
+      title: 'Candlestick & Fractal',
+      shortTitle: 'Candlestick',
+      icon: CandlestickIcon,
+      badge: 'Chart',
+      desc: 'Grafik candle Exness, fractal, Open N, level RS dan plan COP TAH'
     },
     {
       id: 'entries',
@@ -255,7 +268,7 @@ export default function App() {
       )}
 
       {/* ── 2. WORKFLOW NAVIGATION BAR (6 PILAR UTAMA COP TAH) ── */}
-      <div className="bg-cop-surface/95 border-b border-cop-border/80 backdrop-blur-md px-4 lg:px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap">
+      <div className="workflow-nav bg-cop-surface/95 border-b border-cop-border/80 backdrop-blur-md px-4 lg:px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap">
         {/* Left: 6 Pilar Workflow Controller */}
         <div className="flex items-center gap-1.5 p-1 bg-cop-card/90 rounded-2xl border border-cop-border shadow-sm flex-wrap">
           {WORKFLOW_PILLARS.map((p) => {
@@ -264,6 +277,7 @@ export default function App() {
             return (
               <button
                 key={p.id}
+                aria-current={viewMode === p.id ? 'page' : undefined}
                 onClick={() => setViewMode(p.id)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
                   isActive
@@ -310,7 +324,7 @@ export default function App() {
         <div className="flex items-center gap-2.5 font-mono text-xs">
           <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-cop-card border border-cop-border text-[11px]">
             <span className="text-slate-400">Harga Live:</span>
-            <strong className="text-white tabular-nums">${currentPrice.toFixed(data?.decimals ?? 3)}</strong>
+            <strong className="text-white tabular-nums">{currentPrice == null ? '—' : `$${currentPrice.toFixed(data?.decimals ?? 3)}`}</strong>
             <span className="text-slate-600">·</span>
             <span className={`font-bold ${isWeeklyUp ? 'text-emerald-400' : 'text-rose-400'}`}>
               1W JIKA {isWeeklyUp ? 'UP' : 'DOWN'}
@@ -328,42 +342,23 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── 3. WORKFLOW BREADCRUMB STRIP (PANDUAN LANGKAH TRADING) ── */}
-      <div className="bg-cop-bg/90 border-b border-cop-border/40 px-4 lg:px-6 py-1.5 flex items-center justify-between text-[11px] font-mono text-slate-400 flex-wrap gap-2">
-        <div className="flex items-center gap-2 overflow-x-auto py-0.5">
-          <span className="text-slate-500 uppercase tracking-widest text-[10px] hidden md:inline">Navigasi Langsung:</span>
-          {WORKFLOW_PILLARS.map((p, idx) => {
-            const isCurrent = viewMode === p.id;
-            return (
-              <div key={p.id} className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setViewMode(p.id)}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition-all ${
-                    isCurrent
-                      ? 'bg-amber-500/20 text-cop-gold border border-amber-500/40 font-bold'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-cop-gold animate-pulse' : 'bg-slate-600'}`} />
-                  <span>{p.shortTitle}</span>
-                </button>
-                {idx < WORKFLOW_PILLARS.length - 1 && (
-                  <span className="text-slate-600">➔</span>
-                )}
-              </div>
-            );
-          })}
+      <div className="workspace-summary" role="status" aria-live="polite">
+        <div><span className="workspace-eyebrow">WORKSPACE / {symbol} / {timeframe}</span>
+          <h1>{WORKFLOW_PILLARS.find(p => p.id === viewMode)?.title || 'Semua Bagian'}</h1>
+          <p>{WORKFLOW_PILLARS.find(p => p.id === viewMode)?.desc || 'Seluruh analisis dalam satu tampilan'}</p>
         </div>
-
-        <div className="text-[10px] text-slate-500 hidden xl:flex items-center gap-2">
-          <span>Feed: <strong className="text-slate-300">{data?.broker?.name || broker}</strong></span>
-          <span>·</span>
-          <span>Spread: <strong className="text-cop-cyan">{data?.broker?.spreadLabel || '1.2 pips'}</strong></span>
+        <div className={`feed-health ${liveTick ? 'feed-health-fresh' : ''}`}>
+          <span className="feed-dot" />
+          <div><strong>{liveTick ? (liveTick.isDirectMT5 ? 'MT5 langsung' : 'Binance · polling 1 detik') : 'Menunggu harga terbaru'}</strong>
+          <small>{liveTick ? `${liveTick.source || broker} · diterima ${tickAge} dtk lalu` : (data?.dataSource || 'Harga lama tidak ditampilkan sebagai live')}</small></div>
         </div>
       </div>
 
       {/* ── 4. MAIN WORKSPACE CONTAINER ── */}
-      <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+      <main className="workspace-main flex-1 p-4 lg:p-6 space-y-6">
+        {(viewMode === 'candles' || viewMode === 'all') && (
+          <CandlestickChart data={data} liveTick={liveTick} symbol={symbol} timeframe={timeframe} broker={broker} />
+        )}
 
         {/* ════════════════════════════════════════════════════════════════════════
             PILAR 1: COCKPIT EKSEKUSI LIVE (DASHBOARD REAL-TIME)

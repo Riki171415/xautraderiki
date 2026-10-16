@@ -820,7 +820,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                   </div>
                   <div className="text-cop-gold font-bold tabular-nums">${currentRec.rs.pivot.toFixed(decimals)}</div>
                   <p className="text-[9px] text-slate-400 font-sans leading-tight">
-                    Magnet Rumah Pivot
+                    Pivot RS (terpisah dari HSH)
                   </p>
                 </div>
               </div>

@@ -45,7 +45,7 @@ function OHLMetric({ label, valueN, valueB, diff, decimals = 2, isLive = false, 
         <div>
           <div className="text-[10px] text-slate-400 font-mono mb-0.5">Data N (Saat Ini)</div>
           <div
-            className={`text-xl lg:text-2xl font-black font-mono tracking-tight tabular-nums transition-colors ${
+            className={`calm-price text-xl lg:text-2xl font-black font-mono tracking-tight tabular-nums transition-colors ${
               isLive && liveDirection === 'UP'
                 ? 'text-emerald-300'
                 : isLive && liveDirection === 'DOWN'
@@ -150,7 +150,7 @@ export default function OHLPanel({ data, liveTick }) {
               Live Close
             </span>
             <span
-              className={`text-xl lg:text-2xl font-black font-mono tracking-tight tabular-nums ${
+              className={`calm-price text-xl lg:text-2xl font-black font-mono tracking-tight tabular-nums ${
                 isMatchingTick && liveTick?.direction === 'UP'
                   ? 'text-emerald-300'
                   : isMatchingTick && liveTick?.direction === 'DOWN'
