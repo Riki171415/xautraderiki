@@ -16,10 +16,13 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
+    const timeout = setTimeout(() => controller.abort('timeout'), 12000);
     try {
       const params = new URLSearchParams({ symbol, timeframe, broker });
       const res = await fetch(`${API_BASE}/analysis?${params}`, { signal: controller.signal });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (res.status === 404) throw new Error('Server analisis belum tersedia pada alamat aplikasi ini (API 404).');
+      if (!res.ok) throw new Error(`Server analisis tidak dapat diakses (HTTP ${res.status}).`);
+      if (!res.headers.get('content-type')?.includes('application/json')) throw new Error('Alamat data mengembalikan halaman web, bukan server analisis.');
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Analisis gagal');
       if (!controller.signal.aborted) {
@@ -29,9 +32,11 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
         return json.data;
       }
     } catch (err) {
-      if (!controller.signal.aborted) setError(err.message);
+      if (controller.signal.reason === 'timeout') setError('Server analisis tidak merespons dalam 12 detik.');
+      else if (!controller.signal.aborted) setError(err.message);
     } finally {
-      if (!controller.signal.aborted) setLoading(false);
+      clearTimeout(timeout);
+      if (!controller.signal.aborted || controller.signal.reason === 'timeout') setLoading(false);
     }
   }, [symbol, timeframe, broker]);
 

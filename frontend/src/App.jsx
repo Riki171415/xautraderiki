@@ -235,7 +235,7 @@ export default function App() {
   ];
 
   // ── Loading State ──────────────────────────────────────────────────────────
-  if (!data && (loading || wsStatus === 'connecting')) {
+  if (!data && loading && !restError) {
     return (
       <LoadingScreen
         status={wsStatus}
@@ -290,6 +290,13 @@ export default function App() {
           Koneksi terganggu: {wsError || restError} — Menghubungkan ulang secara otomatis...
         </div>
       )}
+
+      {!data && !loading && <section className="mx-4 my-5 p-5 rounded-2xl border border-amber-700 bg-slate-900 text-slate-200" role="status">
+        <h2 className="text-lg font-bold text-amber-300">Aplikasi terbuka · sumber data belum terhubung</h2>
+        <p className="mt-2 text-sm">{restError || 'Menunggu server analisis dan bridge MT5.'}</p>
+        <p className="mt-2 text-sm text-slate-400">Jika memakai Vercel, server analisis harus tersedia melalui HTTPS dan terhubung ke MT5 komputer atau VPS. MT5 di tablet tidak mengirim data langsung ke aplikasi ini. Angka analisis ditampilkan setelah sumber berhasil terhubung.</p>
+        <button type="button" onClick={handleRefresh} className="chart-toggle mt-4">Coba hubungkan kembali</button>
+      </section>}
 
       {/* ── 2. WORKFLOW NAVIGATION BAR (6 PILAR UTAMA COP TAH) ── */}
       <div id="workspace-navigation" aria-label="Navigasi workspace" className="workflow-nav bg-cop-surface/95 border-b border-cop-border/80 backdrop-blur-md px-4 lg:px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap">
