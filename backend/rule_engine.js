@@ -567,6 +567,8 @@ function calcSubAlurCerita(timeframe, ohlcv_N, ohlcv_B, jika, currentPrice) {
   const dayOfWeek = now.getUTCDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
   const wibHour = (now.getUTCHours() + 7) % 24;
 
+  const currentWeekOfMonth = Math.min(Math.ceil(now.getUTCDate() / 7), 5);
+
   const schedules = [
     {
       tf: '1Y',
@@ -614,11 +616,11 @@ function calcSubAlurCerita(timeframe, ohlcv_N, ohlcv_B, jika, currentPrice) {
       targetTime: 'Minggu ke-3 dan ke-4 (Tgl 15 s/d Akhir Bulan)',
       isCurrentBusur: now.getUTCDate() <= 14,
       currentPhase: now.getUTCDate() <= 14 ? 'BUSUR' : 'TARGET',
-      progress: `Tanggal ${now.getUTCDate()} (Minggu ke-${Math.ceil(now.getUTCDate() / 7)})`,
+      progress: `Tanggal ${now.getUTCDate()} (Minggu ke-${currentWeekOfMonth})`,
     },
     {
       tf: '1w',
-      name: 'Minggu (1W)',
+      name: `Minggu (1W · WEEK_${currentWeekOfMonth})`,
       jika: isUp ? 'UP' : 'DOWN',
       busurRule: isUp ? '2,5 Hari (Senin, Selasa, 1/2 Rabu) DOWN = sebagai Busur' : '2,5 Hari (Senin, Selasa, 1/2 Rabu) UP = sebagai Busur',
       targetRule: isUp ? '2,5 Hari (1/2 Rabu, Kamis, Jumat) UP = sebagai Target & HSH' : '2,5 Hari (1/2 Rabu, Kamis, Jumat) DOWN = sebagai Target & HSH',
@@ -626,7 +628,7 @@ function calcSubAlurCerita(timeframe, ohlcv_N, ohlcv_B, jika, currentPrice) {
       targetTime: 'Rabu 12:00 WIB, Kamis, s/d Jumat',
       isCurrentBusur: dayOfWeek === 1 || dayOfWeek === 2 || (dayOfWeek === 3 && wibHour < 12),
       currentPhase: (dayOfWeek === 1 || dayOfWeek === 2 || (dayOfWeek === 3 && wibHour < 12)) ? 'BUSUR' : 'TARGET',
-      progress: dayOfWeek === 1 ? 'Senin (Fase Busur)' : dayOfWeek === 2 ? 'Selasa (Fase Busur)' : dayOfWeek === 3 ? (wibHour < 12 ? 'Rabu Pagi (Akhir Busur)' : 'Rabu Siang (Mulai Target)') : dayOfWeek === 4 ? 'Kamis (Fase Target)' : 'Jumat (Fase Target & HSH)',
+      progress: dayOfWeek === 1 ? `Senin (Fase Busur) — WEEK_${currentWeekOfMonth}` : dayOfWeek === 2 ? `Selasa (Fase Busur) — WEEK_${currentWeekOfMonth}` : dayOfWeek === 3 ? (wibHour < 12 ? `Rabu Pagi (Akhir Busur) — WEEK_${currentWeekOfMonth}` : `Rabu Siang (Mulai Target) — WEEK_${currentWeekOfMonth}`) : dayOfWeek === 4 ? `Kamis (Fase Target) — WEEK_${currentWeekOfMonth}` : `Jumat (Fase Target & HSH) — WEEK_${currentWeekOfMonth}`,
     },
     {
       tf: '1d',
@@ -833,6 +835,8 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
   const currentYear = now.getUTCFullYear();
   const currentQuarter = Math.floor(now.getUTCMonth() / 3) + 1;
   const currentSemester = Math.floor(now.getUTCMonth() / 6) + 1;
+  const currentWeekOfMonth = Math.min(Math.ceil(now.getUTCDate() / 7), 5);
+  const currentWeekLabel = `WEEK_${currentWeekOfMonth}`;
 
   // 9 Period Definitions as displayed in NexTrumFX
   const rowDefs = [
@@ -840,7 +844,7 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     { key: '4h', label: 'HOUR_4' },
     { key: 'market', label: 'LONDON' },
     { key: '1d', label: currentDayName },
-    { key: '1w', label: 'WEEK_1' },
+    { key: '1w', label: currentWeekLabel },
     { key: '1M', label: currentMonthName },
     { key: '3M', label: `QTR_${currentQuarter}` },
     { key: '6M', label: `SMTR_${currentSemester}` },

@@ -78,10 +78,28 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
   const estProfitTp2 = (parseFloat(lot) * parseFloat(tp2Pts) * 10).toFixed(2);
   const estLossSl = (parseFloat(lot) * parseFloat(slPts) * 10).toFixed(2);
 
-  // Day of week in WIB
+  // Calendar & Week Calculation (WIB)
   const now = new Date();
   const dayIndex = now.getUTCDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
   const wibHour = (now.getUTCHours() + 7) % 24;
+
+  // Dynamic Week Number of the Month (1 to 5)
+  const weekNumber = Math.min(Math.ceil(now.getUTCDate() / 7), 5);
+  const weekLabel = `WEEK ${weekNumber}`;
+  const monthNames = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  const monthName = monthNames[now.getUTCMonth()];
+  const currentYear = now.getUTCFullYear();
+
+  // Role of this week in the Monthly Cycle (1M)
+  const isMonthlyBusur = weekNumber <= 2;
+  const monthlyRoleTitle = isMonthlyBusur ? `Fase Busur Bulanan (Minggu 1 & 2)` : `Fase Target & HSH Bulanan (Minggu 3 & 4)`;
+  const monthlyRoleBadge = isMonthlyBusur ? 'bg-amber-950/80 text-amber-300 border-amber-500/50' : 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50';
+  const monthlyRoleDescription = isMonthlyBusur
+    ? `Saat ini berada di ${weekLabel}. Lilin bulanan ${monthName} sedang menarik busur membentuk ekor/pijakan.`
+    : `Saat ini berada di ${weekLabel} (Tgl 15+). Lilin bulanan ${monthName} telah melampaui fase busur dan memasuki pelepasan target bulanan menuju Resistance/Support makro!`;
 
   const isBusurPhase = dayIndex === 1 || dayIndex === 2 || (dayIndex === 3 && wibHour < 12);
 
@@ -127,13 +145,14 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
 
   const handleCopyPlan = async () => {
     const text =
-      `📋 [TRADING PLAN MINGGUAN COP TAH — DATA PASAR NYATA]\n` +
+      `📋 [TRADING PLAN MINGGUAN COP TAH — ${weekLabel} (${monthName.toUpperCase()} ${currentYear})]\n` +
       `Asset: ${data.symbol || 'XAUUSD'} · Server: ${broker?.name || 'Exness'} (${broker?.server || 'MT5Real36'})\n` +
+      `Periode: ${weekLabel} (${monthName} ${currentYear}) · Siklus: ${monthlyRoleTitle}\n` +
       `Tanggal: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}\n` +
       `──────────────────────────────────────────────\n` +
       `📊 DATA CANDLE MINGGUAN (1W):\n` +
-      `• Open Minggu Ini (N): $${openN.toFixed(decimals)}\n` +
-      `• Open Minggu Lalu (B): $${openB.toFixed(decimals)}\n` +
+      `• Open ${weekLabel} (N): $${openN.toFixed(decimals)}\n` +
+      `• Open WEEK ${weekNumber > 1 ? weekNumber - 1 : 4} (B): $${openB.toFixed(decimals)}\n` +
       `• Hukum JIKA Mingguan: JIKA ${weeklyTrend} (${isWeeklyUp ? 'BULLISH / Fokus BUY' : 'BEARISH / Fokus SELL'})\n` +
       `• Hukum Perahu: ${weeklyPerahu}\n` +
       `──────────────────────────────────────────────\n` +
@@ -164,16 +183,19 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
             <Calendar className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base font-extrabold text-white font-mono">
-                Trading Plan Mingguan (Real Market Data)
+                Trading Plan Mingguan — {weekLabel} ({monthName} {currentYear})
               </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold uppercase">
-                Data Nyata 1W
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-amber-500/20 text-cop-gold border border-amber-500/50 font-black uppercase shadow-glow-gold-sm">
+                ⭐ {weekLabel} AKTIF
+              </span>
+              <span className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full border font-bold uppercase ${monthlyRoleBadge}`}>
+                {monthlyRoleTitle}
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Panduan Berdasarkan Matematika Lilin Mingguan & 5 Hukum COP TAH (Bukan Asumsi)
+            <p className="text-xs text-slate-400 font-mono mt-1">
+              {monthlyRoleDescription}
             </p>
           </div>
         </div>
@@ -184,7 +206,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
           className="btn-gold self-start md:self-auto"
         >
           {copied ? <Check className="w-4 h-4 text-slate-950" /> : <Copy className="w-4 h-4 text-slate-950" />}
-          <span>{copied ? 'Tersalin ke Clipboard!' : 'Salin Trading Plan Mingguan'}</span>
+          <span>{copied ? 'Tersalin ke Clipboard!' : `Salin Plan ${weekLabel}`}</span>
         </button>
       </div>
 
@@ -192,7 +214,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
       <div className="p-4 rounded-2xl bg-cop-card border border-cop-border space-y-3 font-mono">
         <div className="flex items-center justify-between border-b border-cop-border/60 pb-2">
           <span className="text-xs font-bold text-cop-gold uppercase tracking-wider flex items-center gap-1.5">
-            <Zap className="w-4 h-4" /> 1. Data Nyata Pasar Lilin 1W (Minggu Ini vs Minggu Lalu)
+            <Zap className="w-4 h-4" /> 1. Data Nyata Pasar Lilin 1W ({weekLabel} vs Minggu Sebelumnya)
           </span>
           <span className="text-[10px] text-slate-400">
             Feed Server: <strong className="text-white">{broker?.name || 'Exness'} ({broker?.server || 'MT5Real36'})</strong>
@@ -201,12 +223,12 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
           <div className="p-2.5 rounded-xl bg-cop-surface border border-cop-border">
-            <span className="text-[10px] text-slate-400 block uppercase">Open Minggu Ini (N):</span>
+            <span className="text-[10px] text-slate-400 block uppercase">Open {weekLabel} (N):</span>
             <span className="text-sm font-black text-white tabular-nums">${openN.toFixed(decimals)}</span>
           </div>
 
           <div className="p-2.5 rounded-xl bg-cop-surface border border-cop-border">
-            <span className="text-[10px] text-slate-400 block uppercase">Open Minggu Lalu (B):</span>
+            <span className="text-[10px] text-slate-400 block uppercase">Open WEEK {weekNumber > 1 ? weekNumber - 1 : 4} (B):</span>
             <span className="text-sm font-bold text-slate-300 tabular-nums">${openB.toFixed(decimals)}</span>
           </div>
 
