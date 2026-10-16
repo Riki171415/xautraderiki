@@ -25,6 +25,12 @@ const {
   calcLeak4RegMatrix,
 } = require('./rule_engine');
 
+const {
+  loadOrBuildHistoricalDataset,
+  getHistoricalCandles,
+  exportHistoricalCsv,
+} = require('./historical_data');
+
 const app = express();
 const PORT = 3001;
 
@@ -891,6 +897,46 @@ app.get('/api/yearly-history', async (req, res) => {
   }
 });
 
+// ─── Historical XAUUSD Data Endpoints (2000–2026) ─────────────────────────────
+
+// Paginated & Filterable Historical Monthly Candles with COP TAH Classifications
+app.get('/api/historical/candles', async (req, res) => {
+  try {
+    const { decade = 'ALL', search = '', limit = 100, page = 1 } = req.query;
+    const result = await getHistoricalCandles(decade, search, parseInt(limit, 10), parseInt(page, 10));
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Macro Summary Statistics (ATH, ATL, winrates, ranges, sources)
+app.get('/api/historical/summary', async (req, res) => {
+  try {
+    const ds = await loadOrBuildHistoricalDataset();
+    res.json({
+      success: true,
+      metadata: ds.metadata,
+      summary: ds.summary,
+      macroBenchmarkSeries: ds.macroBenchmarkSeries,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Direct CSV File Export
+app.get('/api/historical/export', async (req, res) => {
+  try {
+    const csvData = await exportHistoricalCsv();
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="xauusd_historical_coptah_2000_2026.csv"');
+    res.status(200).send(csvData);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Available brokers / servers
 app.get('/api/brokers', (req, res) => {
   res.json({ success: true, brokers: Object.values(BROKERS) });
@@ -1423,6 +1469,11 @@ server.listen(PORT, () => {
 ║       Port: ${PORT}  |  WebSocket: ws://localhost:${PORT}   ║
 ╚══════════════════════════════════════════════════════╝
   `);
+
+  // Preload historical 2000–2026 dataset
+  loadOrBuildHistoricalDataset().catch((err) => {
+    console.warn('[Server] Error preloading historical dataset:', err.message);
+  });
 });
 
 module.exports = { app, server };

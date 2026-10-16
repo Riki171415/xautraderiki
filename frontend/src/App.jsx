@@ -24,6 +24,7 @@ import Leak4RegTable from './components/Leak4RegTable';
 import GlobalStoryline from './components/GlobalStoryline';
 import WeeklyTradingPlan from './components/WeeklyTradingPlan';
 import MultiTimeframeEntryPlanner from './components/MultiTimeframeEntryPlanner';
+import HistoricalDataViewer from './components/HistoricalDataViewer';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAnalysis, resetTouches } from './hooks/useAnalysis';
 import {
@@ -47,7 +48,8 @@ import {
   Sparkles,
   Shield,
   Split,
-  Target
+  Target,
+  Database
 } from 'lucide-react';
 
 export default function App() {
@@ -187,6 +189,15 @@ export default function App() {
       icon: Globe,
       badge: 'Makro',
       desc: 'Siklus 10 Tahun Emas & Posisi Real 2026 Q4'
+    },
+    {
+      id: 'history',
+      pillarNum: '7',
+      title: 'Historis (2000–2026)',
+      shortTitle: '7. Historis',
+      icon: Database,
+      badge: '26+ Thn',
+      desc: 'Dataset Historis 317+ Bulan (2000–2026) Berbasis 5 Hukum COP TAH'
     }
   ];
 
@@ -266,7 +277,9 @@ export default function App() {
                       ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-glow-gold-sm'
                       : p.id === 'table'
                       ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-md'
-                      : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-glow-gold-sm font-black'
+                      : p.id === 'global'
+                      ? 'bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-md'
+                      : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-glow-gold font-black'
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
                 title={p.desc}
@@ -477,6 +490,23 @@ export default function App() {
               </div>
             )}
             <GlobalStoryline data={data} liveTick={liveTick} />
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════════════════
+            PILAR 7: DATA HISTORIS XAUUSD (2000 – 2026) & 5 HUKUM COP TAH
+            ════════════════════════════════════════════════════════════════════════ */}
+        {(viewMode === 'history' || viewMode === 'all') && (
+          <div className="space-y-4">
+            {viewMode === 'all' && (
+              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60 font-mono">
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                  Pilar 7: Data Historis XAUUSD (2000 – 2026) & Klasifikasi 5 Hukum COP TAH
+                </h2>
+              </div>
+            )}
+            <HistoricalDataViewer liveTick={liveTick} />
           </div>
         )}
 
