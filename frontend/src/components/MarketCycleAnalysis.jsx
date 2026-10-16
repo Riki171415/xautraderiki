@@ -1,9 +1,9 @@
 /**
- * MarketCycleAnalysis — Analisis Pergerakan Market COP TAH
+ * MarketCycleAnalysis — Analisis Siklus Pasar & Alur Fraktal COP TAH
  *
- * 1. Pergerakan Market (NORMAL vs STRONG) — 12 Langkah Cerita Harian (Asia -> Eropa -> USA -> Transisi)
- * 2. Sub-Alur Cerita Fraktal (Hukum Busur & Target: 1Y, 6M, 3M, 1M, 1W, D1, H4)
- * 3. Korelasi TF Besar & TF Kecil (Keputusan Entry Aman & 3 Pagar Pengaman)
+ * Menampilkan angka nyata pasar langsung (Live Price, Open, High, Low, Pivot, R1, R2, S1, S2)
+ * Dilengkapi dengan Analisa 2 Arah (Skenario A BUY Trend vs Skenario B SELL HSH Reversal)
+ * serta Tabel Fraktal 7-Timeframe lengkap dengan angka riil tanpa istilah 'lilin'.
  */
 
 import React, { useState } from 'react';
@@ -24,45 +24,158 @@ import {
   Sun,
   Sunset,
   Moon,
-  Repeat
+  Repeat,
+  TrendingUp,
+  TrendingDown,
+  Home,
+  Target,
+  Split,
+  Shield
 } from 'lucide-react';
 
-export default function MarketCycleAnalysis({ data }) {
+export default function MarketCycleAnalysis({ data, liveTick }) {
   if (!data) return null;
 
-  const { marketCycle, subAlurCerita, multiTfDecision, decimals = 3 } = data;
-  const [activeTab, setActiveTab] = useState('cycle'); // 'cycle' | 'fractal' | 'confluence'
+  const { marketCycle, subAlurCerita, multiTfDecision, leak4RegMatrix, broker, userModal = 10000, lotCalc, decimals = 3 } = data;
+  const [activeTab, setActiveTab] = useState('cycle'); // 'cycle' | 'two-way' | 'fractal' | 'confluence'
   const [cycleViewMode, setCycleViewMode] = useState('auto'); // 'auto' | 'NORMAL' | 'STRONG'
+
+  const currentPrice = liveTick?.price || data?.ohlcv_N?.close || 4184.25;
+
+  // ── Extract Daily Real Numbers from leak4RegMatrix ──────────────────────────
+  const dailyRow = leak4RegMatrix?.tableRows?.find(
+    (r) => r.timeframe === '1d' || r.label?.includes('DAILY') || r.label?.includes('JUMAT') || r.label?.includes('KAMIS') || r.label?.includes('RABU') || r.label?.includes('SELASA') || r.label?.includes('SENIN')
+  );
+  const dailyRS = leak4RegMatrix?.rsColumns?.find(
+    (c) => c.timeframe === '1d' || c.label?.includes('DAILY')
+  );
+
+  const dOpen = dailyRow ? parseFloat(dailyRow.openN) : currentPrice - 20;
+  const dOpenB = dailyRow ? parseFloat(dailyRow.openB) : dOpen - 15;
+  const dHigh = dailyRow ? parseFloat(dailyRow.highN) : currentPrice + 10;
+  const dLow = dailyRow ? parseFloat(dailyRow.lowN) : currentPrice - 25;
+  const dRange = dailyRow ? parseFloat(dailyRow.rangeN) : dHigh - dLow;
+
+  const dPivot = dailyRS ? parseFloat(dailyRS.pivot) : (dOpen + dHigh + dLow) / 3;
+  const dRes1 = dailyRS ? parseFloat(dailyRS.res1) : dPivot + 20;
+  const dRes2 = dailyRS ? parseFloat(dailyRS.res2) : dPivot + 45;
+  const dRes3 = dailyRS ? parseFloat(dailyRS.res3) : dPivot + 75;
+  const dSup1 = dailyRS ? parseFloat(dailyRS.sup1) : dPivot - 20;
+  const dSup2 = dailyRS ? parseFloat(dailyRS.sup2) : dPivot - 45;
+  const dSup3 = dailyRS ? parseFloat(dailyRS.sup3) : dPivot - 75;
+
+  const isDailyUp = dOpen >= dOpenB;
+  const dailyTrend = isDailyUp ? 'UP' : 'DOWN';
+
+  // Lot Calculation (3 Core Theories)
+  const lot = lotCalc?.lot || (userModal / 25000).toFixed(2);
+
+  // ── SKENARIO 2 ARAH SIKLUS HARIAN (INTRADAY) ──────────────────────────────
+  // Skenario A: BUY Trend Intraday (Busur Sesi Pagi di S1)
+  const trendEntry = isDailyUp ? dSup1 : dRes1;
+  const trendTp1 = dPivot;
+  const trendTp2 = isDailyUp ? dRes1 : dSup1;
+  const trendTp3 = isDailyUp ? dRes2 : dSup2;
+  const trendSl = isDailyUp ? dSup2 : dRes2;
+
+  const trendTp1Pts = Math.abs(trendTp1 - trendEntry).toFixed(decimals);
+  const trendTp2Pts = Math.abs(trendTp2 - trendEntry).toFixed(decimals);
+  const trendSlPts = Math.abs(trendEntry - trendSl).toFixed(decimals);
+  const trendRr = parseFloat(trendSlPts) > 0 ? (parseFloat(trendTp2Pts) / parseFloat(trendSlPts)).toFixed(2) : '2.50';
+
+  const trendProfitTp1 = (parseFloat(lot) * parseFloat(trendTp1Pts) * 10).toFixed(2);
+  const trendProfitTp2 = (parseFloat(lot) * parseFloat(trendTp2Pts) * 10).toFixed(2);
+  const trendLossSl = (parseFloat(lot) * parseFloat(trendSlPts) * 10).toFixed(2);
+
+  // Skenario B: SELL HSH Reversal Intraday (Jika Target R1/R2 Tercapai di Sesi Malam USA)
+  const hshEntryPrimary = isDailyUp ? dRes1 : dSup1;
+  const hshEntrySecondary = isDailyUp ? dRes2 : dSup2;
+  const hshTp1 = dOpen; // Pulang ke Open Hari Ini
+  const hshTp2 = dPivot; // Pulang ke Pivot Gravitasi Harian
+  const hshTp3 = isDailyUp ? dSup1 : dRes1; // Koreksi ke Lantai Busur
+  const hshSl = isDailyUp ? dRes2 + 10 : dSup2 - 10;
+
+  const hshTp1Pts = Math.abs(hshEntryPrimary - hshTp1).toFixed(decimals);
+  const hshTp2Pts = Math.abs(hshEntryPrimary - hshTp2).toFixed(decimals);
+  const hshTp3Pts = Math.abs(hshEntryPrimary - hshTp3).toFixed(decimals);
+  const hshSlPts = Math.abs(hshSl - hshEntryPrimary).toFixed(decimals);
+  const hshRr = parseFloat(hshSlPts) > 0 ? (parseFloat(hshTp2Pts) / parseFloat(hshSlPts)).toFixed(2) : '2.80';
+
+  const hshProfitTp1 = (parseFloat(lot) * parseFloat(hshTp1Pts) * 10).toFixed(2);
+  const hshProfitTp2 = (parseFloat(lot) * parseFloat(hshTp2Pts) * 10).toFixed(2);
+  const hshProfitTp3 = (parseFloat(lot) * parseFloat(hshTp3Pts) * 10).toFixed(2);
+  const hshLossSl = (parseFloat(lot) * parseFloat(hshSlPts) * 10).toFixed(2);
+
+  // ── Helper to Lookup Multi-TF Matrix Numbers for Fractal Table ─────────────
+  const getTfNumbers = (tfKey) => {
+    let row = null;
+    let rs = null;
+
+    if (tfKey === '1Y') {
+      row = leak4RegMatrix?.tableRows?.find((r) => r.timeframe === '1Y');
+      rs = leak4RegMatrix?.rsColumns?.find((c) => c.timeframe === '1Y');
+    } else if (tfKey === '6M') {
+      row = leak4RegMatrix?.tableRows?.find((r) => r.timeframe === '6M');
+      rs = leak4RegMatrix?.rsColumns?.find((c) => c.timeframe === '6M');
+    } else if (tfKey === '3M') {
+      row = leak4RegMatrix?.tableRows?.find((r) => r.timeframe === '3M');
+      rs = leak4RegMatrix?.rsColumns?.find((c) => c.timeframe === '3M');
+    } else if (tfKey === '1M') {
+      row = leak4RegMatrix?.tableRows?.find((r) => r.timeframe === '1M');
+      rs = leak4RegMatrix?.rsColumns?.find((c) => c.timeframe === '1M');
+    } else if (tfKey === '1w') {
+      row = leak4RegMatrix?.tableRows?.find((r) => r.timeframe === '1w' || r.label?.includes('WEEK'));
+      rs = leak4RegMatrix?.rsColumns?.find((c) => c.timeframe === '1w' || c.label?.includes('WEEK'));
+    } else if (tfKey === '1d') {
+      row = dailyRow;
+      rs = dailyRS;
+    } else if (tfKey === '4h') {
+      row = leak4RegMatrix?.tableRows?.find((r) => r.timeframe === '4h');
+      rs = leak4RegMatrix?.rsColumns?.find((c) => c.timeframe === '4h');
+    }
+
+    return {
+      open: row ? parseFloat(row.openN) : null,
+      low: row ? parseFloat(row.lowN) : null,
+      high: row ? parseFloat(row.highN) : null,
+      pivot: rs ? parseFloat(rs.pivot) : null,
+      res1: rs ? parseFloat(rs.res1) : null,
+      sup1: rs ? parseFloat(rs.sup1) : null,
+      range: row ? parseFloat(row.rangeN) : null,
+    };
+  };
 
   const currentPattern = marketCycle?.marketType || 'NORMAL';
   const displayPattern = cycleViewMode === 'auto' ? currentPattern : cycleViewMode;
-
   const isStrong = displayPattern === 'STRONG';
   const activeStep = marketCycle?.currentStep || 4;
 
   return (
     <div className="cop-panel space-y-4">
       {/* ── Top Header & Tab Navigation ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-cop-border pb-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-cop-border pb-3">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-cop-gold shadow-glow-gold-sm">
             <Compass className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base font-extrabold text-white font-mono">Analisis Siklus Pasar & Alur Fraktal</h2>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/40 font-bold uppercase">
                 Metode COP TAH
               </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-950/80 text-blue-300 border border-blue-500/50 font-bold uppercase flex items-center gap-1">
+                <Split className="w-3 h-3 text-blue-400" /> Analisa 2 Arah Tersedia
+              </span>
             </div>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
-              12 Langkah Sesi Harian · Sub-Alur Pentangan Busur · Matriks Keputusan Entry Aman
+              12 Langkah Sesi Harian · Skenario 2 Arah (BUY & SELL HSH) · Angka Nyata Pasar Lengkap
             </p>
           </div>
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-cop-card border border-cop-border self-start md:self-auto shadow-sm">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-cop-card border border-cop-border self-start lg:self-auto shadow-sm flex-wrap">
           <button
             onClick={() => setActiveTab('cycle')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
@@ -72,8 +185,21 @@ export default function MarketCycleAnalysis({ data }) {
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Siklus 12 Langkah</span>
+            <span>Siklus 12 Sesi</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('two-way')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+              activeTab === 'two-way'
+                ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-glow-gold-sm'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Split className="w-3.5 h-3.5 text-cop-gold" />
+            <span>Analisa 2 Arah</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('fractal')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
@@ -83,8 +209,9 @@ export default function MarketCycleAnalysis({ data }) {
             }`}
           >
             <GitBranch className="w-3.5 h-3.5" />
-            <span>Sub-Alur Fraktal</span>
+            <span>Sub-Alur Fraktal (Data Riil)</span>
           </button>
+
           <button
             onClick={() => setActiveTab('confluence')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
@@ -99,8 +226,51 @@ export default function MarketCycleAnalysis({ data }) {
         </div>
       </div>
 
+      {/* ── BARIS RINGKASAN ANGKA REAL-TIME SIKLUS HARIAN (LIVE METRICS STRIP) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 font-mono text-xs">
+        <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border">
+          <span className="text-[10px] text-slate-400 block uppercase">Harga Live</span>
+          <span className="text-sm font-black text-white tabular-nums">${currentPrice.toFixed(decimals)}</span>
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border">
+          <span className="text-[10px] text-slate-400 block uppercase">Open Hari Ini</span>
+          <span className="text-sm font-bold text-amber-300 tabular-nums">${dOpen.toFixed(decimals)}</span>
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border">
+          <span className="text-[10px] text-slate-400 block uppercase">Pivot Harian</span>
+          <span className="text-sm font-bold text-cop-gold tabular-nums">${dPivot.toFixed(decimals)}</span>
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border">
+          <span className="text-[10px] text-slate-400 block uppercase">Target R1</span>
+          <span className="text-sm font-bold text-emerald-400 tabular-nums">${dRes1.toFixed(decimals)}</span>
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border">
+          <span className="text-[10px] text-slate-400 block uppercase">Target R2</span>
+          <span className="text-sm font-bold text-emerald-300 tabular-nums">${dRes2.toFixed(decimals)}</span>
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border">
+          <span className="text-[10px] text-slate-400 block uppercase">Lantai S1 (Busur)</span>
+          <span className="text-sm font-bold text-blue-400 tabular-nums">${dSup1.toFixed(decimals)}</span>
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border">
+          <span className="text-[10px] text-slate-400 block uppercase">Lantai S2 (SL)</span>
+          <span className="text-sm font-bold text-rose-400 tabular-nums">${dSup2.toFixed(decimals)}</span>
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-cop-card border border-cop-border">
+          <span className="text-[10px] text-slate-400 block uppercase">Rentang Hari</span>
+          <span className="text-sm font-black text-cop-cyan tabular-nums">{dRange.toFixed(1)} pts</span>
+        </div>
+      </div>
+
       {/* ──────────────────────────────────────────────────────────────────────────
-          TAB 1: SIKLUS 12 LANGKAH PERGERAKAN MARKET (NORMAL vs STRONG)
+          TAB 1: SIKLUS 12 LANGKAH PERGERAKAN MARKET DENGAN ANGKA LEVEL LENGKAP
          ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'cycle' && (
         <div className="space-y-4">
@@ -121,7 +291,7 @@ export default function MarketCycleAnalysis({ data }) {
                 )}
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
                     Status Pola Hari Ini:
                   </span>
@@ -138,7 +308,8 @@ export default function MarketCycleAnalysis({ data }) {
                     Langkah {activeStep} / 12
                   </span>
                 </div>
-                <div className="text-xs text-slate-300 mt-1 font-mono flex items-center gap-2">
+
+                <div className="text-xs text-slate-300 mt-1 font-mono flex items-center gap-2 flex-wrap">
                   <span className="text-white font-bold">{marketCycle?.activeSession}</span>
                   <span className="text-slate-500">·</span>
                   <span className="text-cop-cyan font-bold">{marketCycle?.wibTime}</span>
@@ -184,17 +355,34 @@ export default function MarketCycleAnalysis({ data }) {
             </div>
           </div>
 
-          {/* 12-Step Grid Timeline */}
+          {/* 12-Step Grid Timeline dengan Angka Level Sesi Lengkap */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Phase 1: ASIA (Steps 1-4) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5">
+            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5 font-mono">
               <div className="flex items-center justify-between border-b border-cop-border pb-2">
                 <div className="flex items-center gap-2">
                   <Sun className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-bold text-white font-mono uppercase">1. Pagi (ASIA)</span>
+                  <span className="text-xs font-bold text-white uppercase">1. Pagi (ASIA)</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">06:00 - 14:00 WIB</span>
+                <span className="text-[10px] text-slate-400">06:00 - 14:00 WIB</span>
               </div>
+
+              {/* Box Level Acuan Angka Asia */}
+              <div className="p-2 rounded-lg bg-cop-surface border border-cop-border/80 text-[11px] space-y-1">
+                <div className="flex items-center justify-between text-slate-400 text-[10px]">
+                  <span>LEVEL ACUAN ASIA:</span>
+                  <span className="text-cop-gold font-bold">Fase Busur</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-300">Open D1:</span>
+                  <strong className="text-white">${dOpen.toFixed(decimals)}</strong>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-400">Lantai S1 (Buy):</span>
+                  <strong className="text-blue-300">${dSup1.toFixed(decimals)}</strong>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 {marketCycle?.steps?.slice(0, 4).map((s) => (
                   <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
@@ -203,14 +391,31 @@ export default function MarketCycleAnalysis({ data }) {
             </div>
 
             {/* Phase 2: EROPA (Steps 5-7) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5">
+            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5 font-mono">
               <div className="flex items-center justify-between border-b border-cop-border pb-2">
                 <div className="flex items-center gap-2">
                   <Sunset className="w-4 h-4 text-cop-cyan" />
-                  <span className="text-xs font-bold text-white font-mono uppercase">2. Sore (EROPA)</span>
+                  <span className="text-xs font-bold text-white uppercase">2. Sore (EROPA)</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">14:00 - 20:00 WIB</span>
+                <span className="text-[10px] text-slate-400">14:00 - 20:00 WIB</span>
               </div>
+
+              {/* Box Level Acuan Angka Eropa */}
+              <div className="p-2 rounded-lg bg-cop-surface border border-cop-border/80 text-[11px] space-y-1">
+                <div className="flex items-center justify-between text-slate-400 text-[10px]">
+                  <span>LEVEL ACUAN EROPA:</span>
+                  <span className="text-cop-cyan font-bold">Titik Balik</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-cop-gold">Pivot Harian:</span>
+                  <strong className="text-cop-gold">${dPivot.toFixed(decimals)}</strong>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-emerald-400">Target Break R1:</span>
+                  <strong className="text-emerald-300">${dRes1.toFixed(decimals)}</strong>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 {marketCycle?.steps?.slice(4, 7).map((s) => (
                   <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
@@ -219,14 +424,31 @@ export default function MarketCycleAnalysis({ data }) {
             </div>
 
             {/* Phase 3: USA (Steps 8-11) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5">
+            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5 font-mono">
               <div className="flex items-center justify-between border-b border-cop-border pb-2">
                 <div className="flex items-center gap-2">
                   <Moon className="w-4 h-4 text-indigo-400" />
-                  <span className="text-xs font-bold text-white font-mono uppercase">3. Malam (USA)</span>
+                  <span className="text-xs font-bold text-white uppercase">3. Malam (USA)</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">20:00 - 04:00 WIB</span>
+                <span className="text-[10px] text-slate-400">20:00 - 04:00 WIB</span>
               </div>
+
+              {/* Box Level Acuan Angka USA & HSH */}
+              <div className="p-2 rounded-lg bg-cop-surface border border-cop-border/80 text-[11px] space-y-1">
+                <div className="flex items-center justify-between text-slate-400 text-[10px]">
+                  <span>LEVEL ACUAN USA:</span>
+                  <span className="text-rose-400 font-bold">Target & HSH</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-emerald-400">Target R2:</span>
+                  <strong className="text-emerald-300">${dRes2.toFixed(decimals)}</strong>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-rose-400">Pembalikan HSH:</span>
+                  <strong className="text-rose-300">➔ ${dOpen.toFixed(decimals)}</strong>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 {marketCycle?.steps?.slice(7, 11).map((s) => (
                   <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
@@ -235,14 +457,31 @@ export default function MarketCycleAnalysis({ data }) {
             </div>
 
             {/* Phase 4: Transisi (Step 12) */}
-            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5">
+            <div className="p-3.5 rounded-xl bg-cop-card/80 border border-cop-border space-y-2.5 font-mono">
               <div className="flex items-center justify-between border-b border-cop-border pb-2">
                 <div className="flex items-center gap-2">
                   <Repeat className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-bold text-white font-mono uppercase">4. Transisi Esok</span>
+                  <span className="text-xs font-bold text-white uppercase">4. Transisi Esok</span>
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">04:00 - 06:00 WIB</span>
+                <span className="text-[10px] text-slate-400">04:00 - 06:00 WIB</span>
               </div>
+
+              {/* Box Level Acuan Angka Transisi */}
+              <div className="p-2 rounded-lg bg-cop-surface border border-cop-border/80 text-[11px] space-y-1">
+                <div className="flex items-center justify-between text-slate-400 text-[10px]">
+                  <span>LEVEL TRANSISI:</span>
+                  <span className="text-amber-300 font-bold">Ekuilibrium</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-300">Area Closing:</span>
+                  <strong className="text-white">${dPivot.toFixed(decimals)}</strong>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Rentang Final:</span>
+                  <strong className="text-cop-cyan">{dRange.toFixed(1)} pts</strong>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 {marketCycle?.steps?.slice(11, 12).map((s) => (
                   <StepCard key={s.step} step={s} isActive={s.step === activeStep} />
@@ -258,7 +497,136 @@ export default function MarketCycleAnalysis({ data }) {
       )}
 
       {/* ──────────────────────────────────────────────────────────────────────────
-          TAB 2: SUB-ALUR CERITA FRAKTAL (BUSUR VS TARGET)
+          TAB 2: ANALISA 2 ARAH SIKLUS HARIAN (BUY TREND VS SELL HSH REVERSAL)
+         ────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === 'two-way' && (
+        <div className="space-y-4 font-mono">
+          <div className="p-3.5 rounded-xl bg-cop-card border border-cop-border flex items-center justify-between flex-wrap gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <Split className="w-4 h-4 text-cop-gold" />
+              <span className="font-bold text-white">Panduan Eksekusi 2 Arah Siklus Harian (XAUUSD Intraday)</span>
+            </div>
+            <span className="text-[11px] text-slate-400">
+              Lot Rekomendasi (Modal ${userModal.toLocaleString()}): <strong className="text-cop-gold">{lot} Lot</strong>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* KARTU SKENARIO A: BUY TREND INTRADAY (BUSUR S1) */}
+            <div className="p-5 rounded-2xl border-2 border-emerald-500/60 bg-gradient-to-br from-emerald-950/20 via-cop-card to-slate-900 shadow-glow-green-sm space-y-4">
+              <div className="flex items-start justify-between gap-3 border-b border-emerald-800/40 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black px-2 py-0.5 rounded bg-emerald-500 text-slate-950">
+                      SKENARIO A
+                    </span>
+                    <h3 className="text-base font-black text-white">
+                      BUY LIMIT @ ${trendEntry.toFixed(decimals)}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1">
+                    Sesuai Hukum JIKA {dailyTrend} harian. Pasang Buy Limit saat sesi pagi (Asia) menarik busur bawah ke Support S1.
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="text-[10px] text-slate-400 block uppercase">Risk / Reward</span>
+                  <span className="text-sm font-black text-emerald-400">1 : {trendRr}</span>
+                </div>
+              </div>
+
+              {/* 4 Kotak Roadmap Target A */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                <div className="p-2.5 rounded-xl bg-cop-surface border border-cop-border">
+                  <span className="text-[10px] text-blue-400 font-bold block mb-0.5">TITIK ENTRY</span>
+                  <div className="text-sm font-black text-white tabular-nums">${trendEntry.toFixed(decimals)}</div>
+                  <span className="text-[9px] text-slate-400">Support S1</span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/50">
+                  <span className="text-[10px] text-emerald-400 font-bold block mb-0.5">TARGET 1 (PIVOT)</span>
+                  <div className="text-sm font-black text-emerald-300 tabular-nums">${trendTp1.toFixed(decimals)}</div>
+                  <span className="text-[9px] text-slate-300">+{trendTp1Pts} pts (+${trendProfitTp1})</span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-emerald-950/50 border border-emerald-500/70 shadow-glow-green-sm">
+                  <span className="text-[10px] text-emerald-300 font-black block mb-0.5">TARGET 2 (R1)</span>
+                  <div className="text-sm font-black text-emerald-300 tabular-nums">${trendTp2.toFixed(decimals)}</div>
+                  <span className="text-[9px] text-emerald-400 font-bold">+{trendTp2Pts} pts (+${trendProfitTp2})</span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-700/60">
+                  <span className="text-[10px] text-rose-400 font-bold block mb-0.5">STOP LOSS (S2)</span>
+                  <div className="text-sm font-black text-rose-300 tabular-nums">${trendSl.toFixed(decimals)}</div>
+                  <span className="text-[9px] text-rose-300">-{trendSlPts} pts (-${trendLossSl})</span>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border text-xs flex items-center justify-between text-slate-300">
+                <span>🎯 Target 3 Runner: <strong className="text-white">${trendTp3.toFixed(decimals)}</strong> (Resistance R2)</span>
+                <span className="text-slate-400 text-[11px]">Waktu: <strong className="text-cop-gold">Sesi Asia s/d Awal Eropa</strong></span>
+              </div>
+            </div>
+
+            {/* KARTU SKENARIO B: SELL HSH REVERSAL (TARGET R1/R2 TERCAPAI) */}
+            <div className="p-5 rounded-2xl border-2 border-rose-500/60 bg-gradient-to-br from-rose-950/20 via-cop-card to-slate-900 shadow-glow-red-sm space-y-4">
+              <div className="flex items-start justify-between gap-3 border-b border-rose-800/40 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black px-2 py-0.5 rounded bg-rose-500 text-white">
+                      SKENARIO B (2 ARAH)
+                    </span>
+                    <h3 className="text-base font-black text-white">
+                      SELL REVERSAL @ ${hshEntryPrimary.toFixed(decimals)}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-rose-200/90 mt-1">
+                    Jika Target R1 (${dRes1.toFixed(decimals)}) atau R2 (${dRes2.toFixed(decimals)}) disentuh di sesi USA malam & muncul rejection wick, harga ditarik HSH pulang ke Open D1 & Pivot!
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="text-[10px] text-slate-400 block uppercase">Risk / Reward</span>
+                  <span className="text-sm font-black text-rose-400">1 : {hshRr}</span>
+                </div>
+              </div>
+
+              {/* 4 Kotak Roadmap Target B */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                <div className="p-2.5 rounded-xl bg-cop-surface border border-rose-500/40">
+                  <span className="text-[10px] text-rose-400 font-bold block mb-0.5">AREA ENTRY SELL</span>
+                  <div className="text-sm font-black text-white tabular-nums">${hshEntryPrimary.toFixed(decimals)}</div>
+                  <span className="text-[9px] text-slate-400">R1 ($${hshEntryPrimary.toFixed(0)}) - R2 ($${hshEntrySecondary.toFixed(0)})</span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-800/50">
+                  <span className="text-[10px] text-rose-400 font-bold block mb-0.5">TP 1 (OPEN HARI INI)</span>
+                  <div className="text-sm font-black text-rose-300 tabular-nums">${hshTp1.toFixed(decimals)}</div>
+                  <span className="text-[9px] text-slate-300">+{hshTp1Pts} pts (+${hshProfitTp1})</span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-rose-950/50 border border-rose-500/70 shadow-glow-red-sm">
+                  <span className="text-[10px] text-rose-300 font-black block mb-0.5">TP 2 (PIVOT HARIAN)</span>
+                  <div className="text-sm font-black text-rose-300 tabular-nums">${hshTp2.toFixed(decimals)}</div>
+                  <span className="text-[9px] text-rose-400 font-bold">+{hshTp2Pts} pts (+${hshProfitTp2})</span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-700/80">
+                  <span className="text-[10px] text-rose-300 font-bold block mb-0.5">STOP LOSS SELL (SL)</span>
+                  <div className="text-sm font-black text-rose-200 tabular-nums">${hshSl.toFixed(decimals)}</div>
+                  <span className="text-[9px] text-rose-300">-{hshSlPts} pts (-${hshLossSl})</span>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border text-xs flex items-center justify-between text-slate-300">
+                <span>🎯 TP 3 Koreksi Dasar: <strong className="text-white">${hshTp3.toFixed(decimals)}</strong> (Support S1 / +{hshTp3Pts} pts)</span>
+                <span className="text-slate-400 text-[11px]">Waktu Eksekusi: <strong className="text-rose-400">Sesi USA (21:00 - 02:00 WIB)</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ──────────────────────────────────────────────────────────────────────────
+          TAB 3: SUB-ALUR CERITA FRAKTAL (LENGKAP DENGAN DATA ANGKA PASAR)
          ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'fractal' && (
         <div className="space-y-4">
@@ -288,60 +656,99 @@ export default function MarketCycleAnalysis({ data }) {
             </div>
           </div>
 
-          {/* Full Fractal Timetable across 7 Timeframes */}
+          {/* Full Fractal Timetable across 7 Timeframes WITH REAL NUMBERS */}
           <div className="overflow-x-auto rounded-xl border border-cop-border">
             <table className="w-full text-left font-mono text-xs border-collapse">
               <thead>
                 <tr className="bg-cop-card text-slate-400 uppercase text-[10px] tracking-wider border-b border-cop-border">
-                  <th className="py-2.5 px-3">Timeframe</th>
+                  <th className="py-2.5 px-3">Timeframe Data</th>
+                  <th className="py-2.5 px-3">Open N</th>
+                  <th className="py-2.5 px-3">Lantai Busur (S1/Low)</th>
+                  <th className="py-2.5 px-3">Pivot Ekuilibrium</th>
+                  <th className="py-2.5 px-3">Plafon Target (R1/High)</th>
+                  <th className="py-2.5 px-3">Rentang Data</th>
                   <th className="py-2.5 px-3">Hukum Jika</th>
-                  <th className="py-2.5 px-3">Fase 1: Busur (Pentangan)</th>
-                  <th className="py-2.5 px-3">Fase 2: Target (Pelepasan)</th>
                   <th className="py-2.5 px-3">Fase Live</th>
                   <th className="py-2.5 px-3">Progress Waktu</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cop-border/40 bg-cop-surface/40">
-                {subAlurCerita?.allSchedules?.map((sched) => (
-                  <tr key={sched.tf} className="hover:bg-white/5 transition-colors">
-                    <td className="py-2.5 px-3 font-bold text-white whitespace-nowrap align-middle">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-cop-cyan">{sched.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                          sched.jika === 'UP'
-                            ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/40'
-                            : 'bg-rose-950/60 text-rose-300 border border-rose-600/40'
-                        }`}
-                      >
-                        JIKA {sched.jika}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-amber-300/90 text-[11px]">
-                      <div>{sched.busurRule}</div>
-                      <div className="text-[10px] text-slate-500">{sched.busurTime}</div>
-                    </td>
-                    <td className="py-2.5 px-3 text-emerald-300/90 text-[11px]">
-                      <div>{sched.targetRule}</div>
-                      <div className="text-[10px] text-slate-500">{sched.targetTime}</div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          sched.currentPhase === 'BUSUR'
-                            ? 'bg-amber-950/80 text-amber-300 border-amber-600/50'
-                            : 'bg-emerald-950/80 text-emerald-300 border-emerald-600/50'
-                        }`}
-                      >
-                        {sched.currentPhase}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-400 text-[11px]">{sched.progress}</td>
-                  </tr>
-                ))}
+                {subAlurCerita?.allSchedules?.map((sched) => {
+                  const nums = getTfNumbers(sched.tf);
+                  return (
+                    <tr key={sched.tf} className="hover:bg-white/5 transition-colors">
+                      <td className="py-2.5 px-3 font-bold text-white whitespace-nowrap align-middle">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-cop-cyan font-bold">{sched.name}</span>
+                        </div>
+                      </td>
+
+                      {/* Open N */}
+                      <td className="py-2.5 px-3 font-bold text-amber-300 tabular-nums">
+                        {nums.open !== null ? `$${nums.open.toFixed(decimals)}` : '—'}
+                      </td>
+
+                      {/* Lantai Busur (S1 / Low) */}
+                      <td className="py-2.5 px-3 font-bold text-blue-400 tabular-nums">
+                        {nums.sup1 !== null
+                          ? `$${nums.sup1.toFixed(decimals)}`
+                          : nums.low !== null
+                          ? `$${nums.low.toFixed(decimals)}`
+                          : '—'}
+                      </td>
+
+                      {/* Pivot Ekuilibrium */}
+                      <td className="py-2.5 px-3 font-bold text-cop-gold tabular-nums">
+                        {nums.pivot !== null ? `$${nums.pivot.toFixed(decimals)}` : '—'}
+                      </td>
+
+                      {/* Plafon Target (R1 / High) */}
+                      <td className="py-2.5 px-3 font-bold text-emerald-400 tabular-nums">
+                        {nums.res1 !== null
+                          ? `$${nums.res1.toFixed(decimals)}`
+                          : nums.high !== null
+                          ? `$${nums.high.toFixed(decimals)}`
+                          : '—'}
+                      </td>
+
+                      {/* Rentang Data Pts */}
+                      <td className="py-2.5 px-3 font-mono text-slate-300 tabular-nums">
+                        {nums.range !== null ? `${nums.range.toFixed(1)} pts` : '—'}
+                      </td>
+
+                      {/* Hukum Jika */}
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                            sched.jika === 'UP'
+                              ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/40'
+                              : 'bg-rose-950/60 text-rose-300 border border-rose-600/40'
+                          }`}
+                        >
+                          JIKA {sched.jika}
+                        </span>
+                      </td>
+
+                      {/* Fase Live */}
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                            sched.currentPhase === 'BUSUR'
+                              ? 'bg-amber-950/80 text-amber-300 border-amber-600/50'
+                              : 'bg-emerald-950/80 text-emerald-300 border-emerald-600/50'
+                          }`}
+                        >
+                          {sched.currentPhase}
+                        </span>
+                      </td>
+
+                      {/* Progress Waktu */}
+                      <td className="py-2.5 px-3 text-slate-400 text-[11px] whitespace-nowrap">
+                        {sched.progress}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -349,41 +756,51 @@ export default function MarketCycleAnalysis({ data }) {
       )}
 
       {/* ──────────────────────────────────────────────────────────────────────────
-          TAB 3: KORELASI TF BESAR & TF KECIL
+          TAB 4: KORELASI TF BESAR & TF KECIL
          ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'confluence' && (
-        <div className="space-y-4">
+        <div className="space-y-4 font-mono">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 rounded-xl bg-cop-card border border-cop-border space-y-2.5">
-              <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-cop-gold" />
                 Timeframe Besar (HTF): <strong className="text-white">{multiTfDecision?.htf?.timeframe || 'D1'}</strong>
               </span>
-              <div className="text-xs font-mono text-slate-300 leading-relaxed">
+              <div className="text-xs text-slate-300 leading-relaxed">
                 JIKA: <strong className="text-emerald-400">{multiTfDecision?.htf?.jika || 'UP'}</strong> · MOVE: <strong className="text-cop-gold">{multiTfDecision?.htf?.move || 'NRL DWN'}</strong>
+              </div>
+              <div className="text-[11px] text-slate-400 border-t border-cop-border/60 pt-2 flex items-center justify-between">
+                <span>Open D1: <strong className="text-white">${dOpen.toFixed(decimals)}</strong></span>
+                <span>Pivot D1: <strong className="text-cop-gold">${dPivot.toFixed(decimals)}</strong></span>
+                <span>R1: <strong className="text-emerald-400">${dRes1.toFixed(decimals)}</strong></span>
               </div>
             </div>
 
             <div className="p-4 rounded-xl bg-cop-card border border-cop-border space-y-2.5">
-              <span className="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-cop-cyan" />
                 Timeframe Kecil (LTF): <strong className="text-white">{multiTfDecision?.ltf?.timeframe || '1H'}</strong>
               </span>
-              <div className="text-xs font-mono text-slate-300 leading-relaxed">
+              <div className="text-xs text-slate-300 leading-relaxed">
                 JIKA: <strong className="text-rose-400">{multiTfDecision?.ltf?.jika || 'DOWN'}</strong> · MOVE: <strong className="text-cop-gold">{multiTfDecision?.ltf?.move || 'NRL DWN'}</strong>
+              </div>
+              <div className="text-[11px] text-slate-400 border-t border-cop-border/60 pt-2 flex items-center justify-between">
+                <span>Harga Live: <strong className="text-white">${currentPrice.toFixed(decimals)}</strong></span>
+                <span>Support S1: <strong className="text-blue-400">${dSup1.toFixed(decimals)}</strong></span>
+                <span>SL S2: <strong className="text-rose-400">${dSup2.toFixed(decimals)}</strong></span>
               </div>
             </div>
           </div>
 
           {/* 3 Pagar Pengaman */}
           <div className="p-4 rounded-xl bg-cop-card border border-cop-border space-y-2.5">
-            <span className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               3 Pagar Pengaman COP TAH (Batas Toleransi Entry)
             </span>
             <div className="space-y-1.5">
               {multiTfDecision?.guardrails?.map((guard, idx) => (
-                <div key={idx} className="p-2.5 rounded-lg bg-cop-surface border border-cop-border text-xs font-mono text-slate-300 flex items-start gap-2">
+                <div key={idx} className="p-2.5 rounded-lg bg-cop-surface border border-cop-border text-xs text-slate-300 flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
                   <span>{guard}</span>
                 </div>

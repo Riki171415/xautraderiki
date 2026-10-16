@@ -442,7 +442,7 @@ export default function App() {
             {/* 2. Market Cycle 12-Step Session Analysis */}
             {(terminalTab === 'cycle' || terminalTab === 'both' || viewMode === 'all') && (
               <div className="space-y-2">
-                <MarketCycleAnalysis data={data} />
+                <MarketCycleAnalysis data={data} liveTick={liveTick} />
               </div>
             )}
           </div>
