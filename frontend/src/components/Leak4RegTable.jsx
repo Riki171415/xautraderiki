@@ -169,18 +169,32 @@ export default function Leak4RegTable({ data, liveTick }) {
                     {row.rangeD}
                   </td>
 
-                  {/* KOTAK INDIKATOR POSISI HARGA SAAT INI */}
+                  {/* KOTAK INDIKATOR POSISI HARGA SAAT INI & STATUS SENTUHAN LEVEL */}
                   <td className="py-2 px-3">
-                    <div
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono font-bold text-[10px] shadow-sm ${
-                        isAboveOpen
-                          ? 'bg-emerald-950/80 border-emerald-500/80 text-emerald-300 shadow-glow-green-sm'
-                          : 'bg-rose-950/80 border-rose-500/80 text-rose-300 shadow-glow-red-sm'
-                      }`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${isAboveOpen ? 'bg-emerald-400' : 'bg-rose-400'} animate-ping`} />
-                      <span>{isAboveOpen ? '▲ DI ATAS OPEN' : '▼ DI BAWAH OPEN'}</span>
-                      <span className="text-white font-black">({isAboveOpen ? '+' : '-'}{distPts})</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <div
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono font-bold text-[10px] shadow-sm ${
+                          isAboveOpen
+                            ? 'bg-emerald-950/80 border-emerald-500/80 text-emerald-300 shadow-glow-green-sm'
+                            : 'bg-rose-950/80 border-rose-500/80 text-rose-300 shadow-glow-red-sm'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${isAboveOpen ? 'bg-emerald-400' : 'bg-rose-400'} animate-ping`} />
+                        <span>{isAboveOpen ? '▲ DI ATAS OPEN' : '▼ DI BAWAH OPEN'}</span>
+                        <span className="text-white font-black">({isAboveOpen ? '+' : '-'}{distPts})</span>
+                      </div>
+                      {/* Status Sentuhan Level R&S */}
+                      {row.touchedCount > 0 ? (
+                        <span className="text-[9px] bg-emerald-950/90 border border-emerald-500/70 text-emerald-300 px-2 py-0.5 rounded font-black flex items-center gap-1 shadow-sm">
+                          <span>✓</span>
+                          <span>{row.touchedSummary} Tersentuh</span>
+                        </span>
+                      ) : (
+                        <span className="text-[9px] bg-slate-800/80 border border-slate-700/60 text-slate-400 px-2 py-0.5 rounded font-mono flex items-center gap-1">
+                          <span>⏳</span>
+                          <span>Level Belum Tersentuh</span>
+                        </span>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -214,12 +228,17 @@ export default function Leak4RegTable({ data, liveTick }) {
             <div className="flex items-center gap-3 text-[11px] text-amber-200 flex-wrap">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded border-2 border-amber-400 bg-amber-500/40 inline-block shadow-glow-gold-sm" />
-                <span>Kotak Emas = Level Terdekat Saat Ini</span>
+                <span>Kotak Emas / SAAT INI = Level Terdekat</span>
               </span>
               <span className="text-slate-600">·</span>
               <span className="flex items-center gap-1.5 text-emerald-300">
-                <span className="text-[9px] bg-emerald-500 text-slate-950 font-black px-1 rounded">✓</span>
-                <span>Tanda ✓ = Level Telah Tersentuh / Diuji Harga Periode Ini</span>
+                <span className="text-[9px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.5 rounded shadow-sm">✓ TERSENTUH</span>
+                <span>= Sudah Diuji Periode Ini</span>
+              </span>
+              <span className="text-slate-600">·</span>
+              <span className="flex items-center gap-1.5 text-slate-400">
+                <span className="text-[9px] bg-slate-800 text-slate-300 border border-slate-700 px-1.5 py-0.5 rounded">⏳ BELUM</span>
+                <span>= Belum Tersentuh</span>
               </span>
             </div>
           </div>
@@ -229,7 +248,7 @@ export default function Leak4RegTable({ data, liveTick }) {
               Matriks Support & Resistance Multi-Timeframe (9 Kolom)
             </span>
             <span className="text-[10px] font-mono text-slate-400">
-              Deteksi Otomatis Level Terdekat
+              Deteksi Status Sentuhan & Level Terdekat Otomatis
             </span>
           </div>
 
@@ -237,11 +256,38 @@ export default function Leak4RegTable({ data, liveTick }) {
             <thead>
               <tr className="border-b border-cop-border text-slate-400 font-extrabold uppercase">
                 <th className="py-2 px-2 text-left text-cop-gold">LEVEL</th>
-                {rsColumns.map((col) => (
-                  <th key={col.timeframe} className="py-2 px-2 text-cyan-300">
-                    {col.label}
-                  </th>
-                ))}
+                {rsColumns.map((col) => {
+                  const touchedCount = col.touchedCount !== undefined
+                    ? col.touchedCount
+                    : Object.values(col.touchedLevels || {}).filter(Boolean).length;
+                  const isMarket = col.timeframe === 'market';
+                  return (
+                    <th
+                      key={col.timeframe}
+                      className={`py-2 px-2 ${
+                        isMarket
+                          ? 'text-amber-300 bg-amber-500/10 rounded-t-lg border-x border-amber-500/30'
+                          : 'text-cyan-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <span>{col.label}</span>
+                        {isMarket && (
+                          <span className="text-[8px] bg-amber-500 text-slate-950 px-1 rounded font-black">
+                            SESI
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[8px] font-mono font-normal mt-0.5">
+                        {touchedCount > 0 ? (
+                          <span className="text-emerald-400 font-bold">{touchedCount}/9 Tersentuh</span>
+                        ) : (
+                          <span className="text-slate-500">0/9 Tersentuh</span>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-cop-border/40">
@@ -276,13 +322,17 @@ export default function Leak4RegTable({ data, liveTick }) {
                             ? 'bg-amber-500/25 text-amber-200 font-black border-2 border-amber-400 rounded-lg shadow-glow-gold'
                             : isTouched
                             ? 'bg-emerald-950/60 text-emerald-200 font-black border border-emerald-500/60 shadow-glow-green-sm'
-                            : ''
+                            : 'hover:bg-white/[0.02]'
                         }`}
                       >
                         <div className="flex items-center justify-center gap-1 flex-wrap">
-                          {isTouched && (
+                          {isTouched ? (
                             <span className="text-[8px] bg-emerald-500 text-slate-950 px-1 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
                               ✓ TERSENTUH
+                            </span>
+                          ) : (
+                            <span className="text-[8px] bg-slate-800/80 text-slate-400 border border-slate-700/60 px-1 py-0.2 rounded font-medium flex items-center gap-0.5">
+                              ⏳ BELUM
                             </span>
                           )}
                           <span className="font-bold">{col[rKey]}</span>
@@ -331,13 +381,17 @@ export default function Leak4RegTable({ data, liveTick }) {
                           ? 'bg-amber-500/35 text-amber-200 border-2 border-amber-400 rounded-lg shadow-glow-gold'
                           : isTouched
                           ? 'bg-emerald-950/60 text-emerald-200 border border-emerald-500/60'
-                          : ''
+                          : 'hover:bg-white/[0.02]'
                       }`}
                     >
                       <div className="flex items-center justify-center gap-1 flex-wrap">
-                        {isTouched && (
+                        {isTouched ? (
                           <span className="text-[8px] bg-emerald-500 text-slate-950 px-1 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
                             ✓ TERSENTUH
+                          </span>
+                        ) : (
+                          <span className="text-[8px] bg-slate-800/80 text-slate-400 border border-slate-700/60 px-1 py-0.2 rounded font-medium flex items-center gap-0.5">
+                            ⏳ BELUM
                           </span>
                         )}
                         <span className="font-black">{col.pivot}</span>
@@ -383,13 +437,17 @@ export default function Leak4RegTable({ data, liveTick }) {
                             ? 'bg-amber-500/25 text-amber-200 font-black border-2 border-amber-400 rounded-lg shadow-glow-gold'
                             : isTouched
                             ? 'bg-rose-950/60 text-rose-200 font-black border border-rose-500/60 shadow-glow-red-sm'
-                            : ''
+                            : 'hover:bg-white/[0.02]'
                         }`}
                       >
                         <div className="flex items-center justify-center gap-1 flex-wrap">
-                          {isTouched && (
+                          {isTouched ? (
                             <span className="text-[8px] bg-rose-500 text-white px-1 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
                               ✓ TERSENTUH
+                            </span>
+                          ) : (
+                            <span className="text-[8px] bg-slate-800/80 text-slate-400 border border-slate-700/60 px-1 py-0.2 rounded font-medium flex items-center gap-0.5">
+                              ⏳ BELUM
                             </span>
                           )}
                           <span className="font-bold">{col[sKey]}</span>

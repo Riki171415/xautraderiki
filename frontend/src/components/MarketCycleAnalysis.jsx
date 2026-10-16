@@ -141,6 +141,12 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
     } else if (tfKey === '4h') {
       row = leak4RegMatrix?.tableRows?.find((r) => r.timeframe === '4h');
       rs = leak4RegMatrix?.rsColumns?.find((c) => c.timeframe === '4h');
+    } else if (tfKey === 'market' || tfKey === 'london') {
+      row = leak4RegMatrix?.tableRows?.find((r) => r.timeframe === 'market');
+      rs = leak4RegMatrix?.rsColumns?.find((c) => c.timeframe === 'market');
+    } else if (tfKey === '1h') {
+      row = leak4RegMatrix?.tableRows?.find((r) => r.timeframe === '1h');
+      rs = leak4RegMatrix?.rsColumns?.find((c) => c.timeframe === '1h');
     }
 
     return {

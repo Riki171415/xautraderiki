@@ -914,6 +914,40 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     const diff = rangeN - rangeB;
     const rangeD = diff >= 0 ? `+ ${diff}` : `- ${Math.abs(diff)}`;
 
+    // Calculate touched levels for this timeframe
+    const touchedLevels = {
+      res4: Boolean(highN >= r4B || currentPrice >= r4B),
+      res3: Boolean(highN >= r3B || currentPrice >= r3B),
+      res2: Boolean(highN >= r2B || currentPrice >= r2B),
+      res1: Boolean(highN >= r1B || currentPrice >= r1B),
+      pivot: Boolean(
+        (highN >= pivotB && lowN <= pivotB) ||
+        Math.abs(currentPrice - pivotB) <= 1.5 ||
+        (openN <= pivotB && highN >= pivotB) ||
+        (openN >= pivotB && lowN <= pivotB)
+      ),
+      sup1: Boolean(lowN <= s1B || currentPrice <= s1B),
+      sup2: Boolean(lowN <= s2B || currentPrice <= s2B),
+      sup3: Boolean(lowN <= s3B || currentPrice <= s3B),
+      sup4: Boolean(lowN <= s4B || currentPrice <= s4B),
+    };
+
+    const touchedKeys = Object.keys(touchedLevels).filter((k) => touchedLevels[k]);
+    const touchedCount = touchedKeys.length;
+    const unreachedCount = 9 - touchedCount;
+
+    const touchedLabels = [];
+    if (touchedLevels.res4) touchedLabels.push('R4');
+    if (touchedLevels.res3) touchedLabels.push('R3');
+    if (touchedLevels.res2) touchedLabels.push('R2');
+    if (touchedLevels.res1) touchedLabels.push('R1');
+    if (touchedLevels.pivot) touchedLabels.push('PV');
+    if (touchedLevels.sup1) touchedLabels.push('S1');
+    if (touchedLevels.sup2) touchedLabels.push('S2');
+    if (touchedLevels.sup3) touchedLabels.push('S3');
+    if (touchedLevels.sup4) touchedLabels.push('S4');
+    const touchedSummary = touchedLabels.length > 0 ? touchedLabels.join(', ') : 'Belum Ada';
+
     tableRows.push({
       timeframe: def.key,
       label: def.label,
@@ -933,6 +967,11 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
       rangeN,
       rangeB,
       rangeD,
+      touchedLevels,
+      touchedCount,
+      unreachedCount,
+      touchedSummary,
+      touchedLabels,
     });
 
     // RS Matrix Column
@@ -943,19 +982,6 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     else if (def.label.startsWith('SMTR')) rsLabel = 'SMTR';
     else if (def.label === `${currentYear}`) rsLabel = 'YEAR';
     else if (def.key === 'market') rsLabel = 'MARKET';
-
-    // Calculate touched levels for this timeframe
-    const touchedLevels = {
-      res4: Boolean(highN >= r4B || currentPrice >= r4B),
-      res3: Boolean(highN >= r3B || currentPrice >= r3B),
-      res2: Boolean(highN >= r2B || currentPrice >= r2B),
-      res1: Boolean(highN >= r1B || currentPrice >= r1B),
-      pivot: Boolean((highN >= pivotB && lowN <= pivotB) || Math.abs(currentPrice - pivotB) <= 1.0),
-      sup1: Boolean(lowN <= s1B || currentPrice <= s1B),
-      sup2: Boolean(lowN <= s2B || currentPrice <= s2B),
-      sup3: Boolean(lowN <= s3B || currentPrice <= s3B),
-      sup4: Boolean(lowN <= s4B || currentPrice <= s4B),
-    };
 
     rsColumns.push({
       timeframe: def.key,
@@ -978,6 +1004,11 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
       sup3: s3B.toFixed(decimals),
       sup4: s4B.toFixed(decimals),
       touchedLevels,
+      touchedCount,
+      unreachedCount,
+      touchedKeys,
+      touchedSummary,
+      touchedLabels,
     });
   }
 

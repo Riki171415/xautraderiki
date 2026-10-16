@@ -466,6 +466,58 @@ async function fetchBrokerOHLCV(brokerId = 'EXNESS', marketSymbol = 'XAUUSD', ti
   }
 }
 
+// Aggregate London Market Session (07:00–16:00 UTC / 14:00–23:00 WIB)
+// Candle N represents active/latest London session candles
+// Candle B represents previous session (e.g. yesterday's London session or earlier session)
+function aggregateLondonSession(ohlcv1h) {
+  if (!Array.isArray(ohlcv1h) || ohlcv1h.length < 4) return null;
+  const now = new Date();
+  const todayDateStr = now.toISOString().slice(0, 10);
+  const todayCandles = ohlcv1h.filter((c) => new Date(c[0]).toISOString().slice(0, 10) === todayDateStr);
+  const todayLondonCandles = todayCandles.filter((c) => {
+    const h = new Date(c[0]).getUTCHours();
+    return h >= 7 && h <= 16;
+  });
+
+  const yesterday = new Date(now.getTime() - 86400000);
+  const yesterdayDateStr = yesterday.toISOString().slice(0, 10);
+  const yesterdayLondonCandles = ohlcv1h.filter((c) => {
+    const dStr = new Date(c[0]).toISOString().slice(0, 10);
+    const h = new Date(c[0]).getUTCHours();
+    return dStr === yesterdayDateStr && h >= 7 && h <= 16;
+  });
+
+  let candleBCandles = yesterdayLondonCandles;
+  if (!candleBCandles || candleBCandles.length === 0) {
+    candleBCandles = todayCandles.filter((c) => new Date(c[0]).getUTCHours() < 7);
+  }
+  if (!candleBCandles || candleBCandles.length === 0) {
+    candleBCandles = ohlcv1h.slice(-16, -8);
+  }
+
+  let candleNCandles = todayLondonCandles;
+  if (!candleNCandles || candleNCandles.length === 0) {
+    candleNCandles = todayCandles.length > 0 ? todayCandles : ohlcv1h.slice(-8);
+  }
+
+  const agg = (arr) => {
+    if (!arr || arr.length === 0) return null;
+    return {
+      open: arr[0][1],
+      high: Math.max(...arr.map((c) => c[2])),
+      low: Math.min(...arr.map((c) => c[3])),
+      close: arr[arr.length - 1][4],
+      volume: arr.reduce((acc, c) => acc + (c[5] || 0), 0),
+      timestamp: arr[0][0],
+    };
+  };
+
+  const ohlcv_N = agg(candleNCandles);
+  const ohlcv_B = agg(candleBCandles);
+  if (ohlcv_N && ohlcv_B) return { ohlcv_N, ohlcv_B };
+  return null;
+}
+
 // Multi-Timeframe Cache for Leak 4 REG Table (TTL: 30s)
 let multiTfCandlesCache = {
   data: {},
@@ -481,10 +533,12 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
 
   const tfs = ['5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M', '3M', '6M', '1Y'];
   const res = {};
+  let ohlcv1hRaw = null;
 
   for (const tf of tfs) {
     try {
       const ohlcv = await fetchBrokerOHLCV(brokerId, marketSymbol, tf);
+      if (tf === '1h') ohlcv1hRaw = ohlcv;
       if (tf === '1Y' && Array.isArray(ohlcv)) {
         multiTfCandlesCache.annualCandles = ohlcv;
       }
@@ -513,7 +567,11 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
     }
   }
 
-  if (res['1h']) {
+  // Aggregate London market session
+  const marketSession = aggregateLondonSession(ohlcv1hRaw);
+  if (marketSession) {
+    res['market'] = marketSession;
+  } else if (res['1h']) {
     res['market'] = res['1h'];
   }
 
@@ -830,7 +888,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     try {
       const multiTfMap = await getMultiTfCandles(broker.id, marketSymbol);
       multiTfMap[timeframe] = { ohlcv_N, ohlcv_B };
-      if (multiTfMap['1h']) multiTfMap['market'] = multiTfMap['1h'];
+      if (!multiTfMap['market']) multiTfMap['market'] = multiTfMap['1h'];
       leak4RegMatrix = calcLeak4RegMatrix(multiTfMap, ohlcv_N.close, Math.round((broker.spread || 0.12) * 100), decimals);
     } catch (e) {
       console.warn('[Leak4Reg Matrix Error]:', e.message);
