@@ -144,8 +144,20 @@ export default function RSMatrix({ data, liveTick }) {
 
           const config = LEVEL_CONFIG[key];
           const isClosest = closestLevel?.key === key;
-          const rowClass = getLevelClass(config.type, level.touched);
           const distance = currentPrice ? (currentPrice - level.value).toFixed(decimals) : null;
+
+          // Institutional Touch Detection (Live Price or Current Period High/Low Tested Level)
+          const isTouched = Boolean(
+            level.touched ||
+            (config.type === 'resistance' && (currentPrice >= level.value || (ohlcv_N?.high && ohlcv_N.high >= level.value))) ||
+            (config.type === 'support' && (currentPrice <= level.value || (ohlcv_N?.low && ohlcv_N.low <= level.value))) ||
+            (config.type === 'pivot' && (
+              (ohlcv_N?.high && ohlcv_N?.low && ohlcv_N.high >= level.value && ohlcv_N.low <= level.value) ||
+              (currentPrice && Math.abs(currentPrice - level.value) <= 1.0)
+            ))
+          );
+
+          const rowClass = getLevelClass(config.type, isTouched);
 
           return (
             <div
@@ -153,12 +165,14 @@ export default function RSMatrix({ data, liveTick }) {
               className={`${rowClass} transition-all duration-300 ${
                 isClosest
                   ? 'border-2 border-amber-400 bg-amber-500/20 shadow-glow-gold rounded-xl scale-[1.01]'
+                  : isTouched
+                  ? 'border-l-4 border-l-emerald-400 bg-emerald-950/15'
                   : ''
               }`}
             >
               {/* Level Badge */}
               <div className="flex items-center gap-2">
-                <span className={getLabelBadgeClass(config.type, level.touched)}>
+                <span className={getLabelBadgeClass(config.type, isTouched)}>
                   {config.label}
                 </span>
                 {isClosest && (
@@ -167,8 +181,14 @@ export default function RSMatrix({ data, liveTick }) {
                     📍 HARGA SAAT INI
                   </span>
                 )}
+                {isTouched && !isClosest && (
+                  <span className="flex items-center gap-1 text-[9px] font-mono font-black text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/80 shadow-glow-green-sm">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    TERSENTUH
+                  </span>
+                )}
                 <span className="text-[10px] text-slate-400 font-mono hidden xl:inline">
-                  {!isClosest && config.desc}
+                  {!isClosest && !isTouched && config.desc}
                 </span>
               </div>
 
@@ -178,7 +198,7 @@ export default function RSMatrix({ data, liveTick }) {
               </span>
 
               {/* Distance from Market Price */}
-              <div className="flex items-center gap-2 justify-end w-32">
+              <div className="flex items-center gap-2 justify-end w-36">
                 {distance !== null && (
                   <span
                     className={`text-[11px] font-mono font-semibold tabular-nums ${
@@ -189,14 +209,14 @@ export default function RSMatrix({ data, liveTick }) {
                   </span>
                 )}
 
-                {/* Touched Badge */}
-                {level.touched ? (
-                  <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-emerald-300 bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-500/70 animate-pulse">
-                    TOUCH
-                  </span>
-                ) : isClosest ? (
+                {/* Status Badges */}
+                {isClosest ? (
                   <span className="text-[9px] font-mono font-black text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/80 shadow-glow-gold-sm">
                     TERDEKAT
+                  </span>
+                ) : isTouched ? (
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-emerald-300 bg-emerald-950/90 px-1.5 py-0.2 rounded border border-emerald-500/70 flex items-center gap-0.5">
+                    ✓ HIT
                   </span>
                 ) : null}
               </div>

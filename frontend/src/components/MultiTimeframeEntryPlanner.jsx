@@ -146,14 +146,32 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
         {filteredRecs.map((rec) => {
           const isBuy = rec.busur.action === 'BUY LIMIT';
           const isSell = rec.busur.action === 'SELL LIMIT';
-          const distToEntry = Math.abs(currentPrice - rec.busur.entryPrice).toFixed(decimals);
+          const entryPrice = rec.busur.entryPrice;
+          const tp1Price = rec.busur.tp1;
+          const tp2Price = rec.busur.tp2;
+          const distToEntry = Math.abs(currentPrice - entryPrice).toFixed(decimals);
           const isCopied = copiedTf === rec.tf;
+
+          // Institutional Touch Detection for Entry Signal & TP Targets
+          const isEntryTouched = isBuy
+            ? (currentPrice <= entryPrice || (rec.lowN !== undefined && rec.lowN <= entryPrice))
+            : (currentPrice >= entryPrice || (rec.highN !== undefined && rec.highN >= entryPrice));
+
+          const isTp1Touched = isBuy
+            ? (currentPrice >= tp1Price || (rec.highN !== undefined && rec.highN >= tp1Price))
+            : (currentPrice <= tp1Price || (rec.lowN !== undefined && rec.lowN <= tp1Price));
+
+          const isTp2Touched = isBuy
+            ? (currentPrice >= tp2Price || (rec.highN !== undefined && rec.highN >= tp2Price))
+            : (currentPrice <= tp2Price || (rec.lowN !== undefined && rec.lowN <= tp2Price));
 
           return (
             <div
               key={rec.tf}
               className={`cop-card p-4 rounded-2xl border-2 flex flex-col justify-between space-y-4 transition-all duration-300 backdrop-blur-md shadow-card-elevated ${
-                isBuy
+                isEntryTouched
+                  ? 'border-amber-400 bg-gradient-to-b from-amber-950/30 via-cop-card to-slate-900 shadow-glow-gold'
+                  : isBuy
                   ? 'border-emerald-500/50 bg-gradient-to-b from-emerald-950/20 via-cop-card to-slate-900 shadow-glow-green-sm'
                   : 'border-rose-500/50 bg-gradient-to-b from-rose-950/20 via-cop-card to-slate-900 shadow-glow-red-sm'
               }`}
@@ -184,7 +202,53 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                   </span>
                 </div>
 
-                {/* KOTAK INDIKATOR LOKASI HARGA SAAT INI (USER REQUESTED) */}
+                {/* INDIKATOR STATUS SENTUHAN SINYAL ENTRY & TARGET */}
+                {isTp2Touched ? (
+                  <div className="p-2.5 rounded-xl bg-purple-950/70 border-2 border-purple-400 shadow-glow-purple flex items-center justify-between text-xs font-mono">
+                    <div className="flex items-center gap-2 text-purple-200 font-black">
+                      <Sparkles className="w-4 h-4 text-purple-300" />
+                      <span>🏆 TARGET UTAMA TP2 TERCAPAI</span>
+                    </div>
+                    <span className="text-[10px] bg-purple-500 text-slate-950 px-2 py-0.5 rounded font-black shadow-sm">
+                      SELESAI (+{rec.busur.tp2Points} pts)
+                    </span>
+                  </div>
+                ) : isTp1Touched ? (
+                  <div className="p-2.5 rounded-xl bg-emerald-950/70 border-2 border-emerald-400 shadow-glow-green-sm flex items-center justify-between text-xs font-mono">
+                    <div className="flex items-center gap-2 text-emerald-200 font-black">
+                      <Target className="w-4 h-4 text-emerald-300" />
+                      <span>🎯 TARGET PIVOT TP1 TERCAPAI</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-500 text-slate-950 px-2 py-0.5 rounded font-black shadow-sm">
+                      AMANKAN SEBAGIAN
+                    </span>
+                  </div>
+                ) : isEntryTouched ? (
+                  <div className="p-2.5 rounded-xl bg-amber-500/25 border-2 border-amber-400 text-amber-200 font-black shadow-glow-gold flex items-center justify-between text-xs font-mono animate-pulse">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
+                      </span>
+                      <span>⚡ HARGA TERSENTUH (SINYAL ENTRY TERPICU)</span>
+                    </div>
+                    <span className="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black shadow-sm">
+                      ORDER AKTIF
+                    </span>
+                  </div>
+                ) : (
+                  <div className="p-2 rounded-xl bg-slate-900/90 border border-slate-700/80 text-slate-300 flex items-center justify-between text-xs font-mono">
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Clock className="w-3.5 h-3.5 text-cop-cyan" />
+                      <span>Menunggu Sentuhan Harga:</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-cop-gold tabular-nums">
+                      Sisa {distToEntry} pts
+                    </span>
+                  </div>
+                )}
+
+                {/* KOTAK INDIKATOR LOKASI HARGA SAAT INI */}
                 <div className="p-3 rounded-xl bg-slate-950/90 border-2 border-amber-500/60 space-y-1.5 shadow-sm">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="text-slate-400 flex items-center gap-1.5">
@@ -206,7 +270,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                       Jarak ke Entry: <strong className="text-emerald-400 font-bold tabular-nums">{distToEntry} pts</strong>
                     </span>
                     <span className="text-slate-400 text-right">
-                      Usia Lilin: <strong className="text-cop-cyan">{rec.hsh.percentElapsed}%</strong>
+                      Usia Periode: <strong className="text-cop-cyan">{rec.hsh.percentElapsed}%</strong>
                     </span>
                   </div>
                 </div>
@@ -222,8 +286,12 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                     </span>
                   </div>
 
-                  {/* ENTRY ROW */}
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-cop-card border border-cop-border text-xs">
+                  {/* ENTRY ROW DENGAN TANDA TERSENTUH */}
+                  <div className={`flex items-center justify-between p-2 rounded-lg border text-xs transition-all ${
+                    isEntryTouched
+                      ? 'bg-amber-500/20 border-amber-400 shadow-glow-gold-sm font-bold'
+                      : 'bg-cop-card border-cop-border'
+                  }`}>
                     <div className="flex items-center gap-1.5">
                       <span className={`text-[9px] font-black px-1.5 py-0.2 rounded ${
                         isBuy ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'
@@ -232,9 +300,20 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                       </span>
                       <span className="text-slate-300 font-semibold">{isBuy ? 'Support S1' : 'Resistance R1'}</span>
                     </div>
-                    <span className="text-sm font-black text-white tabular-nums">
-                      ${rec.busur.entryPrice.toFixed(decimals)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-black text-white tabular-nums">
+                        ${entryPrice.toFixed(decimals)}
+                      </span>
+                      {isEntryTouched ? (
+                        <span className="text-[9px] font-black px-2 py-0.5 rounded bg-emerald-500 text-slate-950 flex items-center gap-1 animate-pulse shadow-sm">
+                          <CheckCircle2 className="w-3 h-3" /> TERSENTUH
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                          MENUNGGU
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* TP1 & TP2 & SL Grid */}

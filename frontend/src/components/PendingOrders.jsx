@@ -39,6 +39,29 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
   const entryPrice = busur?.entryPrice || 0;
   const liveDist = currentPrice && entryPrice ? Math.abs(currentPrice - entryPrice).toFixed(decimals) : busur?.distToEntry || '0.000';
 
+  // Institutional Touch Detection
+  const isEntryTouched = Boolean(
+    isBuy
+      ? (currentPrice && entryPrice && currentPrice <= entryPrice) || (ohlcv_N?.low !== undefined && ohlcv_N.low <= entryPrice)
+      : (currentPrice && entryPrice && currentPrice >= entryPrice) || (ohlcv_N?.high !== undefined && ohlcv_N.high >= entryPrice)
+  );
+
+  const isTp1Touched = Boolean(
+    busur?.tp1 && (
+      isBuy
+        ? (currentPrice && currentPrice >= busur.tp1) || (ohlcv_N?.high !== undefined && ohlcv_N.high >= busur.tp1)
+        : (currentPrice && currentPrice <= busur.tp1) || (ohlcv_N?.low !== undefined && ohlcv_N.low <= busur.tp1)
+    )
+  );
+
+  const isTp2Touched = Boolean(
+    busur?.tp2 && (
+      isBuy
+        ? (currentPrice && currentPrice >= busur.tp2) || (ohlcv_N?.high !== undefined && ohlcv_N.high >= busur.tp2)
+        : (currentPrice && currentPrice <= busur.tp2) || (ohlcv_N?.low !== undefined && ohlcv_N.low <= busur.tp2)
+    )
+  );
+
   const handleModalSubmit = async (e) => {
     e.preventDefault();
     if (!modalInput || isNaN(modalInput)) return;
@@ -155,7 +178,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
         </div>
 
         {/* Live Distance Meter Strip */}
-        <div className="mt-3 pt-2.5 border-t border-slate-700/50 flex items-center justify-between text-[11px] font-mono">
+        <div className="mt-3 pt-2.5 border-t border-slate-700/50 flex items-center justify-between text-[11px] font-mono flex-wrap gap-2">
           <span className="text-slate-400 flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-cop-cyan" />
             Harga Live: <strong className="text-white tabular-nums">${currentPrice.toFixed(decimals)}</strong>
@@ -165,9 +188,24 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
             Titik Entry: <strong className="text-cop-gold tabular-nums">${entryPrice.toFixed(decimals)}</strong>
           </span>
           <span className="text-slate-400">
-            Status: <strong className={isBuy ? 'text-emerald-400' : isSell ? 'text-rose-400' : 'text-slate-400'}>
-              {currentPrice > entryPrice ? (isBuy ? 'Menunggu Koreksi Turun' : 'Siap Terpanggil') : (isSell ? 'Menunggu Koreksi Naik' : 'Siap Terpanggil')}
-            </strong>
+            Status:{' '}
+            {isTp2Touched ? (
+              <strong className="text-purple-300 font-black">🏆 Target TP2 Tercapai</strong>
+            ) : isTp1Touched ? (
+              <strong className="text-emerald-300 font-black">🎯 Target TP1 Tercapai</strong>
+            ) : isEntryTouched ? (
+              <strong className="text-amber-300 font-black animate-pulse">⚡ Harga Tersentuh (Order Aktif)</strong>
+            ) : (
+              <strong className={isBuy ? 'text-emerald-400' : isSell ? 'text-rose-400' : 'text-slate-400'}>
+                {currentPrice > entryPrice
+                  ? isBuy
+                    ? 'Menunggu Koreksi Turun'
+                    : 'Siap Terpanggil'
+                  : isSell
+                  ? 'Menunggu Koreksi Naik'
+                  : 'Siap Terpanggil'}
+              </strong>
+            )}
           </span>
         </div>
       </div>
@@ -184,16 +222,31 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
         </div>
 
         <div className="space-y-1.5 font-mono text-xs">
-          {/* ENTRY ROW */}
-          <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-cop-surface border border-cop-border/60">
+          {/* ENTRY ROW DENGAN TANDA TERSENTUH */}
+          <div className={`flex items-center justify-between px-3 py-1.5 rounded-lg border transition-all ${
+            isEntryTouched
+              ? 'bg-amber-500/20 border-amber-400 shadow-glow-gold-sm font-bold'
+              : 'bg-cop-surface border-cop-border/60'
+          }`}>
             <div className="flex items-center gap-2">
               <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-600/50">
                 ENTRY
               </span>
               <span className="font-semibold text-slate-300">Titik Masuk Pending Order</span>
             </div>
-            <div className="text-right font-bold text-white tabular-nums">
-              ${entryPrice.toFixed(decimals)}
+            <div className="flex items-center gap-2">
+              <span className="text-right font-bold text-white tabular-nums">
+                ${entryPrice.toFixed(decimals)}
+              </span>
+              {isEntryTouched ? (
+                <span className="text-[9px] font-black px-2 py-0.5 rounded bg-emerald-500 text-slate-950 flex items-center gap-1 animate-pulse shadow-sm">
+                  <CheckCircle2 className="w-3 h-3" /> TERSENTUH
+                </span>
+              ) : (
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                  MENUNGGU
+                </span>
+              )}
             </div>
           </div>
 
@@ -208,7 +261,14 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-emerald-400 font-semibold tabular-nums">+{busur?.tp1Points} pts</span>
               <span className="text-[10px] text-slate-400 tabular-nums">(+$${busur?.estProfitTp1})</span>
-              <span className="font-bold text-emerald-400 tabular-nums">${busur?.tp1?.toFixed(decimals) || '—'}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-emerald-400 tabular-nums">${busur?.tp1?.toFixed(decimals) || '—'}</span>
+                {isTp1Touched && (
+                  <span className="text-[8px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
+                    ✓ HIT
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -223,7 +283,14 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-emerald-400 font-bold tabular-nums">+{busur?.tp2Points} pts</span>
               <span className="text-[10px] text-emerald-300 font-bold tabular-nums">(+$${busur?.estProfitTp2})</span>
-              <span className="font-black text-emerald-300 tabular-nums">${busur?.tp2?.toFixed(decimals) || '—'}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-emerald-300 tabular-nums">${busur?.tp2?.toFixed(decimals) || '—'}</span>
+                {isTp2Touched && (
+                  <span className="text-[8px] bg-purple-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
+                    ✓ HIT
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

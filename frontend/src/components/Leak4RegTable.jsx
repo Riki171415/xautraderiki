@@ -211,9 +211,16 @@ export default function Leak4RegTable({ data, liveTick }) {
                 ${activePrice}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-amber-200">
-              <span className="w-2.5 h-2.5 rounded border-2 border-amber-400 bg-amber-500/40 inline-block shadow-glow-gold-sm" />
-              <span>Sel bergaris kotak emas menyala = Level terdekat dengan posisi pasar saat ini</span>
+            <div className="flex items-center gap-3 text-[11px] text-amber-200 flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded border-2 border-amber-400 bg-amber-500/40 inline-block shadow-glow-gold-sm" />
+                <span>Kotak Emas = Level Terdekat Saat Ini</span>
+              </span>
+              <span className="text-slate-600">·</span>
+              <span className="flex items-center gap-1.5 text-emerald-300">
+                <span className="text-[9px] bg-emerald-500 text-slate-950 font-black px-1 rounded">✓</span>
+                <span>Tanda ✓ = Level Telah Tersentuh / Diuji Harga Periode Ini</span>
+              </span>
             </div>
           </div>
 
@@ -244,7 +251,12 @@ export default function Leak4RegTable({ data, liveTick }) {
                   {rsColumns.map((col) => {
                     const currentNum = parseFloat(activePrice);
                     const cellNum = parseFloat(col[rKey]);
-                    // Check if this level is closest in this column
+                    const highNum = parseFloat(col.highN);
+
+                    // Touch detection: High of period crossed level OR live price reached level
+                    const isTouched = (!isNaN(highNum) && highNum >= cellNum) || (!isNaN(currentNum) && currentNum >= cellNum);
+
+                    // Closest level check
                     const allVals = ['res4', 'res3', 'res2', 'res1', 'pivot', 'sup1', 'sup2', 'sup3', 'sup4']
                       .map((k) => ({ k, diff: Math.abs(parseFloat(col[k]) - currentNum) }))
                       .sort((a, b) => a.diff - b.diff);
@@ -253,15 +265,23 @@ export default function Leak4RegTable({ data, liveTick }) {
                     return (
                       <td
                         key={col.timeframe}
-                        className={`py-1.5 px-2 tabular-nums transition-all ${
+                        className={`py-1 px-1.5 tabular-nums transition-all ${
                           isClosest
                             ? 'bg-amber-500/25 text-amber-200 font-black border-2 border-amber-400 rounded-lg shadow-glow-gold'
+                            : isTouched
+                            ? 'bg-emerald-950/30 text-emerald-300 font-bold'
                             : ''
                         }`}
                       >
                         {isClosest ? (
                           <div className="flex items-center justify-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                            <span>{col[rKey]}</span>
+                            <span className="text-[8px] bg-amber-500 text-slate-950 px-1 py-0.2 rounded font-black">SAAT INI</span>
+                          </div>
+                        ) : isTouched ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="text-[8px] bg-emerald-500 text-slate-950 px-1 rounded font-black shadow-sm">✓</span>
                             <span>{col[rKey]}</span>
                           </div>
                         ) : (
@@ -278,6 +298,15 @@ export default function Leak4RegTable({ data, liveTick }) {
                 <td className="py-2 px-2 text-left text-cop-gold font-bold">PIVOT</td>
                 {rsColumns.map((col) => {
                   const currentNum = parseFloat(activePrice);
+                  const cellNum = parseFloat(col.pivot);
+                  const highNum = parseFloat(col.highN);
+                  const lowNum = parseFloat(col.lowN);
+
+                  // Touch detection: Price tested inside High-Low range of period OR live price is right at Pivot
+                  const isTouched =
+                    (!isNaN(highNum) && !isNaN(lowNum) && highNum >= cellNum && lowNum <= cellNum) ||
+                    (!isNaN(currentNum) && Math.abs(currentNum - cellNum) <= 1.0);
+
                   const allVals = ['res4', 'res3', 'res2', 'res1', 'pivot', 'sup1', 'sup2', 'sup3', 'sup4']
                     .map((k) => ({ k, diff: Math.abs(parseFloat(col[k]) - currentNum) }))
                     .sort((a, b) => a.diff - b.diff);
@@ -286,15 +315,23 @@ export default function Leak4RegTable({ data, liveTick }) {
                   return (
                     <td
                       key={col.timeframe}
-                      className={`py-2 px-2 text-white font-black tabular-nums transition-all ${
+                      className={`py-2 px-1.5 text-white font-black tabular-nums transition-all ${
                         isClosest
                           ? 'bg-amber-500/40 text-amber-200 border-2 border-amber-400 rounded-lg shadow-glow-gold'
+                          : isTouched
+                          ? 'bg-emerald-950/40 text-emerald-300'
                           : ''
                       }`}
                     >
                       {isClosest ? (
                         <div className="flex items-center justify-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                          <span>{col.pivot}</span>
+                          <span className="text-[8px] bg-amber-500 text-slate-950 px-1 py-0.2 rounded font-black">SAAT INI</span>
+                        </div>
+                      ) : isTouched ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="text-[8px] bg-emerald-500 text-slate-950 px-1 rounded font-black shadow-sm">✓</span>
                           <span>{col.pivot}</span>
                         </div>
                       ) : (
@@ -310,6 +347,12 @@ export default function Leak4RegTable({ data, liveTick }) {
                   <td className="py-1.5 px-2 text-left font-bold text-rose-400">{`SUP_${idx + 1}`}</td>
                   {rsColumns.map((col) => {
                     const currentNum = parseFloat(activePrice);
+                    const cellNum = parseFloat(col[sKey]);
+                    const lowNum = parseFloat(col.lowN);
+
+                    // Touch detection: Low of period crossed support OR live price reached/fell below support
+                    const isTouched = (!isNaN(lowNum) && lowNum <= cellNum) || (!isNaN(currentNum) && currentNum <= cellNum);
+
                     const allVals = ['res4', 'res3', 'res2', 'res1', 'pivot', 'sup1', 'sup2', 'sup3', 'sup4']
                       .map((k) => ({ k, diff: Math.abs(parseFloat(col[k]) - currentNum) }))
                       .sort((a, b) => a.diff - b.diff);
@@ -318,15 +361,23 @@ export default function Leak4RegTable({ data, liveTick }) {
                     return (
                       <td
                         key={col.timeframe}
-                        className={`py-1.5 px-2 tabular-nums transition-all ${
+                        className={`py-1 px-1.5 tabular-nums transition-all ${
                           isClosest
                             ? 'bg-amber-500/25 text-amber-200 font-black border-2 border-amber-400 rounded-lg shadow-glow-gold'
+                            : isTouched
+                            ? 'bg-rose-950/30 text-rose-300 font-bold'
                             : ''
                         }`}
                       >
                         {isClosest ? (
                           <div className="flex items-center justify-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                            <span>{col[sKey]}</span>
+                            <span className="text-[8px] bg-amber-500 text-slate-950 px-1 py-0.2 rounded font-black">SAAT INI</span>
+                          </div>
+                        ) : isTouched ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="text-[8px] bg-rose-500 text-white px-1 rounded font-black shadow-sm">✓</span>
                             <span>{col[sKey]}</span>
                           </div>
                         ) : (

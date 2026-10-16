@@ -106,6 +106,15 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
   const hshProfitTp3 = (parseFloat(lot) * parseFloat(hshTp3Pts) * 10).toFixed(2);
   const hshLossSl = (parseFloat(lot) * parseFloat(hshSlPts) * 10).toFixed(2);
 
+  // Institutional Touch Detection for Intraday Levels
+  const isTrendEntryTouched = Boolean(currentPrice <= trendEntry || (dailyRow?.lowN && parseFloat(dailyRow.lowN) <= trendEntry));
+  const isTrendTp1Touched = Boolean(currentPrice >= trendTp1 || (dailyRow?.highN && parseFloat(dailyRow.highN) >= trendTp1));
+  const isTrendTp2Touched = Boolean(currentPrice >= trendTp2 || (dailyRow?.highN && parseFloat(dailyRow.highN) >= trendTp2));
+
+  const isHshEntryTouched = Boolean(currentPrice >= hshEntryPrimary || (dailyRow?.highN && parseFloat(dailyRow.highN) >= hshEntryPrimary));
+  const isHshTp1Touched = Boolean(currentPrice <= hshTp1 || (dailyRow?.lowN && parseFloat(dailyRow.lowN) <= hshTp1));
+  const isHshTp2Touched = Boolean(currentPrice <= hshTp2 || (dailyRow?.lowN && parseFloat(dailyRow.lowN) <= hshTp2));
+
   // ── Helper to Lookup Multi-TF Matrix Numbers for Fractal Table ─────────────
   const getTfNumbers = (tfKey) => {
     let row = null;
@@ -536,20 +545,47 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
 
               {/* 4 Kotak Roadmap Target A */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                <div className="p-2.5 rounded-xl bg-cop-surface border border-cop-border">
-                  <span className="text-[10px] text-blue-400 font-bold block mb-0.5">TITIK ENTRY</span>
+                <div className={`p-2.5 rounded-xl border transition-all ${
+                  isTrendEntryTouched ? 'bg-amber-500/20 border-amber-400 shadow-glow-gold-sm' : 'bg-cop-surface border-cop-border'
+                }`}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-blue-400 font-bold">TITIK ENTRY</span>
+                    {isTrendEntryTouched && (
+                      <span className="text-[8px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
+                        ✓ TERSENTUH
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm font-black text-white tabular-nums">${trendEntry.toFixed(decimals)}</div>
                   <span className="text-[9px] text-slate-400">Support S1</span>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-800/50">
-                  <span className="text-[10px] text-emerald-400 font-bold block mb-0.5">TARGET 1 (PIVOT)</span>
+                <div className={`p-2.5 rounded-xl border transition-all ${
+                  isTrendTp1Touched ? 'bg-emerald-950/60 border-emerald-400' : 'bg-emerald-950/30 border-emerald-800/50'
+                }`}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-emerald-400 font-bold">TARGET 1 (PIVOT)</span>
+                    {isTrendTp1Touched && (
+                      <span className="text-[8px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
+                        ✓ HIT
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm font-black text-emerald-300 tabular-nums">${trendTp1.toFixed(decimals)}</div>
                   <span className="text-[9px] text-slate-300">+{trendTp1Pts} pts (+${trendProfitTp1})</span>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-emerald-950/50 border border-emerald-500/70 shadow-glow-green-sm">
-                  <span className="text-[10px] text-emerald-300 font-black block mb-0.5">TARGET 2 (R1)</span>
+                <div className={`p-2.5 rounded-xl border transition-all ${
+                  isTrendTp2Touched ? 'bg-emerald-950/70 border-emerald-400 shadow-glow-green-sm' : 'bg-emerald-950/50 border-emerald-500/70 shadow-glow-green-sm'
+                }`}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-emerald-300 font-black">TARGET 2 (R1)</span>
+                    {isTrendTp2Touched && (
+                      <span className="text-[8px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
+                        ✓ HIT
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm font-black text-emerald-300 tabular-nums">${trendTp2.toFixed(decimals)}</div>
                   <span className="text-[9px] text-emerald-400 font-bold">+{trendTp2Pts} pts (+${trendProfitTp2})</span>
                 </div>
@@ -591,20 +627,47 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
 
               {/* 4 Kotak Roadmap Target B */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                <div className="p-2.5 rounded-xl bg-cop-surface border border-rose-500/40">
-                  <span className="text-[10px] text-rose-400 font-bold block mb-0.5">AREA ENTRY SELL</span>
+                <div className={`p-2.5 rounded-xl border transition-all ${
+                  isHshEntryTouched ? 'bg-amber-500/20 border-amber-400 shadow-glow-gold-sm' : 'bg-cop-surface border-rose-500/40'
+                }`}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-rose-400 font-bold">AREA ENTRY SELL</span>
+                    {isHshEntryTouched && (
+                      <span className="text-[8px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
+                        ✓ TERSENTUH
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm font-black text-white tabular-nums">${hshEntryPrimary.toFixed(decimals)}</div>
                   <span className="text-[9px] text-slate-400">R1 ($${hshEntryPrimary.toFixed(0)}) - R2 ($${hshEntrySecondary.toFixed(0)})</span>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-800/50">
-                  <span className="text-[10px] text-rose-400 font-bold block mb-0.5">TP 1 (OPEN HARI INI)</span>
+                <div className={`p-2.5 rounded-xl border transition-all ${
+                  isHshTp1Touched ? 'bg-rose-950/60 border-rose-400' : 'bg-rose-950/30 border-rose-800/50'
+                }`}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-rose-400 font-bold">TP 1 (OPEN HARI INI)</span>
+                    {isHshTp1Touched && (
+                      <span className="text-[8px] bg-rose-400 text-white font-black px-1.5 py-0.2 rounded shadow-sm">
+                        ✓ HIT
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm font-black text-rose-300 tabular-nums">${hshTp1.toFixed(decimals)}</div>
                   <span className="text-[9px] text-slate-300">+{hshTp1Pts} pts (+${hshProfitTp1})</span>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-rose-950/50 border border-rose-500/70 shadow-glow-red-sm">
-                  <span className="text-[10px] text-rose-300 font-black block mb-0.5">TP 2 (PIVOT HARIAN)</span>
+                <div className={`p-2.5 rounded-xl border transition-all ${
+                  isHshTp2Touched ? 'bg-rose-950/70 border-rose-400 shadow-glow-red-sm' : 'bg-rose-950/50 border-rose-500/70 shadow-glow-red-sm'
+                }`}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-rose-300 font-black">TP 2 (PIVOT HARIAN)</span>
+                    {isHshTp2Touched && (
+                      <span className="text-[8px] bg-rose-400 text-white font-black px-1.5 py-0.2 rounded shadow-sm">
+                        ✓ HIT
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm font-black text-rose-300 tabular-nums">${hshTp2.toFixed(decimals)}</div>
                   <span className="text-[9px] text-rose-400 font-bold">+{hshTp2Pts} pts (+${hshProfitTp2})</span>
                 </div>
