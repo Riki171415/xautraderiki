@@ -944,9 +944,30 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     else if (def.label === `${currentYear}`) rsLabel = 'YEAR';
     else if (def.key === 'market') rsLabel = 'MARKET';
 
+    // Calculate touched levels for this timeframe
+    const touchedLevels = {
+      res4: Boolean(highN >= r4B || currentPrice >= r4B),
+      res3: Boolean(highN >= r3B || currentPrice >= r3B),
+      res2: Boolean(highN >= r2B || currentPrice >= r2B),
+      res1: Boolean(highN >= r1B || currentPrice >= r1B),
+      pivot: Boolean((highN >= pivotB && lowN <= pivotB) || Math.abs(currentPrice - pivotB) <= 1.0),
+      sup1: Boolean(lowN <= s1B || currentPrice <= s1B),
+      sup2: Boolean(lowN <= s2B || currentPrice <= s2B),
+      sup3: Boolean(lowN <= s3B || currentPrice <= s3B),
+      sup4: Boolean(lowN <= s4B || currentPrice <= s4B),
+    };
+
     rsColumns.push({
       timeframe: def.key,
       label: rsLabel,
+      openN: openN.toFixed(decimals),
+      highN: highN.toFixed(decimals),
+      lowN: lowN.toFixed(decimals),
+      closeN: closeN.toFixed(decimals),
+      openB: openB.toFixed(decimals),
+      highB: highB.toFixed(decimals),
+      lowB: lowB.toFixed(decimals),
+      closeB: closeB.toFixed(decimals),
       res4: r4B.toFixed(decimals),
       res3: r3B.toFixed(decimals),
       res2: r2B.toFixed(decimals),
@@ -956,6 +977,7 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
       sup2: s2B.toFixed(decimals),
       sup3: s3B.toFixed(decimals),
       sup4: s4B.toFixed(decimals),
+      touchedLevels,
     });
   }
 

@@ -233,6 +233,190 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
         </div>
       </div>
 
+      {/* ── 2.5. Tabel Matriks Status Sentuhan Harga di Setiap Timeframe ── */}
+      <div className="border-2 border-cop-border rounded-2xl bg-cop-surface/90 overflow-hidden shadow-xl font-mono">
+        <div className="p-3.5 bg-gradient-to-r from-slate-950 via-cop-card to-slate-900 border-b border-cop-border flex items-center justify-between flex-wrap gap-2 text-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+            </span>
+            <span className="font-black text-white uppercase tracking-wider flex items-center gap-2">
+              <Layers className="w-4 h-4 text-cop-gold" />
+              Tabel Matriks Status Sentuhan Harga di Setiap Timeframe
+            </span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50">
+              Deteksi Real-Time
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-400 hidden sm:inline">
+            Tanda <strong className="text-emerald-400">✓ TERSENTUH</strong> menunjukkan harga telah menyentuh titik target pada periode ini
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-center text-[11px] border-collapse">
+            <thead>
+              <tr className="bg-slate-900/90 text-[10px] text-slate-400 uppercase tracking-wider border-b border-cop-border">
+                <th className="py-2.5 px-3 text-left">Timeframe</th>
+                <th className="py-2.5 px-2">Arah JIKA & Pola</th>
+                <th className="py-2.5 px-3">Titik Entry S1/R1</th>
+                <th className="py-2.5 px-3">Status Sentuhan Entry</th>
+                <th className="py-2.5 px-3">Target TP1 (Pivot)</th>
+                <th className="py-2.5 px-3">Target TP2 (Busur)</th>
+                <th className="py-2.5 px-3">Stop Loss</th>
+                <th className="py-2.5 px-2">R : R</th>
+                <th className="py-2.5 px-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-cop-border/40">
+              {entryRecommendations.map((rec) => {
+                const isSelected = selectedTf === rec.tf;
+                const recIsBuy = rec.busur.action === 'BUY LIMIT';
+                const recEntry = rec.busur.entryPrice;
+                const recTp1 = rec.busur.tp1;
+                const recTp2 = rec.busur.tp2;
+                const recDist = Math.abs(currentPrice - recEntry).toFixed(decimals);
+
+                const touchedEntry = Boolean(
+                  recIsBuy
+                    ? (currentPrice <= recEntry || (rec.lowN !== undefined && rec.lowN <= recEntry))
+                    : (currentPrice >= recEntry || (rec.highN !== undefined && rec.highN >= recEntry))
+                );
+
+                const touchedTp1 = Boolean(
+                  recIsBuy
+                    ? (currentPrice >= recTp1 || (rec.highN !== undefined && rec.highN >= recTp1))
+                    : (currentPrice <= recTp1 || (rec.lowN !== undefined && rec.lowN <= recTp1))
+                );
+
+                const touchedTp2 = Boolean(
+                  recIsBuy
+                    ? (currentPrice >= recTp2 || (rec.highN !== undefined && rec.highN >= recTp2))
+                    : (currentPrice <= recTp2 || (rec.lowN !== undefined && rec.lowN <= recTp2))
+                );
+
+                return (
+                  <tr
+                    key={rec.tf}
+                    onClick={() => setSelectedTf(rec.tf)}
+                    className={`cursor-pointer transition-all hover:bg-amber-500/[0.08] ${
+                      isSelected ? 'bg-amber-500/15 font-bold' : ''
+                    }`}
+                  >
+                    <td className="py-2.5 px-3 text-left whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-black px-2 py-0.5 rounded ${
+                          isSelected ? 'bg-amber-400 text-slate-950 font-black' : 'bg-cop-card text-white'
+                        }`}>
+                          {rec.tf.toUpperCase()}
+                        </span>
+                        <div>
+                          <div className="text-white font-bold">{rec.name}</div>
+                          <div className="text-[9px] text-slate-400">{rec.style}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-2.5 px-2">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${
+                          rec.jika.trend === 'UP'
+                            ? 'bg-emerald-950 text-emerald-300 border-emerald-600/40'
+                            : 'bg-rose-950 text-rose-300 border-rose-600/40'
+                        }`}>
+                          JIKA {rec.jika.trend}
+                        </span>
+                        <span className="text-[9px] text-slate-400">{rec.perahu.pattern}</span>
+                      </div>
+                    </td>
+
+                    <td className="py-2.5 px-3 tabular-nums">
+                      <div className="font-bold text-white">
+                        <span className={recIsBuy ? 'text-emerald-400' : 'text-rose-400'}>
+                          {recIsBuy ? 'BUY' : 'SELL'}
+                        </span>{' '}
+                        ${recEntry.toFixed(decimals)}
+                      </div>
+                      <span className="text-[9px] text-slate-400">{recIsBuy ? 'Support S1' : 'Resistance R1'}</span>
+                    </td>
+
+                    <td className="py-2.5 px-3">
+                      {touchedEntry ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 text-slate-950 font-black text-[10px] shadow-glow-green-sm animate-pulse">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>✓ TERSENTUH</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] border border-slate-700">
+                          <Clock className="w-3 h-3 text-cop-cyan" />
+                          <span>Sisa {recDist} pts</span>
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="py-2.5 px-3 tabular-nums">
+                      <div className="flex items-center justify-center gap-1">
+                        {touchedTp1 && (
+                          <span className="text-[8px] bg-emerald-500 text-slate-950 px-1.5 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
+                            ✓ HIT
+                          </span>
+                        )}
+                        <span className={touchedTp1 ? 'text-emerald-300 font-black' : 'text-slate-300 font-bold'}>
+                          ${recTp1.toFixed(decimals)}
+                        </span>
+                      </div>
+                      <span className="text-[9px] text-emerald-400">+{rec.busur.tp1Points} pts</span>
+                    </td>
+
+                    <td className="py-2.5 px-3 tabular-nums">
+                      <div className="flex items-center justify-center gap-1">
+                        {touchedTp2 && (
+                          <span className="text-[8px] bg-purple-500 text-slate-950 px-1.5 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
+                            🏆 HIT
+                          </span>
+                        )}
+                        <span className={touchedTp2 ? 'text-purple-300 font-black' : 'text-slate-300 font-bold'}>
+                          ${recTp2.toFixed(decimals)}
+                        </span>
+                      </div>
+                      <span className="text-[9px] text-cop-gold">+{rec.busur.tp2Points} pts</span>
+                    </td>
+
+                    <td className="py-2.5 px-3 tabular-nums">
+                      <span className="text-rose-400 font-bold">${rec.busur.stopLoss.toFixed(decimals)}</span>
+                      <div className="text-[9px] text-slate-400">-{rec.busur.slPoints} pts</div>
+                    </td>
+
+                    <td className="py-2.5 px-2">
+                      <span className="text-[10px] font-bold text-cop-gold bg-cop-card px-1.5 py-0.5 rounded border border-cop-border">
+                        {rec.busur.riskReward}
+                      </span>
+                    </td>
+
+                    <td className="py-2.5 px-3 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTf(rec.tf);
+                        }}
+                        className={`px-3 py-1 rounded-xl text-[10px] font-bold transition-all ${
+                          isSelected
+                            ? 'bg-amber-400 text-slate-950 shadow-glow-gold-sm font-black'
+                            : 'bg-cop-card text-slate-300 border border-cop-border hover:bg-slate-700'
+                        }`}
+                      >
+                        {isSelected ? 'Sedang Aktif' : 'Lihat Detail →'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* ── 3. Focused Cockpit View (Hanya Menampilkan 1 Timeframe Terpilih) ── */}
       <div className="bg-gradient-to-br from-cop-card via-cop-surface to-cop-card border-2 border-cop-border rounded-3xl p-5 lg:p-6 shadow-2xl space-y-6">
         {/* Navigation Bar between Timeframes */}

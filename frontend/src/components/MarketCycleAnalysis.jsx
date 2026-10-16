@@ -738,6 +738,26 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
               <tbody className="divide-y divide-cop-border/40 bg-cop-surface/40">
                 {subAlurCerita?.allSchedules?.map((sched) => {
                   const nums = getTfNumbers(sched.tf);
+
+                  const s1Val = nums.sup1 !== null ? nums.sup1 : nums.low;
+                  const r1Val = nums.res1 !== null ? nums.res1 : nums.high;
+                  const pivotVal = nums.pivot;
+
+                  const isSupTouched = Boolean(
+                    (s1Val !== null && nums.low !== null && nums.low <= s1Val) ||
+                    (s1Val !== null && currentPrice <= s1Val)
+                  );
+                  const isPivotTouched = Boolean(
+                    pivotVal !== null && (
+                      (nums.high !== null && nums.low !== null && nums.high >= pivotVal && nums.low <= pivotVal) ||
+                      Math.abs(currentPrice - pivotVal) <= 1.0
+                    )
+                  );
+                  const isResTouched = Boolean(
+                    (r1Val !== null && nums.high !== null && nums.high >= r1Val) ||
+                    (r1Val !== null && currentPrice >= r1Val)
+                  );
+
                   return (
                     <tr key={sched.tf} className="hover:bg-white/5 transition-colors">
                       <td className="py-2.5 px-3 font-bold text-white whitespace-nowrap align-middle">
@@ -752,26 +772,51 @@ export default function MarketCycleAnalysis({ data, liveTick }) {
                       </td>
 
                       {/* Lantai Busur (S1 / Low) */}
-                      <td className="py-2.5 px-3 font-bold text-blue-400 tabular-nums">
-                        {nums.sup1 !== null
-                          ? `$${nums.sup1.toFixed(decimals)}`
-                          : nums.low !== null
-                          ? `$${nums.low.toFixed(decimals)}`
-                          : '—'}
+                      <td className={`py-2.5 px-3 font-bold tabular-nums transition-colors ${
+                        isSupTouched ? 'bg-rose-950/40 text-rose-300' : 'text-blue-400'
+                      }`}>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {isSupTouched && (
+                            <span className="text-[8px] bg-rose-500 text-white px-1.5 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
+                              ✓ TERSENTUH
+                            </span>
+                          )}
+                          <span>
+                            {s1Val !== null ? `$${s1Val.toFixed(decimals)}` : '—'}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Pivot Ekuilibrium */}
-                      <td className="py-2.5 px-3 font-bold text-cop-gold tabular-nums">
-                        {nums.pivot !== null ? `$${nums.pivot.toFixed(decimals)}` : '—'}
+                      <td className={`py-2.5 px-3 font-bold tabular-nums transition-colors ${
+                        isPivotTouched ? 'bg-amber-500/20 text-amber-200' : 'text-cop-gold'
+                      }`}>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {isPivotTouched && (
+                            <span className="text-[8px] bg-emerald-500 text-slate-950 px-1.5 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
+                              ✓ TERSENTUH
+                            </span>
+                          )}
+                          <span>
+                            {pivotVal !== null ? `$${pivotVal.toFixed(decimals)}` : '—'}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Plafon Target (R1 / High) */}
-                      <td className="py-2.5 px-3 font-bold text-emerald-400 tabular-nums">
-                        {nums.res1 !== null
-                          ? `$${nums.res1.toFixed(decimals)}`
-                          : nums.high !== null
-                          ? `$${nums.high.toFixed(decimals)}`
-                          : '—'}
+                      <td className={`py-2.5 px-3 font-bold tabular-nums transition-colors ${
+                        isResTouched ? 'bg-emerald-950/40 text-emerald-300' : 'text-emerald-400'
+                      }`}>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {isResTouched && (
+                            <span className="text-[8px] bg-emerald-500 text-slate-950 px-1.5 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5 animate-pulse">
+                              ✓ TERSENTUH
+                            </span>
+                          )}
+                          <span>
+                            {r1Val !== null ? `$${r1Val.toFixed(decimals)}` : '—'}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Rentang Data Pts */}
