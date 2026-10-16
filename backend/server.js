@@ -590,6 +590,37 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
       warnings.push(`👑 Rambu Filter King: Timeframe Harian adalah penentu arah utama. Seluruh timeframe intraday (5m–4h) wajib tunduk pada level Pivot Harian $${rs.pivot.toFixed(decimals)}.`);
     }
 
+    // Detailed COP TAH Method Rationale (Mengapa Entry di Sini?)
+    const isActionBuy = busur.action === 'BUY LIMIT';
+    const coptahRationale = {
+      whyEntryHere: isActionBuy
+        ? `Sesuai Filosofi Hukum Busur COP TAH: "Anak panah tidak bisa melesat tanpa tali busur ditarik ke belakang". Pada status ${jika.trend}, kita DILARANG mengejar harga di atas Pivot (FOMO). Kita WAJIB menunggu harga menarik busur turun ke lantai Support S1 ($${busur.entryPrice.toFixed(decimals)}) untuk menyerap likuiditas beli institusional (spring compression) sebelum meluncur ke Pivot ($${busur.tp1.toFixed(decimals)}) dan Target R1 ($${busur.tp2.toFixed(decimals)}).`
+        : `Sesuai Filosofi Hukum Busur COP TAH: Pada status ${jika.trend}, dorongan turun memerlukan tarikan busur ke atas terlebih dahulu. Kita menunggu harga menguji atap Resistance R1 ($${busur.entryPrice.toFixed(decimals)}) untuk mendapatkan harga jual terbaik (premium liquidity) sebelum anak panah ditembakkan ke lantai Support S1 ($${busur.tp1.toFixed(decimals)}).`,
+      jikaRole: `Hukum JIKA (${jika.trend}): Open N ($${ohlcv_N.open.toFixed(decimals)}) ${ohlcv_N.open >= ohlcv_B.open ? 'lebih tinggi dari' : 'lebih rendah dari'} Open B ($${ohlcv_B.open.toFixed(decimals)}). Mengonfirmasi bahwa perahu pembuka arah mengarah ke ${jika.direction}. Level ${isActionBuy ? 'Support S1' : 'Resistance R1'} bertindak sebagai pijakan perahu.`,
+      perahuRole: `Hukum Perahu (${perahu.pattern} - ${perahu.status}): ${perahu.description}. Pola ini menentukan apakah perahu sedang meluncur kencang (Breakout), mengembang normal, atau sedang mengisi bahan bakar di area konsolidasi.`,
+      hshRole: `Hukum HSH (Home Sweet Home): Titik TP1 diletakkan di Pivot ($${busur.tp1.toFixed(decimals)}) karena Pivot adalah "Rumah Idaman" tempat harga selalu ditarik secara magnetik untuk menyeimbangkan order flow. Selalu kunci keuntungan bertahap saat menyentuh rumah sebelum membiarkan sisa posisi melaju ke TP2.`,
+      riskRewardRatio: busur.riskReward,
+    };
+
+    // Global Macro & Decadal Storyline Connection (Peta 2026 & Dekade 2021–2030)
+    const fractalRoleMap = {
+      '5m': 'Riak Likuiditas Mikro: Menangkap pantulan cepat di lantai Support S1 untuk scalping sebelum sesi London/NY menyerap volume besar. Di peta tahunan, ini adalah butiran pembentuk ekor bar harian.',
+      '15m': 'Tarikan Busur Sesi: Mengonfirmasi apakah transisi sesi perdagangan (Asia ke Eropa atau Eropa ke Amerika) mendukung arah perahu harian atau sedang memicu pantulan likuiditas sesaat.',
+      '30m': 'Jembatan Transisi Sesi: Menguji reaksi pembukaan pasar London & New York terhadap level Pivot. Menghubungkan volatilitas mikro dengan magnet HSH intraday.',
+      '1h': 'Tulang Punggung Intraday: Entry di Support S1 H1 adalah titik akumulasi utama yang menggerakkan perahu harian menuju target mingguan (Weekly Plan). Selaras dengan konsolidasi sehat di koridor $4,150–$4,200 tahun 2026.',
+      '4h': 'Pondasi Swing Mingguan: Level S1/R1 H4 adalah batas aman untuk swing trading 2–5 hari. Mengonfirmasi apakah pergerakan harga saat ini mendukung target ekspansi pekan berjalan (Week 3) atau bersiap memicu skenario 2 Arah (HSH Reversal).',
+      '1d': 'Kompas Makro Harian (Filter King): Terhubung langsung 1:1 secara vertikal dengan siklus bulanan Oktober 2026 dan siklus dekade 2021–2030. Menentukan apakah hari ini merupakan fase penarikan busur bawah atau pelepasan target makro.',
+    };
+
+    const globalMacroStoryline = {
+      decadeCycle: 'Siklus 10 Tahun Emas (2021–2030): Emas berada dalam siklus ekspansi supercycle dekade (dari dasar akumulasi $1,680-$1,800 tahun 2021–2022 menuju All-Time High makro). Di peta 10 tahun, arah jangka panjang tetap didominasi akumulasi makro.',
+      year2026Phase: 'Konteks Tahun 2026 (Fase Q4 Pasca ATH $5,240): Pada Q1 2026 emas mencetak Rekor Tertinggi Sepanjang Masa ($5,240). Saat ini di Q4 2026 (waktu >80%), pasar berada dalam fase distribusi korektif & keseimbangan magnet HSH tahunan di koridor $4,100–$4,250. Setiap dorongan naik diuji ketat oleh plafon resistensi tahunan.',
+      fractalRole: fractalRoleMap[tf] || fractalRoleMap['1h'],
+      alignmentRecommendation: isActionBuy
+        ? `Saran Makro 2026: Order BUY pada TF ${tf} ini memanfaatkan pantulan busur di zona ekuilibrium $4,100–$4,200. Ambil profit disiplin di TP1 ($${busur.tp1.toFixed(decimals)}) atau TP2 ($${busur.tp2.toFixed(decimals)}) dan waspadai atap resistensi tahunan.`
+        : `Saran Makro 2026: Order SELL pada TF ${tf} ini selaras dengan fase penarikan HSH Kuartal 4 tahun 2026 (profit-taking pasca reli ATH). Target koreksi mengarah kembali ke level Open dan Pivot tahunan.`,
+    };
+
     return {
       tf,
       name,
@@ -614,6 +645,8 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
       busur,
       hsh,
       warnings,
+      coptahRationale,
+      globalMacroStoryline,
     };
   }).filter(Boolean);
 }
