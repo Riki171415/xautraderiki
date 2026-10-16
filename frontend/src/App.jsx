@@ -4,6 +4,8 @@
  *
  * View Modes:
  *  - 'dashboard': Executive Dashboard (OHL, RS Matrix, Pending Orders, Operational Status, Narrative)
+ *  - 'weekly': Trading Plan Mingguan (Real Market Data 1W Plan & Execution Map)
+ *  - 'global': Alur Cerita Global COP TAH (2021 - 2030 Peta Siklus 10 Tahun)
  *  - 'table': Multi-Timeframe Matrix Terminal (17-column Leak4Reg Matrix & 9-column RS)
  *  - 'cycle': Market Cycle 12-Step Timeline & Sub-Alur Fraktal
  *  - 'both': All-in-One Integrated View
@@ -20,6 +22,8 @@ import SessionStatus from './components/SessionStatus';
 import LoadingScreen from './components/LoadingScreen';
 import MarketCycleAnalysis from './components/MarketCycleAnalysis';
 import Leak4RegTable from './components/Leak4RegTable';
+import GlobalStoryline from './components/GlobalStoryline';
+import WeeklyTradingPlan from './components/WeeklyTradingPlan';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAnalysis } from './hooks/useAnalysis';
 import { resetTouches } from './hooks/useAnalysis';
@@ -32,6 +36,8 @@ import {
   LayoutDashboard,
   Layers,
   Compass,
+  Calendar,
+  Globe,
   Radio,
   ChevronDown
 } from 'lucide-react';
@@ -40,15 +46,14 @@ export default function App() {
   const [symbol, setSymbol] = useState('XAUUSD');
   const [timeframe, setTimeframe] = useState('1h');
   const [broker, setBroker] = useState('EXNESS');
-  // OPSI A: Executive Dashboard as default view mode!
-  const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard' | 'table' | 'cycle' | 'both'
+  // OPSI A: Executive Dashboard as default view mode
+  const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard' | 'weekly' | 'global' | 'table' | 'cycle' | 'both'
   const [notification, setNotification] = useState(null);
 
   // ── Data Sources ───────────────────────────────────────────────────────────
   const { data: wsData, liveTick, status: wsStatus, error: wsError, reconnectCount, isLoading: wsLoading, sendMessage, clearData } = useWebSocket();
   const { data: restData, loading, error: restError, lastUpdated, refetch } = useAnalysis(symbol, timeframe, broker, 30000);
 
-  // Merge data safely
   const wsMatches =
     Boolean(wsData) &&
     (wsData.symbol === symbol ||
@@ -152,7 +157,7 @@ export default function App() {
         <div className="flex items-center gap-2.5">
           {data && (
             <>
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Feed Aktif:</span>
+              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Feed:</span>
               <span className="text-[11px] font-mono font-bold text-cop-gold flex items-center gap-1.5 bg-amber-950/30 px-2 py-0.5 rounded-lg border border-amber-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 {data.broker?.name || broker} ({data.broker?.server || 'Interbank CFD'})
@@ -165,25 +170,55 @@ export default function App() {
         </div>
 
         {/* Right: View Mode Segmented Switcher & Quick Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Segmented View Mode Controller */}
-          <div className="flex items-center gap-1 bg-cop-card/90 p-1 rounded-xl border border-cop-border shadow-sm">
+          <div className="flex items-center gap-1 bg-cop-card/90 p-1 rounded-xl border border-cop-border shadow-sm flex-wrap">
+            {/* 1. Dashboard */}
             <button
               onClick={() => setViewMode('dashboard')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
                 viewMode === 'dashboard'
                   ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-glow-gold-sm'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
-              title="Executive Dashboard (Tampilan Visual Utama)"
+              title="Executive Dashboard (Tampilan Utama)"
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Dashboard</span>
             </button>
 
+            {/* 2. Weekly Trading Plan (NEW!) */}
+            <button
+              onClick={() => setViewMode('weekly')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                viewMode === 'weekly'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-glow-green-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Trading Plan Mingguan Berdasarkan Data Pasar Nyata 1W"
+            >
+              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Plan Mingguan</span>
+            </button>
+
+            {/* 3. Global Storyline 2021-2030 (NEW!) */}
+            <button
+              onClick={() => setViewMode('global')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                viewMode === 'global'
+                  ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-slate-950 shadow-glow-gold-sm font-black'
+                  : 'text-cop-gold hover:text-white hover:bg-amber-500/10'
+              }`}
+              title="Alur Cerita Global COP TAH (2021 – 2030 Peta Siklus 10 Tahun)"
+            >
+              <Globe className="w-3.5 h-3.5 text-cop-gold" />
+              <span>Cerita 2021-2030</span>
+            </button>
+
+            {/* 4. Matrix Table */}
             <button
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
                 viewMode === 'table'
                   ? 'bg-cop-blue text-white shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -194,22 +229,24 @@ export default function App() {
               <span>Tabel Matriks</span>
             </button>
 
+            {/* 5. Market Cycle */}
             <button
               onClick={() => setViewMode('cycle')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
                 viewMode === 'cycle'
                   ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
-              title="Siklus 12 Langkah & Sub-Alur Fraktal"
+              title="Siklus 12 Langkah Sesi Harian"
             >
               <Compass className="w-3.5 h-3.5" />
               <span>Market Cycle</span>
             </button>
 
+            {/* 6. All-in-One */}
             <button
               onClick={() => setViewMode('both')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
                 viewMode === 'both'
                   ? 'bg-slate-700 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -243,12 +280,10 @@ export default function App() {
 
             {/* 2. Dual Panel: RS Matrix + Order Execution Card */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              {/* Left Column (5/12): RS Matrix Order Flow Proximity */}
               <div className="lg:col-span-5 flex flex-col">
                 <RSMatrix data={data} liveTick={liveTick} />
               </div>
 
-              {/* Right Column (7/12): Target & Pending Orders Signal Ticket */}
               <div className="lg:col-span-7 flex flex-col">
                 <PendingOrders data={data} liveTick={liveTick} onModalUpdate={handleModalUpdate} />
               </div>
@@ -269,7 +304,37 @@ export default function App() {
           </div>
         )}
 
-        {/* ── VIEW 2: MULTI-TIMEFRAME MATRIX TERMINAL TABLE ── */}
+        {/* ── VIEW 2: TRADING PLAN MINGGUAN (REAL MARKET DATA) ── */}
+        {(viewMode === 'weekly' || viewMode === 'both') && (
+          <div className="space-y-4">
+            {viewMode === 'both' && (
+              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
+                  Trading Plan Mingguan (Real Market Data)
+                </h2>
+              </div>
+            )}
+            <WeeklyTradingPlan data={data} liveTick={liveTick} />
+          </div>
+        )}
+
+        {/* ── VIEW 3: ALUR CERITA GLOBAL COP TAH (2021 – 2030) ── */}
+        {(viewMode === 'global' || viewMode === 'both') && (
+          <div className="space-y-4">
+            {viewMode === 'both' && (
+              <div className="flex items-center gap-2 pt-2 border-t border-cop-border/60">
+                <div className="w-2.5 h-2.5 rounded-full bg-cop-gold" />
+                <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
+                  Alur Cerita Global COP TAH (2021 – 2030)
+                </h2>
+              </div>
+            )}
+            <GlobalStoryline data={data} liveTick={liveTick} />
+          </div>
+        )}
+
+        {/* ── VIEW 4: MULTI-TIMEFRAME MATRIX TERMINAL TABLE ── */}
         {(viewMode === 'table' || viewMode === 'both') && (
           <div className="space-y-4">
             {viewMode === 'both' && (
@@ -284,7 +349,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ── VIEW 3: MARKET CYCLE & SUB-ALUR FRAKTAL ── */}
+        {/* ── VIEW 5: MARKET CYCLE & SUB-ALUR FRAKTAL ── */}
         {(viewMode === 'cycle' || viewMode === 'both') && (
           <div className="space-y-4">
             {viewMode === 'both' && (
