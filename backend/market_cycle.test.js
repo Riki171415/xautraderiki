@@ -53,3 +53,49 @@ test('Europe gets the actual previous completed USA open, never upcoming USA',()
 test('previous USA with missing bars cannot invent an HSH open',()=>{
  const r=analyzeMarketSessions(fixture('strongBear',anchor+12*H));assert.equal(r.previousUsa.hshOpen,null);
 });
+
+test('Asia reference is previous Europe, not upcoming Europe',()=>{
+ const c=fixture('strongBear',anchor+3*H);
+ c.hourly=[...Array.from({length:6},(_,i)=>[anchor+(-16+i)*H,80+i,100,70,90,1]),...c.hourly];
+ const r=analyzeMarketSessions(c).hshReference;
+ assert.equal(r.name,'EROPA');assert.equal(r.hshOpen,80);assert.equal(r.start,anchor-16*H);
+});
+test('Europe rotation uses prior USA',()=>{
+ const c=fixture('strongBear',anchor+12*H);
+ c.hourly=[...Array.from({length:8},(_,i)=>[anchor+(-10+i)*H,70+i,100,60,90,1]),...c.hourly];
+ const r=analyzeMarketSessions(c).hshReference;
+ assert.equal(r.name,'USA');assert.equal(r.hshOpen,70);
+});
+test('USA rotation uses Asia of the same cycle including after midnight',()=>{
+ for(const offset of [15,20]) {
+  const r=analyzeMarketSessions(fixture('strongBear',anchor+offset*H)).hshReference;
+  assert.equal(r.name,'ASIA');assert.equal(r.hshOpen,100);assert.equal(r.start,anchor);
+ }
+});
+test('missing reference bars suppress the price; transition has no invented rotation',()=>{
+ const r=analyzeMarketSessions(fixture('strongBear',anchor+3*H));assert.equal(r.hshReference.hshOpen,null);
+ assert.equal(analyzeMarketSessions(fixture('strongBear',anchor+23*H)).hshReference,null);
+});
+
+test('market column switches from Europe to USA with real session open',()=>{
+ const {aggregateActiveMarket}=require('./market_cycle');
+ const c=fixture();const previous=c.hourly.map(r=>[r[0]-24*H,...r.slice(1)]);const rows=[...previous,...c.hourly];
+ rows.find(r=>r[0]===anchor+14*H)[1]=101;
+ const europe=aggregateActiveMarket(rows,anchor+13.5*H);const usa=aggregateActiveMarket(rows,anchor+14*H);
+ assert.equal(europe.sessionName,'EROPA');assert.equal(usa.sessionName,'USA');assert.equal(usa.ohlcv_N.open,101);assert.equal(usa.ohlcv_N.timestamp,anchor+14*H);
+});
+
+test('Asia boundary changes Market name, Open N and previous-session B together',()=>{
+ const {aggregateActiveMarket}=require('./market_cycle');const c=fixture();
+ const next=Array.from({length:2},(_,i)=>[anchor+(24+i)*H,150,160,140,155,1]);
+ const current=aggregateActiveMarket([...c.hourly,...next],anchor+24*H);
+ assert.equal(current.sessionName,'ASIA');assert.equal(current.ohlcv_N.open,150);assert.equal(current.ohlcv_B.open,100);assert.equal(current.ohlcv_N.timestamp,anchor+24*H);
+});
+
+test('status badge hours agree with aggregation at every session boundary',()=>{
+ const {getTradingSession}=require('./rule_engine');
+ for(const [offset,key] of [[0,'tokyo'],[8,'london'],[14,'newYork'],[21.99,'newYork']]) {
+  const r=getTradingSession(anchor+offset*H);assert.deepEqual(r.activeSessions,[key]);
+ }
+ assert.equal(getTradingSession(anchor+22*H).activeSessions.length,0);
+});

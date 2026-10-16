@@ -1,3 +1,4 @@
+import {projectMatrix,activeSessionAt} from '../liveMatrix.mjs';
 /**
  * Leak4RegTable — Multi-Timeframe Matrix Terminal
  * COP TAH Analytics Dashboard — Institutional Multi-Timeframe Analysis Matrix
@@ -12,14 +13,16 @@ import React from 'react';
 import { ArrowUp, ArrowDown, Activity, Globe, Clock, Shield, Info } from 'lucide-react';
 
 export default function Leak4RegTable({ data, liveTick }) {
+  const [now,setNow]=React.useState(Date.now);
+  React.useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
   if (!data) return null;
 
   const { leak4RegMatrix, broker, decimals = 3 } = data;
   if (!leak4RegMatrix) return null;
 
-  const { tableRows = [], rsColumns = [], sessions = [], hshNewYork, dateString, currentPrice, spreadPoints } = leak4RegMatrix;
+  const { tableRows = [], rsColumns = [], sessions = [], hshNewYork, dateString, currentPrice, spreadPoints } = projectMatrix(leak4RegMatrix,liveTick,decimals,now);
 
-  const activePrice = liveTick?.price !== undefined ? liveTick.price.toFixed(decimals) : currentPrice;
+  const activePrice = liveTick?.bid !== undefined ? liveTick.bid.toFixed(decimals) : currentPrice;
   const tickDirection = liveTick?.direction || 'SAME';
 
   // Helper styles
@@ -50,6 +53,7 @@ export default function Leak4RegTable({ data, liveTick }) {
 
   return (
     <div className="cop-panel space-y-4">
+      <p className="text-xs text-slate-400">Market aktif: <strong className="text-amber-200">{activeSessionAt(now)}</strong>{!tableRows.some(r=>r.timeframe==='market') && ' · Menunggu candle sesi baru dan riwayat pembanding lengkap. Data sesi lama tidak ditampilkan sebagai sesi aktif.'}</p>
       {/* ── Top Bar & Telemetry ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-cop-border pb-3 text-xs font-mono">
         <div className="flex items-center gap-2.5">
@@ -207,9 +211,9 @@ export default function Leak4RegTable({ data, liveTick }) {
       {/* ──────────────────────────────────────────────────────────────────────────
           BOTTOM SECTION: 2-COLUMN (TABLE 2: R&S MATRIX + PANEL 3: SESSION & INFO)
          ────────────────────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="matrix-workspace">
         {/* Table 2: Multi-Timeframe Support & Resistance (9 Columns) */}
-        <div className="lg:col-span-8 overflow-x-auto border border-cop-border rounded-xl bg-cop-surface/90 p-3.5 space-y-3">
+        <div className="matrix-levels border border-cop-border rounded-xl bg-cop-surface/90 p-3.5 space-y-3">
           
           {/* KOTAK INDIKATOR HARGA SAAT INI DI LEVEL SUPPORT & RESISTANCE */}
           <div className="p-3 rounded-xl bg-gradient-to-r from-amber-950/70 via-cop-card to-slate-900 border-2 border-amber-500/70 flex items-center justify-between flex-wrap gap-2 text-xs font-mono shadow-glow-gold-sm">
@@ -243,16 +247,18 @@ export default function Leak4RegTable({ data, liveTick }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-              Matriks Support & Resistance Multi-Timeframe (9 Kolom)
+              Matriks Support & Resistance · {rsColumns.length} timeframe
             </span>
             <span className="text-[10px] font-mono text-slate-400">
               Deteksi Status Sentuhan & Level Terdekat Otomatis
             </span>
           </div>
 
-          <table className="w-full text-center border-collapse text-[10px] font-mono">
+          <p className="text-[11px] text-slate-400">Geser tabel ke kanan untuk melihat seluruh timeframe. Kolom level tetap terlihat.</p>
+          <div className="matrix-level-scroll" tabIndex={0} role="region" aria-label="Tabel RS seluruh timeframe, dapat digeser horizontal">
+          <table className="matrix-level-table w-full text-center border-collapse text-[10px] font-mono">
             <thead>
               <tr className="border-b border-cop-border text-slate-400 font-extrabold uppercase">
                 <th className="py-2 px-2 text-left text-cop-gold">LEVEL</th>
@@ -465,13 +471,14 @@ export default function Leak4RegTable({ data, liveTick }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Panel 3: Live Info, Date, & Global Sessions (4 Columns) */}
-        <div className="lg:col-span-4 border border-cop-border rounded-xl bg-cop-surface/90 p-4 flex flex-col justify-between space-y-3">
+        <div className="matrix-session-strip border border-cop-border rounded-xl bg-cop-surface/90 p-4">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-white tracking-tight flex items-center gap-2 font-mono">
+              <span className="text-lg font-black text-white tracking-tight flex items-center flex-wrap gap-2 font-mono">
                 <span>{data.symbol || 'XAUUSD'} :</span>
                 <span
                   className={`tabular-nums ${
@@ -489,9 +496,9 @@ export default function Leak4RegTable({ data, liveTick }) {
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1 border-t border-cop-border/60">
+            <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono text-slate-400 pt-1 border-t border-cop-border/60">
               <span>SPREAD : <strong className="text-cop-cyan">{spreadPoints} PTS</strong></span>
-              <span>HSH NEW YORK : <strong className="text-amber-300">{hshNewYork}</strong></span>
+              <span>HSH USA · OPEN SESI : <strong className="text-amber-300">{hshNewYork}</strong></span>
             </div>
 
             <div className="text-[10px] text-slate-400 font-mono uppercase tracking-wider pt-1">
@@ -513,7 +520,7 @@ export default function Leak4RegTable({ data, liveTick }) {
                       : 'text-rose-400 bg-rose-950/60 border border-rose-700/50'
                   }`}
                 >
-                  {s.status}
+                  {s.city===activeSessionAt(now)?'OPEN':'CLOSED'}
                 </span>
               </div>
             ))}

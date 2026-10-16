@@ -16,3 +16,12 @@ test('range units are raw price and touches require actual traversal',()=>{
  assert.equal(m.tableRows[0].rangeN,20);
  assert.equal(m.rsColumns[0].touchedLevels.res1,false);
 });
+
+test('expired candle cannot trigger active HSH',()=>{
+ const {calcHukumHSH}=require('./rule_engine');
+ assert.equal(calcHukumHSH({open:100,high:140,low:90,close:130},3600000,0,0).hshActive,false);
+});
+test('unverified account profit is not returned as money',()=>{
+ const {calcHukumBusur}=require('./rule_engine');const b={open:100,high:120,low:90,close:110};
+ const r=calcHukumBusur({trend:'UP'},calcRSMatrix(b),b,{lot:.4});assert.equal(r.estProfitTp1,'—');assert.equal(r.estLossSl,'—');
+});

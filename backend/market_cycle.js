@@ -64,6 +64,14 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
       :'Pergerakan antar-sesi belum sesuai pola NORMAL/STRONG. Tidak dipaksakan ke salah satu pola.';
   }
   const previousUsa=summarize(hourly,anchor-10*HOUR,anchor-2*HOUR,now);
+  const referenceWindows={ASIA:{name:'EROPA',from:-16,to:-10,hours:'14:00–20:00 WIB'},EROPA:{name:'USA',from:-10,to:-2,hours:'20:00–04:00 WIB'},USA:{name:'ASIA',from:0,to:8,hours:'06:00–14:00 WIB'}};
+  const window=referenceWindows[active?.name];
+  let hshReference=null;
+  if(window) {
+    const observation=summarize(hourly,anchor+window.from*HOUR,anchor+window.to*HOUR,now);
+    hshReference={...observation,name:window.name,activeSession:active.name,hours:window.hours,
+      hshOpen:observation.coverage && observation.status==='completed'?observation.open:null};
+  }
   const definitions=[
     [1,'USA → ASIA','Ringkasan USA sebelumnya',previousUsa,'close'],
     [2,'ASIA','Open sesi Asia',asia,'open'],[3,'ASIA','Low sesi Asia',asia,'low'],[4,'ASIA','High sesi Asia',asia,'high'],
@@ -79,7 +87,7 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
     label:`${verification==='PROVISIONAL'?'INDIKASI ':''}${marketType} · ${bias}`,
     activeSession:active?.name || 'TRANSISI',currentStep:activeStep?.step ?? null,
     activeStepTitle:activeStep?.title || 'Menunggu data sesi',activeStepDesc:description,
-    totalSteps:12,steps,sessions,evidence,description,source,
+    totalSteps:12,steps,sessions,evidence,description,source,hshReference,
     previousUsa:{...previousUsa,name:'USA sebelumnya',hours:'20:00–04:00 WIB',hshOpen:previousUsa.coverage && previousUsa.status==='completed'?previousUsa.open:null},
     tradingDay:new Date(anchor+7*HOUR).toISOString().slice(0,10),
     wibTime:`${String(local.getUTCHours()).padStart(2,'0')}:${String(local.getUTCMinutes()).padStart(2,'0')} WIB`,
@@ -87,4 +95,17 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
     hshOpen:daily?.open ?? null,
   };
 }
-module.exports={analyzeMarketSessions};
+function aggregateActiveMarket(hourly, now=Date.now()) {
+  const cycle=analyzeMarketSessions({hourly,now});
+  const current=cycle.sessions.find(s=>s.name===cycle.activeSession);
+  if(!current?.coverage) return null;
+  let previous=null;
+  for(let day=1;day<=7 && !previous;day++) {
+    const candidate=summarize(hourly,current.start-day*24*HOUR,current.end-day*24*HOUR,now);
+    if(candidate.coverage && candidate.status==='completed') previous=candidate;
+  }
+  if(!previous) return null;
+  const candle=s=>({timestamp:s.start,periodEnd:s.end,open:s.open,high:s.high,low:s.low,close:s.close,volume:hourly.filter(r=>r[0]>=s.start&&r[0]<s.end&&r[0]<=now).reduce((v,r)=>v+r[5],0)});
+  return {sessionName:current.name,ohlcv_N:candle(current),ohlcv_B:candle(previous)};
+}
+module.exports={analyzeMarketSessions,aggregateActiveMarket};

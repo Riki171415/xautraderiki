@@ -90,9 +90,9 @@ function MarketCycleDetails({ data, liveTick }) {
   const trendSlPts = Math.abs(trendEntry - trendSl).toFixed(decimals);
   const trendRr = parseFloat(trendSlPts) > 0 ? (parseFloat(trendTp2Pts) / parseFloat(trendSlPts)).toFixed(2) : '2.50';
 
-  const trendProfitTp1 = (parseFloat(lot) * parseFloat(trendTp1Pts) * 10).toFixed(2);
-  const trendProfitTp2 = (parseFloat(lot) * parseFloat(trendTp2Pts) * 10).toFixed(2);
-  const trendLossSl = (parseFloat(lot) * parseFloat(trendSlPts) * 10).toFixed(2);
+  const trendProfitTp1 = '—';
+  const trendProfitTp2 = '—';
+  const trendLossSl = '—';
 
   // Skenario B: SELL HSH Reversal Intraday (Jika Target R1/R2 Tercapai di Sesi Malam USA)
   const hshEntryPrimary = isDailyUp ? dRes1 : dSup1;
@@ -108,10 +108,10 @@ function MarketCycleDetails({ data, liveTick }) {
   const hshSlPts = Math.abs(hshSl - hshEntryPrimary).toFixed(decimals);
   const hshRr = parseFloat(hshSlPts) > 0 ? (parseFloat(hshTp1Pts) / parseFloat(hshSlPts)).toFixed(2) : '2.80';
 
-  const hshProfitTp1 = (parseFloat(lot) * parseFloat(hshTp1Pts) * 10).toFixed(2);
-  const hshProfitTp2 = (parseFloat(lot) * parseFloat(hshTp2Pts) * 10).toFixed(2);
-  const hshProfitTp3 = (parseFloat(lot) * parseFloat(hshTp3Pts) * 10).toFixed(2);
-  const hshLossSl = (parseFloat(lot) * parseFloat(hshSlPts) * 10).toFixed(2);
+  const hshProfitTp1 = '—';
+  const hshProfitTp2 = '—';
+  const hshProfitTp3 = '—';
+  const hshLossSl = '—';
 
   // Only observed range touches; no order execution or chronological TP claim.
   const crossed = level => dLow <= level && dHigh >= level;
@@ -297,7 +297,7 @@ function MarketCycleDetails({ data, liveTick }) {
           <div className="p-3.5 rounded-xl bg-cop-card border border-cop-border flex items-center justify-between flex-wrap gap-2 text-xs">
             <div className="flex items-center gap-2">
               <Split className="w-4 h-4 text-cop-gold" />
-              <span className="font-bold text-white">Panduan Eksekusi 2 Arah Siklus Harian (XAUUSD Intraday)</span>
+              <span className="font-bold text-white">Skenario 2 Arah · {data.symbol} · {data.broker?.name}</span>
             </div>
             <span className="text-[11px] text-slate-400">
               Lot Rekomendasi (Modal ${userModal.toLocaleString()}): <strong className="text-cop-gold">{lot} Lot</strong>
@@ -675,7 +675,7 @@ function MarketCycleDetails({ data, liveTick }) {
                 Timeframe Kecil (LTF): <strong className="text-white">{multiTfDecision?.ltf?.timeframe || '1H'}</strong>
               </span>
               <div className="text-xs text-slate-300 leading-relaxed">
-                JIKA: <strong className="text-rose-400">{multiTfDecision?.ltf?.jika || 'DOWN'}</strong> · MOVE: <strong className="text-cop-gold">{multiTfDecision?.ltf?.move || 'NRL DWN'}</strong>
+                JIKA: <strong className="text-rose-400">{multiTfDecision?.ltf?.jika || '—'}</strong> · MOVE: <strong className="text-cop-gold">{multiTfDecision?.ltf?.move || '—'}</strong>
               </div>
               <div className="text-[11px] text-slate-400 border-t border-cop-border/60 pt-2 flex items-center justify-between">
                 <span>Harga Live: <strong className="text-white">${currentPrice.toFixed(decimals)}</strong></span>

@@ -8,7 +8,8 @@ const cors = require('cors');
 const http = require('http');
 const path = require('path');
 const { buildH4Compass } = require('./h4_compass');
-const { DIRECT_TIMEFRAMES, validCandles, getExnessCandles } = require('./mt5_data');
+const { buildMarketEntry } = require('./market_entry');
+const { DIRECT_TIMEFRAMES, validCandles, getExnessCandles, aggregateMonths, aggregateDecades } = require('./mt5_data');
 const WebSocket = require('ws');
 const ccxt = require('ccxt');
 
@@ -111,28 +112,6 @@ const BROKERS = {
     isDirectMT5: false,
     decimals: 3,
   },
-  FBS: {
-    id: 'FBS',
-    name: 'FBS',
-    server: 'FBS-Real (Standard/ECN)',
-    tag: 'FBS',
-    type: 'forex',
-    spread: 0.20,
-    spreadLabel: '2.0 pips ($0.200)',
-    description: 'FBS Markets Real Gold Feed',
-    decimals: 3,
-  },
-  OCTA: {
-    id: 'OCTA',
-    name: 'Octa',
-    server: 'OctaFX-Real (Standard)',
-    tag: 'OCTA',
-    type: 'forex',
-    spread: 0.24,
-    spreadLabel: '2.4 pips ($0.240)',
-    description: 'OctaFX Interbank CFD Feed',
-    decimals: 3,
-  },
 };
 
 // ─── Timeframe Utilities ───────────────────────────────────────────────────────
@@ -156,7 +135,9 @@ function getCandleTimeInfo(candle, timeframe) {
   const openTs = candle.timestamp;
   let closeTs;
 
-  if (timeframe === '1Y' || timeframe === '1y') {
+  if (timeframe === '10Y') {
+    closeTs = Date.UTC(new Date(openTs).getUTCFullYear() + 10, 0, 1);
+  } else if (timeframe === '1Y' || timeframe === '1y') {
     const year = new Date(openTs).getUTCFullYear();
     closeTs = Date.UTC(year + 1, 0, 1, 0, 0, 0);
   } else if (timeframe === '3M') {
@@ -297,109 +278,13 @@ async function fetchForexGoldOHLCV(timeframe, spreadOffset = 0) {
 
 // Fetches OHLCV from Binance, handling 3M (quarterly) and 1Y (annual) aggregation from 1M
 async function fetchOHLCVData(marketSymbol, timeframe) {
-  // 1Y / Tahunan: Aggregate monthly (1M) candles into annual candles
-  if (timeframe === '1Y' || timeframe === '1y') {
-    let monthly;
-    try {
-      monthly = await exchange.fetchOHLCV(marketSymbol, '1M', undefined, 60);
-    } catch (e) {
-      if (marketSymbol.includes('XAU')) {
-        monthly = await exchange.fetchOHLCV('PAXG/USDT', '1M', undefined, 60);
-      } else {
-        throw e;
-      }
-    }
-
-    const yearsMap = new Map();
-    for (const [ts, o, h, l, c, v] of monthly) {
-      const year = new Date(ts).getUTCFullYear();
-      if (!yearsMap.has(year)) {
-        yearsMap.set(year, { timestamp: Date.UTC(year, 0, 1), open: o, high: h, low: l, close: c, volume: v });
-      } else {
-        const y = yearsMap.get(year);
-        y.high = Math.max(y.high, h);
-        y.low = Math.min(y.low, l);
-        y.close = c;
-        y.volume += v;
-      }
-    }
-    return Array.from(yearsMap.values()).map((y) => [y.timestamp, y.open, y.high, y.low, y.close, y.volume]);
-  }
-
-  // 3M / 3 Bulan (Kuartal): Aggregate monthly (1M) candles into quarterly candles
-  if (timeframe === '3M') {
-    let monthly;
-    try {
-      monthly = await exchange.fetchOHLCV(marketSymbol, '1M', undefined, 60);
-    } catch (e) {
-      if (marketSymbol.includes('XAU')) {
-        monthly = await exchange.fetchOHLCV('PAXG/USDT', '1M', undefined, 60);
-      } else {
-        throw e;
-      }
-    }
-
-    const quartersMap = new Map();
-    for (const [ts, o, h, l, c, v] of monthly) {
-      const date = new Date(ts);
-      const year = date.getUTCFullYear();
-      const q = Math.floor(date.getUTCMonth() / 3) + 1;
-      const key = `${year}-Q${q}`;
-      if (!quartersMap.has(key)) {
-        quartersMap.set(key, { timestamp: Date.UTC(year, (q - 1) * 3, 1), open: o, high: h, low: l, close: c, volume: v });
-      } else {
-        const item = quartersMap.get(key);
-        item.high = Math.max(item.high, h);
-        item.low = Math.min(item.low, l);
-        item.close = c;
-        item.volume += v;
-      }
-    }
-    return Array.from(quartersMap.values()).map((q) => [q.timestamp, q.open, q.high, q.low, q.close, q.volume]);
-  }
-
-  // 6M / Semester (6 Bulan): Aggregate monthly (1M) candles into semester candles
-  if (timeframe === '6M') {
-    let monthly;
-    try {
-      monthly = await exchange.fetchOHLCV(marketSymbol, '1M', undefined, 60);
-    } catch (e) {
-      if (marketSymbol.includes('XAU')) {
-        monthly = await exchange.fetchOHLCV('PAXG/USDT', '1M', undefined, 60);
-      } else {
-        throw e;
-      }
-    }
-
-    const smtrMap = new Map();
-    for (const [ts, o, h, l, c, v] of monthly) {
-      const date = new Date(ts);
-      const year = date.getUTCFullYear();
-      const s = Math.floor(date.getUTCMonth() / 6) + 1;
-      const key = `${year}-S${s}`;
-      if (!smtrMap.has(key)) {
-        smtrMap.set(key, { timestamp: Date.UTC(year, (s - 1) * 6, 1), open: o, high: h, low: l, close: c, volume: v });
-      } else {
-        const item = smtrMap.get(key);
-        item.high = Math.max(item.high, h);
-        item.low = Math.min(item.low, l);
-        item.close = c;
-        item.volume += v;
-      }
-    }
-    return Array.from(smtrMap.values()).map((s) => [s.timestamp, s.open, s.high, s.low, s.close, s.volume]);
-  }
-
-  // Standard timeframes (1m, 5m, 15m, 30m, 1h, 4h, 1d, 1w, 1M)
-  try {
-    return await exchange.fetchOHLCV(marketSymbol, timeframe, undefined, 50);
-  } catch (err) {
-    if (marketSymbol.includes('XAU') && marketSymbol !== 'PAXG/USDT') {
-      console.warn(`[CCXT] ${marketSymbol} failed, falling back to PAXG/USDT: ${err.message}`);
-      return await exchange.fetchOHLCV('PAXG/USDT', timeframe, undefined, 50);
-    }
-    throw err;
-  }
+  if (!['PAXG/USDT','XAUT/USDT'].includes(marketSymbol)) throw new Error('Binance Spot: pilih PAXG/USDT atau XAUT/USDT. XAUUSD adalah instrumen Exness.');
+  const months={'3M':3,'6M':6,'1Y':12,'10Y':120}[timeframe];
+  const rows=await exchange.fetchOHLCV(marketSymbol,months?'1M':timeframe,undefined,months?240:50);
+  if(!validCandles(rows)) throw new Error('Binance mengirim candle tidak valid atau riwayat belum cukup.');
+  const result=timeframe==='10Y'?aggregateDecades(rows,false):months?aggregateMonths(rows,months):rows;
+  if(result.length<2) throw new Error(`Riwayat ${marketSymbol} ${timeframe} belum cukup. Tidak mengganti instrumen.`);
+  return result;
 }
 
 // ─── True Spot Gold Benchmark Engine (XAU/USD Forex Benchmark ~4174 - 4179) ────
@@ -437,62 +322,18 @@ async function getTrueSpotGoldPrice() {
 // High-level broker dispatcher: defaults to EXNESS Spot Gold feed
 async function fetchBrokerOHLCV(brokerId = 'EXNESS', marketSymbol = 'XAUUSD', timeframe = '1h') {
   const bKey = (brokerId || 'EXNESS').toUpperCase();
-  const broker = BROKERS[bKey] || BROKERS.EXNESS;
+  const broker = BROKERS[bKey];
+  if (!broker) throw new Error('Broker tidak didukung. Pilih EXNESS atau BINANCE.');
   const decimals = broker.decimals || 3;
 
   if (bKey === 'EXNESS') return getExnessCandles(mt5State, timeframe);
 
-  if (broker.id === 'BINANCE') {
-    try {
-      return await fetchOHLCVData(marketSymbol, timeframe);
-    } catch (err) {
-      console.warn(`[Binance] fallback to PAXG/USDT for ${broker.name}: ${err.message}`);
-      return await fetchOHLCVData('PAXG/USDT', timeframe);
-    }
-  } else {
-    // EXNESS, FBS, OCTA: Sourced directly from physical Spot Gold (PAXG/USDT)
-    // Guarantees 100% price consistency with 0 sudden jumps between candles and live ticks
-    try {
-      const raw = await fetchOHLCVData('PAXG/USDT', timeframe);
-      return raw.map(([t, o, h, l, c, v]) => [
-        t,
-        Number(Number(o).toFixed(decimals)),
-        Number(Number(h).toFixed(decimals)),
-        Number(Number(l).toFixed(decimals)),
-        Number(Number(c).toFixed(decimals)),
-        v,
-      ]);
-    } catch (err) {
-      console.warn(`[Spot Gold Fallback] Yahoo Forex Gold: ${err.message}`);
-      return await fetchForexGoldOHLCV(timeframe, 0);
-    }
-  }
+  if (broker.id === 'BINANCE') return fetchOHLCVData(marketSymbol,timeframe);
 }
 
 // Aggregate London Market Session (07:00–16:00 UTC / 14:00–23:00 WIB)
 // Candle N represents active/latest London session candles
 // Candle B represents previous session (e.g. yesterday's London session or earlier session)
-function aggregateLondonSession(rows) {
-  // Matrix MARKET uses the same fixed EROPA window as the session cycle: 07:00–13:00 UTC.
-  const now=Date.now(),day=86400000,hour=3600000;
-  const utcDay=Math.floor(now/day)*day;
-  const aggregate = start => {
-    const expected=[];
-    for(let t=start;t<start+6*hour && t<=now;t+=hour) expected.push(t);
-    const bars=rows.filter(r=>r[0]>=start && r[0]<start+6*hour && r[0]<=now);
-    if(!expected.length || expected.some(t=>!bars.some(r=>r[0]===t))) return null;
-    return {timestamp:start,open:bars[0][1],high:Math.max(...bars.map(r=>r[2])),low:Math.min(...bars.map(r=>r[3])),close:bars.at(-1)[4],volume:bars.reduce((v,r)=>v+r[5],0)};
-  };
-  if(!Array.isArray(rows)) return null;
-  const start=utcDay+7*hour;
-  if(now<start) return null;
-  const n=aggregate(start);
-  // Search actual previous trading session; do not substitute Asia or arbitrary slices.
-  let previous=null;
-  for(let i=1;i<=4 && !previous;i++) previous=aggregate(start-i*day);
-  return n && previous?{ohlcv_N:n,ohlcv_B:previous}:null;
-}
-
 // Multi-Timeframe Cache for Leak 4 REG Table (TTL: 30s)
 let multiTfCandlesCache = {
   data: {},
@@ -506,19 +347,30 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
     return { ...multiTfCandlesCache.data };
   }
 
-  const tfs = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M', '3M', '6M', '1Y'];
+  const tfs = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M', '3M', '6M', '1Y', '10Y'];
   const res = {};
   let ohlcv1hRaw = null;
+  let annualCandles = [];
 
   for (const tf of tfs) {
     try {
       const ohlcv = await fetchBrokerOHLCV(brokerId, marketSymbol, tf);
       if (tf === '1h') ohlcv1hRaw = ohlcv;
       if (tf === '1Y' && Array.isArray(ohlcv)) {
-        multiTfCandlesCache.annualCandles = ohlcv;
+        annualCandles = ohlcv;
       }
       if (ohlcv && ohlcv.length >= 2) {
         res[tf] = {
+          ...(tf === '10Y' && brokerId === 'EXNESS' ? (() => {
+            const year=new Date(ohlcv.at(-1)[0]).getUTCFullYear()-10;
+            const historical=require('./data/historical_xauusd.json').candles.find(c=>c.date===`${year}-01`);
+            return historical && Number.isFinite(historical.open) && historical.open>0 && [historical.high,historical.low,historical.close].every(Number.isFinite) && historical.low<=Math.min(historical.open,historical.close) && historical.high>=Math.max(historical.open,historical.close) ? {
+              referenceOpenB:historical.open,referenceOpenBTime:Date.UTC(year,0,1),
+              referenceOpenBSource:'Arsip historis lokal · sumber campuran, belum diverifikasi Exness',
+            }:{};
+          })() : {}),
+          partialBefore: tf === '10Y' && (new Date(ohlcv[ohlcv.length-2][0]).getUTCFullYear() % 10 !== 1 || new Date(ohlcv[ohlcv.length-2][0]).getUTCMonth() !== 0),
+          beforeSourceTime: ohlcv[ohlcv.length-2][0],
           ohlcv_N: {
             open: ohlcv[ohlcv.length - 1][1],
             high: ohlcv[ohlcv.length - 1][2],
@@ -543,12 +395,15 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
   }
 
   // Aggregate London market session
-  const marketSession = aggregateLondonSession(ohlcv1hRaw);
+  const marketSession = require('./market_cycle').aggregateActiveMarket(ohlcv1hRaw || []);
   if (marketSession) {
     res['market'] = marketSession;
   }
 
-  multiTfCandlesCache = { key: `${brokerId}|${marketSymbol}`, data: res, annualCandles: multiTfCandlesCache.annualCandles, lastFetch: now };
+  for(const [tf,pair] of Object.entries(res)) {
+    if(tf!=='market') pair.ohlcv_N.periodEnd=getCandleTimeInfo(pair.ohlcv_N,tf).closeTs;
+  }
+  multiTfCandlesCache = { key: `${brokerId}|${marketSymbol}`, data: res, annualCandles, lastFetch: now };
   return { ...res };
 }
 
@@ -688,9 +543,11 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
 async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNESS') {
   try {
     const bKey = (brokerId || 'EXNESS').toUpperCase();
-    const broker = BROKERS[bKey] || BROKERS.EXNESS;
+    const broker = BROKERS[bKey];
+  if (!broker) throw new Error('Broker tidak didukung. Pilih EXNESS atau BINANCE.');
     const decimals = broker.decimals || (broker.id === 'BINANCE' ? 2 : 3);
     const { marketSymbol, displaySymbol } = resolveBinanceMarket(symbol);
+    if (broker.id === 'EXNESS' && displaySymbol !== 'XAUUSD') throw new Error('Exness bridge hanya melayani XAUUSD.');
     const ohlcv = await fetchBrokerOHLCV(broker.id, marketSymbol, timeframe);
 
     if (!ohlcv || ohlcv.length < 2) {
@@ -746,7 +603,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     const marketCycle = calcMarketCycle(ohlcv_N, ohlcv_B, timeframe, ohlcv_N.close, cycleContext);
 
     // Sub-Alur Cerita Fraktal (Busur vs Target hierarchy across 1Y, 6M, 3M, 1M, 1W, D1, H4)
-    const subAlurCerita = calcSubAlurCerita(timeframe, ohlcv_N, ohlcv_B, jika, ohlcv_N.close);
+    let subAlurCerita = calcSubAlurCerita(timeframe, ohlcv_N, ohlcv_B, jika, ohlcv_N.close);
 
     // Multi-Timeframe Confluence & Entry Safe Decision
     const htfMap = {
@@ -809,7 +666,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       ohlcv_B,
     };
 
-    const multiTfDecision = calcMultiTfConfluence(htfData, ltfData, ohlcv_N.close, decimals);
+    let multiTfDecision = calcMultiTfConfluence(htfData, ltfData, ohlcv_N.close, decimals);
 
     // Storyline narrative (including broker details and decimals)
     const storyline = generateStoryline(jika, perahu, busur, rsMatrixUpdated, hsh, lotCalc, displaySymbol, timeframe, broker, decimals);
@@ -873,10 +730,32 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     }
 
     let h4Compass = buildH4Compass();
+    let marketEntry = buildMarketEntry(null,null,marketCycle,null);
     try {
       const hierarchy = await getMultiTfCandles(broker.id, marketSymbol);
       h4Compass = buildH4Compass(hierarchy);
+      let marketQuote=null;
+      if(broker.id==='EXNESS') marketQuote={bid:mt5State.bid,ask:mt5State.ask,timestamp:mt5State.lastTickTime};
+      else {
+        try {const q=await exchange.fetchTicker(marketSymbol);marketQuote={bid:q.bid,ask:q.ask,timestamp:q.timestamp || Date.now()};}catch(error){console.warn('[Market Quote] '+error.message);}
+      }
+      marketEntry=buildMarketEntry(hierarchy.market,h4Compass,marketCycle,marketQuote,Date.now(),decimals);
     } catch (error) { console.warn('[H4 Compass] ' + error.message); }
+    // All narrative consumers use the same actual hierarchy, not calendar assumptions.
+    subAlurCerita={activeTimeframe:timeframe,trend:h4Compass.h4.jika,
+      fundamentalLaw:h4Compass.description,
+      allSchedules:h4Compass.hierarchy.map(f=>({tf:f.timeframe,name:f.timeframe,jika:f.jika,
+        currentPhase:f.phase==='BOW_DIRECTION'?'BUSUR':f.phase==='TARGET_DIRECTION'?'TARGET':'WAIT',
+        busurRule:`Busur ${f.bowDirection}`,targetRule:`Target ${f.targetDirection}`,
+        busurTime:'Mengikuti gerakan aktual, bukan pembagian waktu otomatis',targetTime:'Belum mengonfirmasi akhir Busur',
+        progress:f.available?`Open N ${f.openN}, Open B ${f.openB}`:'Data belum tersedia',
+      }))};
+    const small=h4Compass.hierarchy.find(f=>f.timeframe===timeframe);
+    multiTfDecision={available:h4Compass.h4.available && !!small?.available,
+      htf:{timeframe:'4h',jika:h4Compass.h4.jika,move:h4Compass.h4.move},
+      ltf:{timeframe,jika:small?.jika || 'UNAVAILABLE',move:small?.move || 'UNAVAILABLE'},
+      correlationStatus:h4Compass.description,safeEntryAction:'OBSERVASI · belum ada konfirmasi akhir Busur',
+      rationale:h4Compass.confirmationNote,guardrails:h4Compass.warnings,signalColor:'amber'};
     entryRecommendations = entryRecommendations.map(rec => ({...rec,
       h4Context: {jika:h4Compass.h4.jika,phase:h4Compass.h4.phase,macroStatus:h4Compass.macroStatus},
       warnings:[`H4 pusat analisis: ${h4Compass.label}. ${h4Compass.confirmationNote}`, ...rec.warnings],
@@ -884,12 +763,13 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
 
     const result = {
       h4Compass,
+      marketEntry,
       symbol: displaySymbol,
       marketSymbol,
       timeframe,
       broker,
       decimals,
-      dataSource: broker.id === 'EXNESS' ? (['3M','6M','1Y'].includes(timeframe) ? 'MT5 Exness · agregasi kalender candle MN1' : 'MT5 Exness · ' + mt5State.symbol + ' · ' + timeframe) : 'Binance / data referensi eksternal',
+      dataSource: broker.id === 'EXNESS' ? (['3M','6M','1Y'].includes(timeframe) ? 'MT5 Exness · agregasi kalender candle MN1' : 'MT5 Exness · ' + mt5State.symbol + ' · ' + timeframe) : `Binance Spot · ${marketSymbol}`,
       timestamp: Date.now(),
       candles: candles.slice(-10), // send last 10 candles for mini chart
       ohlcv_N,
@@ -989,6 +869,7 @@ app.get('/api/mt5/history', (req,res) => {
 
 // Paginated & Filterable Historical Monthly Candles with COP TAH Classifications
 app.get('/api/historical/candles', async (req, res) => {
+  return res.status(503).json({success:false,error:'Arsip historis lama dikarantina: ditemukan OHLC tidak konsisten. Gunakan /api/mt5/history untuk data Exness tervalidasi.'});
   try {
     const { decade = 'ALL', search = '', limit = 100, page = 1 } = req.query;
     const result = await getHistoricalCandles(decade, search, parseInt(limit, 10), parseInt(page, 10));
@@ -1000,6 +881,7 @@ app.get('/api/historical/candles', async (req, res) => {
 
 // Macro Summary Statistics (ATH, ATL, winrates, ranges, sources)
 app.get('/api/historical/summary', async (req, res) => {
+  return res.status(503).json({success:false,error:'Arsip historis lama dikarantina: ditemukan OHLC tidak konsisten. Gunakan /api/mt5/history untuk data Exness tervalidasi.'});
   try {
     const ds = await loadOrBuildHistoricalDataset();
     res.json({
@@ -1015,6 +897,7 @@ app.get('/api/historical/summary', async (req, res) => {
 
 // Direct CSV File Export
 app.get('/api/historical/export', async (req, res) => {
+  return res.status(503).json({success:false,error:'Arsip historis lama dikarantina: ditemukan OHLC tidak konsisten. Gunakan /api/mt5/history untuk data Exness tervalidasi.'});
   try {
     const csvData = await exportHistoricalCsv();
     res.setHeader('Content-Type', 'text/csv');
@@ -1211,6 +1094,7 @@ app.get('/api/mt5/status', (req, res) => {
 
 // Manual Price Sync / Calibration endpoint (Allows user to calibrate live price to MT5 exact rate)
 app.post('/api/mt5/sync', async (req, res) => {
+  return res.status(501).json({success:false,error:'Login/kalibrasi dashboard tidak mengautentikasi MT5. Gunakan terminal MT5 dan bridge aktif; harga tidak boleh dikalibrasi manual.'});
   const { price } = req.body;
   const numPrice = parseFloat(price);
   if (!numPrice || isNaN(numPrice) || numPrice < 1000) {
@@ -1246,6 +1130,7 @@ let mt5AccountSession = {
 };
 
 app.post('/api/mt5/login', async (req, res) => {
+  return res.status(501).json({success:false,error:'Login/kalibrasi dashboard tidak mengautentikasi MT5. Gunakan terminal MT5 dan bridge aktif; harga tidak boleh dikalibrasi manual.'});
   const { login, password, server = 'Exness-MT5Real36', currentPrice } = req.body;
   if (!login) {
     return res.status(400).json({ success: false, error: 'Nomor akun MT5 wajib diisi' });
@@ -1450,15 +1335,11 @@ autoRefresh();
 const lastBrokerPrices = {
   BINANCE: 0,
   EXNESS: 0,
-  FBS: 0,
-  OCTA: 0,
 };
 
 const liveCache = {
   BINANCE: { basePrice: 0, lastFetch: 0 },
   EXNESS: { basePrice: 0, lastFetch: 0 },
-  FBS: { basePrice: 0, lastFetch: 0 },
-  OCTA: { basePrice: 0, lastFetch: 0 },
 };
 
 let tickerBusy = false;
@@ -1499,7 +1380,7 @@ setInterval(async () => {
   if (analysisBusy) return;
   analysisBusy = true;
   try { await autoRefresh(); } finally { analysisBusy = false; }
-}, 15000);
+}, 5000);
 
 app.get('/download/tablet.apk', (req, res) => {
   res.download(path.join(__dirname, '../installers/COP-TAH-Exness-Tablet.apk'));

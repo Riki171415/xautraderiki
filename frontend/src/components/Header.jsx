@@ -131,8 +131,6 @@ export default function Header({
   const BROKERS_LIST = [
     { id: 'EXNESS', label: 'Exness (MT5Real36)', server: 'Exness-MT5Real36', tag: '🔵 Real 36' },
     { id: 'BINANCE', label: 'Binance (Live)', server: 'Binance Live', tag: '🟡 Spot/Futures' },
-    { id: 'FBS', label: 'FBS (Real)', server: 'FBS-Real', tag: '🟢 Real' },
-    { id: 'OCTA', label: 'Octa (Real)', server: 'OctaFX-Real', tag: '🟣 Real' },
   ];
 
   const INTRADAY_TF = [
@@ -152,11 +150,13 @@ export default function Header({
     { id: '1Y', label: '1Y' },
   ];
 
-  const SYMBOLS = [
+  const ALL_SYMBOLS = [
     { id: 'XAUUSD', label: 'XAU/USD · Gold Spot' },
     { id: 'PAXG/USDT', label: 'PAXG/USDT · Paxos Gold' },
     { id: 'XAUT/USDT', label: 'XAUT/USDT · Tether Gold' },
   ];
+
+  const SYMBOLS = ALL_SYMBOLS.filter(s => broker === 'BINANCE' ? s.id !== 'XAUUSD' : s.id === 'XAUUSD');
 
   const isConnected = wsStatus === 'connected';
   const now = new Date().toLocaleTimeString('id-ID', { hour12: false, timeZone: 'Asia/Jakarta' });
@@ -164,7 +164,7 @@ export default function Header({
 
   return (
     <header className="header-gradient px-4 lg:px-6 py-2.5 select-none transition-all">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="header-inner flex items-center justify-between gap-3 flex-wrap">
 
         {/* ── Brand Section ── */}
         <div className="flex items-center gap-3">
@@ -175,7 +175,7 @@ export default function Header({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base font-extrabold tracking-tight text-white leading-none">
-                COP TAH <span className="text-cop-gold">Terminal</span>
+                COP TAH <span className="text-cop-gold">{broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}</span>
               </h1>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
                 PRO v2.5
@@ -270,7 +270,7 @@ export default function Header({
         )}
 
         {/* ── Controls & Selectors ── */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="header-controls flex items-center gap-2 flex-wrap">
 
           {/* Broker Selector */}
           <div className="relative">
@@ -378,7 +378,7 @@ export default function Header({
         </div>
 
         {/* ── Status Bar & Clocks ── */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        <div className="header-connection flex items-center gap-2.5 flex-shrink-0">
           {/* WS Status Badge */}
           <div
             className={`flex items-center gap-1.5 text-xs font-mono font-bold px-2.5 py-1 rounded-xl border ${

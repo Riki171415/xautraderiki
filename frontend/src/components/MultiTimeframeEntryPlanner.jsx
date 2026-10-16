@@ -1,3 +1,5 @@
+import {marketRecommendation} from '../marketRecommendation.mjs';
+import MarketEntryPanel from './MarketEntryPanel';
 /**
  * MultiTimeframeEntryPlanner — Rekomendasi Titik Entry Multi-Timeframe (5m, 15m, 30m, 1h, 4h, 1d)
  * Berdasarkan Konsep 3 Core Theories & 5 Hukum COP TAH dengan Peringatan & Rambu-Rambu Lengkap.
@@ -37,12 +39,12 @@ import {
   Anchor
 } from 'lucide-react';
 
-export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
+function TimeframeEntryPlanner({ data, liveTick, marketMode=false }) {
   // Available timeframes in chronological order
-  const TF_ORDER = ['5m', '15m', '30m', '1h', '4h', '1d'];
+  const TF_ORDER = marketMode ? ['market'] : ['5m', '15m', '30m', '1h', '4h', '1d'];
 
   // Initialize selected timeframe from current active timeframe or default to '1h'
-  const initialTf = data?.timeframe && TF_ORDER.includes(data.timeframe) ? data.timeframe : '1h';
+  const initialTf = marketMode ? 'market' : data?.timeframe && TF_ORDER.includes(data.timeframe) ? data.timeframe : '1h';
   const [selectedTf, setSelectedTf] = useState(initialTf);
   const [copiedTf, setCopiedTf] = useState(null);
 
@@ -149,7 +151,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
         <div className="flex items-center justify-between text-xs text-slate-400">
           <span className="flex items-center gap-1.5 font-bold text-white uppercase text-[11px] tracking-wider">
             <SlidersHorizontal className="w-3.5 h-3.5 text-cop-gold" />
-            Pilih Timeframe Analisis:
+            {marketMode ? 'Analisis Sesi Market Aktif:' : 'Pilih Timeframe Analisis:'}
           </span>
           <span className="text-[11px] text-slate-400 hidden sm:inline">
             Klik tombol timeframe untuk mengganti tampilan
@@ -431,7 +433,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
           <div className="flex items-center gap-2">
             <span className="text-slate-400">Sedang Ditampilkan:</span>
             <span className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-glow-gold-sm">
-              Timeframe {currentRec.name} ({currentRec.style})
+              {currentRec.name} ({currentRec.style})
             </span>
           </div>
         </div>
@@ -472,20 +474,20 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
               <div className="p-3.5 rounded-2xl bg-purple-950/70 border-2 border-purple-400 shadow-glow-purple flex items-center justify-between text-xs font-mono">
                 <div className="flex items-center gap-2.5 text-purple-200 font-black text-sm">
                   <Sparkles className="w-5 h-5 text-purple-300 animate-spin" />
-                  <span>🏆 TARGET UTAMA TP2 TERCAPAI LENGKAP</span>
+                  <span>LEVEL TP2 MASUK RENTANG PERIODE</span>
                 </div>
                 <span className="text-xs bg-purple-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
-                  SELESAI (+{currentRec.busur.tp2Points} satuan harga)
+                  BUKAN BUKTI PROFIT
                 </span>
               </div>
             ) : isTp1Touched ? (
               <div className="p-3.5 rounded-2xl bg-emerald-950/70 border-2 border-emerald-400 shadow-glow-green-sm flex items-center justify-between text-xs font-mono">
                 <div className="flex items-center gap-2.5 text-emerald-200 font-black text-sm">
                   <Target className="w-5 h-5 text-emerald-300 animate-pulse" />
-                  <span>🎯 TARGET PIVOT TP1 TERCAPAI</span>
+                  <span>LEVEL PIVOT/TP1 MASUK RENTANG</span>
                 </div>
                 <span className="text-xs bg-emerald-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
-                  AMANKAN SEBAGIAN
+                  OBSERVASI LEVEL
                 </span>
               </div>
             ) : isEntryTouched ? (
@@ -495,10 +497,10 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500" />
                   </span>
-                  <span className="text-sm">⚡ HARGA TERSENTUH (SINYAL ENTRY TERPICU)!</span>
+                  <span className="text-sm">LEVEL ENTRY MASUK RENTANG PERIODE</span>
                 </div>
                 <span className="text-xs bg-amber-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
-                  ORDER AKTIF
+                  BELUM ADA ORDER
                 </span>
               </div>
             ) : (
@@ -724,7 +726,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                 Dekade: <strong className="text-cop-cyan">2021–2030</strong>
               </span>
               <span className="px-2 py-0.5 rounded bg-cop-bg border border-cop-border text-slate-300">
-                Makro: <strong className="text-cop-gold">2026 Q4</strong>
+                Makro: <strong className="text-cop-gold">Konteks H4</strong>
               </span>
             </div>
           </div>
@@ -813,14 +815,14 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
               </div>
             </div>
 
-            {/* ── KANAN: Peta Fraktal Makro (2026 Q4 & Dekade) ── */}
+            {/* ── KANAN: Peta Fraktal Makro (Konteks H4 & Dekade) ── */}
             <div className="p-3.5 rounded-xl bg-cop-surface/60 border border-slate-800 space-y-3 flex flex-col justify-between">
               <div className="space-y-3">
                 {/* Header Card */}
                 <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
                   <span className="text-[11px] font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-cop-cyan" />
-                    Peta Fraktal Global (2026 Q4 & Dekade)
+                    Peta Fraktal Global (Konteks H4 & Dekade)
                   </span>
                   <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-950 text-blue-300 border border-blue-500/30">
                     Siklus Makro
@@ -845,7 +847,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
                     </div>
                   </div>
 
-                  {/* Step 2: 2026 Q4 */}
+                  {/* Step 2: konteks H4 */}
                   <div className="p-2 rounded-lg bg-cop-card/80 border border-slate-800/80 flex items-start gap-2">
                     <span className="w-4 h-4 rounded-full bg-amber-950 text-cop-gold flex items-center justify-center flex-shrink-0 text-[9px] font-black border border-amber-800/60 mt-0.5">
                       2
@@ -892,4 +894,17 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
       </div>
     </div>
   );
+}
+
+export default function MultiTimeframeEntryPlanner(props) {
+ const [mode,setMode]=useState('timeframe');
+ const rec=marketRecommendation(props.data);
+ const e=props.data?.marketEntry;
+ return <div className="entry-planner space-y-4">
+  <div className="flex items-center gap-2 flex-wrap"><button type="button" className={`chart-toggle ${mode==='timeframe'?'chart-toggle-active':''}`} aria-pressed={mode==='timeframe'} onClick={()=>setMode('timeframe')}>Per timeframe</button><button type="button" className={`chart-toggle ${mode==='market'?'chart-toggle-active':''}`} aria-pressed={mode==='market'} onClick={()=>setMode('market')}>Sesi Market · {props.data?.marketCycle?.activeSession || '—'}</button></div>
+  {mode==='market' ? rec ? <>
+    <div className="p-4 rounded-xl border border-amber-700/50 bg-slate-900/70"><p className="workspace-eyebrow">MARKET {e.session} · {e.status==='SCENARIO'?'SKENARIO BELUM TERKONFIRMASI':'WAIT · TUNGGU'}</p><p className="text-sm text-slate-200 mt-2">{e.reason}</p><p className="text-xs text-slate-400 mt-2">{new Date(e.current.timestamp).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'})} → {new Date(e.current.periodEnd).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'})} WIB · B: {new Date(e.previous.timestamp).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'})} WIB. Level di bawah adalah referensi skenario, termasuk saat WAIT.</p></div>
+    <TimeframeEntryPlanner key="market" data={{...props.data,entryRecommendations:[rec]}} liveTick={props.liveTick} marketMode/>
+   </> : <MarketEntryPanel data={props.data}/> : <TimeframeEntryPlanner {...props}/>}
+ </div>;
 }

@@ -24,3 +24,23 @@ test('HSH target is Open N',()=>{
  const result=calcHukumHSH({open:100,high:140,low:90,close:130},3600000,0,60000);
  assert.equal(result.targetType,'OPEN_N'); assert.equal(result.targetPrice,100); assert.equal(result.hshActive,true);
 });
+
+test('decade aggregation uses 2021–2030 calendar and rejects missing initial history',()=>{
+ const {aggregateDecades}=require('./mt5_data');
+ const rows=Array.from({length:240},(_,i)=>[Date.UTC(2011,i,1),100,120,90,110,1]);
+ const result=aggregateDecades(rows);assert.equal(result.length,2);assert.equal(result[0][0],Date.UTC(2011,0,1));assert.equal(result[1][0],Date.UTC(2021,0,1));assert.equal(result[0][5],120);
+ assert.equal(aggregateDecades(rows.slice(10)).length,1);
+});
+
+test('authorized partial decade B uses actual earliest prior open, never invented calendar timestamp',()=>{
+ const {aggregateDecades}=require('./mt5_data');
+ const rows=Array.from({length:120},(_,i)=>[Date.UTC(2016,10+i,1),100+i,250+i,90+i,110+i,1]);
+ const result=aggregateDecades(rows,true);
+ assert.equal(result.length,2);assert.equal(result[0][0],Date.UTC(2016,10,1));assert.equal(result[0][1],100);assert.equal(result[1][0],Date.UTC(2021,0,1));
+});
+
+test('monthly gap blocks year/quarter aggregation',()=>{
+ const {getExnessCandles}=require('./mt5_data');
+ const rows=[[Date.UTC(2025,0,1),100,120,90,110,1],[Date.UTC(2025,2,1),100,120,90,110,1]];
+ assert.throws(()=>getExnessCandles({connected:true,lastTickTime:1000,timeframes:{'1M':{candles:rows,updatedAt:1000}}},'1Y',1001),/bulan hilang/);
+});

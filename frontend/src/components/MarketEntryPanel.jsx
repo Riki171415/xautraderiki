@@ -1,0 +1,21 @@
+import {useState} from 'react';
+export default function MarketEntryPanel({data}) {
+ const [copyState,setCopyState]=useState('');
+ const entry=data?.marketEntry;
+ const fmt=n=>Number.isFinite(n)?n.toFixed(data?.decimals ?? 3):'—';
+ const time=ts=>ts?new Date(ts).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+' WIB':'—';
+ const plan=entry?.plan;
+ const copy=async()=>{try{await navigator.clipboard.writeText(`COP TAH · ${data.symbol} · ${data.broker.name} · MARKET ${entry?.session}\n${time(entry?.current?.timestamp)}\n`+(entry?.analysis || []).map(a=>a.title+'\n'+a.text).join('\n\n'));setCopyState('Analisis disalin');}catch{setCopyState('Tidak dapat menyalin; pilih teks analisis secara manual');}};
+ return <section className="cop-panel space-y-4">
+ <div className="flex justify-between flex-wrap gap-3"><div><p className="workspace-eyebrow">SARAN ENTRY · SESI AKTIF · {data?.symbol} · {data?.broker?.name}</p><h2 className="text-xl font-semibold mt-2">Market {entry?.session || '—'}</h2><p className="text-xs text-slate-400 mt-2">{time(entry?.current?.timestamp)} → {time(entry?.current?.periodEnd)}</p></div><span className="chart-toggle text-amber-200">{entry?.status==='SCENARIO'?'SKENARIO · BELUM KONFIRMASI':'WAIT · TUNGGU'}</span></div>
+ <p className="text-sm leading-relaxed text-slate-200">{entry?.reason || 'Menunggu pembaruan analisis Market.'}</p>
+ <div className="grid grid-cols-1 md:grid-cols-3 gap-3">{[['Arah Market',entry?.jika?.trend],['Kunci H4',entry?.h4?.jika],['Perahu Market',entry?.perahu?.pattern]].map(([name,value])=><div className="p-4 rounded-xl border border-slate-700" key={name}><p className="text-xs text-slate-400">{name}</p><strong className="block mt-2">{value || '—'}</strong></div>)}</div>
+ <div className="overflow-x-auto"><table className="w-full text-xs text-left"><thead><tr>{['Periode Market','Mulai','Open','High','Low','Close'].map(h=><th key={h} className="p-3 border-b border-slate-700">{h}</th>)}</tr></thead><tbody>{[['N · sesi hari ini',entry?.current],['B · sesi sejenis sebelumnya',entry?.previous]].map(([name,c])=><tr key={name}>{[name,time(c?.timestamp),fmt(c?.open),fmt(c?.high),fmt(c?.low),fmt(c?.close)].map((v,i)=><td key={i} className="p-3 border-b border-slate-700 whitespace-nowrap">{v}</td>)}</tr>)}</tbody></table></div>
+ {plan && entry?.jika?.trend!=='NEUTRAL' && <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{[[plan.action,plan.entryPrice],['TP1 · Pivot',plan.tp1],['TP2',plan.tp2],['SL',plan.stopLoss],['Rumah HSH Market',entry?.current?.open]].map(([name,value])=><div key={name} className="p-4 rounded-xl bg-slate-900/60 border border-slate-700"><p className="text-xs text-slate-400">{name}</p><strong className="text-amber-200 block mt-2 tabular-nums">{fmt(value)}</strong></div>)}</div>}
+ <div className="border-t border-slate-700 pt-4 space-y-3"><div className="flex justify-between gap-3 items-center flex-wrap"><h3 className="font-semibold">Analisis lengkap sesi {entry?.session || 'Market'}</h3><button type="button" className="chart-toggle" onClick={copy} disabled={!entry?.analysis?.length}>Salin analisis sesi</button></div>{copyState && <p role="status" className="text-xs text-slate-400">{copyState}</p>}
+ <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">{entry?.analysis?.map(section=><article key={section.title} className="p-4 rounded-xl border border-slate-700 bg-slate-900/40"><h4 className="text-sm font-semibold text-amber-200">{section.title}</h4><p className="text-xs text-slate-300 mt-2 leading-relaxed">{section.text}</p></article>)}</div>
+ <div className="p-4 rounded-xl border border-slate-700"><h4 className="text-sm font-semibold">Pemeriksaan sebelum mempertimbangkan entry</h4><ul className="space-y-2 mt-3 text-xs text-slate-300">{entry?.checklist?.map((line,i)=><li key={i}>• {line}</li>)}</ul></div></div>
+ <p className="text-xs text-slate-300">HSH pembanding: {entry?.reference?.name || '—'} · Open {fmt(entry?.reference?.hshOpen)} · {time(entry?.reference?.start)}.</p>
+ <p className="text-xs text-slate-400">{entry?.sourceComparison} Snapshot Bid {fmt(entry?.quote?.bid)} / Ask {fmt(entry?.quote?.ask)}. Level skenario mengikuti snapshot analisis; periksa ulang saat harga berubah. Tidak ada order dikirim. Tidak ada klaim target tercapai atau profit.</p>
+ </section>;
+}

@@ -24,7 +24,7 @@ function SessionBadge({ name, sessionData, flag }) {
           {flag} {name}
         </div>
         <div className="text-[10px] text-slate-500 mt-1 tabular-nums">
-          {sessionData?.open} – {sessionData?.close} UTC
+          {sessionData?.open} – {sessionData?.close} WIB
         </div>
       </div>
       {isActive && (
@@ -132,7 +132,12 @@ export default function SessionStatus({ data }) {
     return () => clearInterval(t);
   }, []);
 
-  const session = data?.session;
+  const hour=Number(localTime.split(/[.:]/)[0]);
+  const session = {sessions:{
+    tokyo:{active:hour>=6&&hour<14,open:'06:00',close:'14:00'},
+    london:{active:hour>=14&&hour<20,open:'14:00',close:'20:00'},
+    newYork:{active:hour>=20||hour<4,open:'20:00',close:'04:00'},
+  }};
   const hsh = data?.hsh;
 
   return (
@@ -157,9 +162,9 @@ export default function SessionStatus({ data }) {
 
         {/* Global Session Badges */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-          <SessionBadge name="TOKYO" flag="🇯🇵" sessionData={session?.sessions?.tokyo} />
-          <SessionBadge name="LONDON" flag="🇬🇧" sessionData={session?.sessions?.london} />
-          <SessionBadge name="NEW YORK" flag="🇺🇸" sessionData={session?.sessions?.newYork} />
+          <SessionBadge name="ASIA" flag="🇯🇵" sessionData={session?.sessions?.tokyo} />
+          <SessionBadge name="EROPA" flag="🇬🇧" sessionData={session?.sessions?.london} />
+          <SessionBadge name="USA" flag="🇺🇸" sessionData={session?.sessions?.newYork} />
         </div>
       </div>
 

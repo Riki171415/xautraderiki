@@ -1,10 +1,10 @@
 import { useState } from 'react';
 const direction={UP:'UP',DOWN:'DOWN',NEUTRAL:'NETRAL',UNAVAILABLE:'—',FLAT:'DI OPEN'};
 const phase={TARGET_DIRECTION:'Gerak searah target',BOW_DIRECTION:'Gerakan busur',AT_OPEN:'Di Open N',WAIT:'Tunggu arah',UNAVAILABLE:'Belum tersedia'};
-const macroLabels={ALIGNED:'D1 & W1 searah H4',CONFLICT:'Konflik arah H4 dengan D1/W1',INCOMPLETE:'Data D1/W1 belum lengkap',MIXED:'Konteks D1/W1 belum searah penuh',WAIT:'Menunggu arah H4'};
+const macroLabels={ALIGNED:'Global 10 tahun–D1 searah H4',CONFLICT:'Konflik H4 dengan konteks global',INCOMPLETE:'Hierarki 10 tahun–D1 belum lengkap',MIXED:'Konteks global belum searah penuh',WAIT:'Menunggu arah H4'};
 function Frame({frame,onSelect,selected}) {
-  return <button type="button" onClick={()=>onSelect(frame.timeframe)} disabled={!frame.available} aria-pressed={selected===frame.timeframe} className={`h4-frame ${frame.alignment==='OPPOSED'?'h4-frame-conflict':''} ${selected===frame.timeframe?'h4-frame-selected':''}`}>
-    <strong>{frame.timeframe}</strong><span>JIKA {direction[frame.jika]}</span><small>{frame.available?`Gerak ${direction[frame.move]}`:'Data belum tersedia'}</small>
+  return <button type="button" onClick={()=>onSelect(frame.timeframe)} disabled={!frame.available || frame.timeframe==='10Y'} aria-pressed={selected===frame.timeframe} className={`h4-frame ${frame.alignment==='OPPOSED'?'h4-frame-conflict':''} ${selected===frame.timeframe?'h4-frame-selected':''}`}>
+    <strong>{frame.timeframe}{frame.referenceOpenBSource ? ' · B arsip' : frame.partialBefore ? ' · B parsial' : ''}</strong><span>JIKA {direction[frame.jika]}</span><small>{frame.available?`Gerak ${direction[frame.move]} · ${frame.phase==='BOW_DIRECTION'?'BUSUR':frame.phase==='TARGET_DIRECTION'?'TARGET':'TUNGGU'}`:'Data belum tersedia'}</small>
   </button>;
 }
 export default function H4CompassPanel({analysis,decimals=3,onSelect,selected}) {
@@ -18,7 +18,7 @@ export default function H4CompassPanel({analysis,decimals=3,onSelect,selected}) 
       <button type="button" className="chart-toggle" aria-expanded={expanded} onClick={()=>setExpanded(s=>!s)}>{expanded?'Ringkas':'Lihat alur timeframe'}</button>
     </div>
     <div className="h4-summary-grid">
-      <div><small>KONTEKS BESAR</small><strong className={analysis.macroStatus==='CONFLICT'?'text-amber-200':''}>{macroLabels[analysis.macroStatus]}</strong><p>Makro adalah konteks, H4 tetap pusat pembacaan tren.</p></div>
+      <div><small>KONTEKS BESAR</small><strong className={analysis.macroStatus==='CONFLICT'?'text-amber-200':''}>{macroLabels[analysis.macroStatus]}</strong><p>Mulai 10 tahun, uraikan Busur/Target tiap tingkat; H4 kunci arah operasional.</p></div>
       <div><small>H4 · {phase[h4.phase]}</small><strong>Busur {direction[analysis.bowDirection] || 'TUNGGU'} → Target {direction[analysis.targetDirection] || 'TUNGGU'}</strong><p>Open N {fmt(h4.openN)} · Open B {fmt(h4.openB)} · harga {fmt(h4.close)}</p><p>Rumah HSH H4 = Open N {fmt(h4.hshTarget)}</p></div>
       <div><small>PERKEMBANGAN TF KECIL</small><strong>{analysis.micro.filter(f=>f.alignment==='ALIGNED').length} searah · {analysis.micro.filter(f=>f.alignment==='OPPOSED').length} berlawanan JIKA H4</strong><p>H1 · M30 · M15 · M5 · akhir busur belum terkonfirmasi.</p></div>
     </div>

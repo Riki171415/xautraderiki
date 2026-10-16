@@ -46,7 +46,7 @@ export default function RSMatrix({ data, liveTick }) {
   const { rsMatrix, ohlcv_N, broker } = data;
   const decimals = data.decimals ?? (broker?.id !== 'BINANCE' ? 3 : 2);
   const isMatchingTick = Boolean(liveTick?.price && (!liveTick.broker || !broker || liveTick.broker === broker.id));
-  const currentPrice = isMatchingTick ? liveTick.price : ohlcv_N?.close;
+  const currentPrice = isMatchingTick ? liveTick.bid : ohlcv_N?.close;
 
   const levelOrder = ['r4', 'r3', 'r2', 'r1', 'pivot', 's1', 's2', 's3', 's4'];
 
@@ -147,15 +147,9 @@ export default function RSMatrix({ data, liveTick }) {
           const distance = currentPrice ? (currentPrice - level.value).toFixed(decimals) : null;
 
           // Institutional Touch Detection (Live Price or Current Period High/Low Tested Level)
-          const isTouched = Boolean(
-            level.touched ||
-            (config.type === 'resistance' && (currentPrice >= level.value || (ohlcv_N?.high && ohlcv_N.high >= level.value))) ||
-            (config.type === 'support' && (currentPrice <= level.value || (ohlcv_N?.low && ohlcv_N.low <= level.value))) ||
-            (config.type === 'pivot' && (
-              (ohlcv_N?.high && ohlcv_N?.low && ohlcv_N.high >= level.value && ohlcv_N.low <= level.value) ||
-              (currentPrice && Math.abs(currentPrice - level.value) <= 1.0)
-            ))
-          );
+          const low=Math.min(ohlcv_N.low,currentPrice ?? ohlcv_N.low);
+          const high=Math.max(ohlcv_N.high,currentPrice ?? ohlcv_N.high);
+          const isTouched=low<=level.value && high>=level.value;
 
           const rowClass = getLevelClass(config.type, isTouched);
 

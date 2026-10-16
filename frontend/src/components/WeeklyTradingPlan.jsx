@@ -111,9 +111,9 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
   const trendSlPts = Math.abs(trendEntry - trendSl).toFixed(decimals);
   const trendRr = parseFloat(trendSlPts) > 0 ? (parseFloat(trendTp2Pts) / parseFloat(trendSlPts)).toFixed(2) : '2.50';
 
-  const trendProfitTp1 = (parseFloat(lot) * parseFloat(trendTp1Pts) * 10).toFixed(2);
-  const trendProfitTp2 = (parseFloat(lot) * parseFloat(trendTp2Pts) * 10).toFixed(2);
-  const trendLossSl = (parseFloat(lot) * parseFloat(trendSlPts) * 10).toFixed(2);
+  const trendProfitTp1 = '—';
+  const trendProfitTp2 = '—';
+  const trendLossSl = '—';
 
   // ── SKENARIO 2 (2 ARAH): PEMBALIKAN HSH (HOME SWEET HOME) SAAT TARGET TERCAPAI ──
   const hshAction = isWeeklyUp ? 'SELL ON REVERSAL' : 'BUY ON REVERSAL';
@@ -140,10 +140,10 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
   const hshSlPts = Math.abs(hshSl - hshEntryPrimary).toFixed(decimals);
   const hshRr = parseFloat(hshSlPts) > 0 ? (parseFloat(hshTp1Pts) / parseFloat(hshSlPts)).toFixed(2) : '2.80';
 
-  const hshProfitTp1 = (parseFloat(lot) * parseFloat(hshTp1Pts) * 10).toFixed(2);
-  const hshProfitTp2 = (parseFloat(lot) * parseFloat(hshTp2Pts) * 10).toFixed(2);
-  const hshProfitTp3 = (parseFloat(lot) * parseFloat(hshTp3Pts) * 10).toFixed(2);
-  const hshLossSl = (parseFloat(lot) * parseFloat(hshSlPts) * 10).toFixed(2);
+  const hshProfitTp1 = '—';
+  const hshProfitTp2 = '—';
+  const hshProfitTp3 = '—';
+  const hshLossSl = '—';
 
   // Institutional Touch Detection for Weekly Levels
   const crossed = level => lowN <= level && highN >= level;

@@ -134,9 +134,9 @@ function calcHukumBusur(jikaResult, rsMatrix, ohlcv_N, lotCalc = null, decimals 
       tp2Points: tp2Pts,
       slPoints: slPts,
       riskReward: `1 : ${rrRatio}`,
-      estProfitTp1: (lot * parseFloat(tp1Pts) * 10).toFixed(2),
-      estProfitTp2: (lot * parseFloat(tp2Pts) * 10).toFixed(2),
-      estLossSl: (lot * parseFloat(slPts) * 10).toFixed(2),
+      estProfitTp1: '—',
+      estProfitTp2: '—',
+      estLossSl: '—',
       instruction: `BUY LIMIT di ${entry.toFixed(decimals)} | Target TP1: ${tp1.toFixed(decimals)} (+${tp1Pts}) | Target TP2: ${tp2.toFixed(decimals)} (+${tp2Pts}) | Stop Loss: ${sl.toFixed(decimals)} (-${slPts})`,
       rationale: `Tren UP — Pasang Buy Limit di Busur Bawah (Support S1 ${entry.toFixed(decimals)}). Target ambil untung di Pivot (${tp1.toFixed(decimals)}) dan Resistance R1 (${tp2.toFixed(decimals)}).`,
       color: 'green',
@@ -168,9 +168,9 @@ function calcHukumBusur(jikaResult, rsMatrix, ohlcv_N, lotCalc = null, decimals 
       tp2Points: tp2Pts,
       slPoints: slPts,
       riskReward: `1 : ${rrRatio}`,
-      estProfitTp1: (lot * parseFloat(tp1Pts) * 10).toFixed(2),
-      estProfitTp2: (lot * parseFloat(tp2Pts) * 10).toFixed(2),
-      estLossSl: (lot * parseFloat(slPts) * 10).toFixed(2),
+      estProfitTp1: '—',
+      estProfitTp2: '—',
+      estLossSl: '—',
       instruction: `SELL LIMIT di ${entry.toFixed(decimals)} | Target TP1: ${tp1.toFixed(decimals)} (+${tp1Pts}) | Target TP2: ${tp2.toFixed(decimals)} (+${tp2Pts}) | Stop Loss: ${sl.toFixed(decimals)} (-${slPts})`,
       rationale: `Tren DOWN — Pasang Sell Limit di Busur Atas (Resistance R1 ${entry.toFixed(decimals)}). Target ambil untung di Pivot (${tp1.toFixed(decimals)}) dan Support S1 (${tp2.toFixed(decimals)}).`,
       color: 'red',
@@ -319,12 +319,12 @@ function calcHukumHSH(ohlcv_N, timeframeMs, openTimestamp, customRemainingMs = n
   let hshSeverity = 'NONE';
   let hshMessage = '';
 
-  if (isNearClose && priceExtended && extensionRatio > 0.3) {
+  if (remaining > 0 && isNearClose && priceExtended && extensionRatio > 0.3) {
     hshActive = true;
 
     if (percentElapsed >= 95 || (timeframeMs <= 3600000 && remainingMinutes < 5)) {
       hshSeverity = 'CRITICAL';
-      hshMessage = `⚠️ HSH CRITICAL: Only ${formattedTime} left! Price far from Open (${open.toFixed(2)}). Expect REVERSION back to Open!`;
+      hshMessage = `⚠️ HSH CRITICAL: Only ${formattedTime} left! Price far from Open (${open.toFixed(2)}). Pantau kemungkinan kembali ke Open N; belum terkonfirmasi.`;
     } else if (percentElapsed >= 90 || (timeframeMs <= 3600000 && remainingMinutes < 15)) {
       hshSeverity = 'HIGH';
       hshMessage = `⚠️ HSH WARNING: ${formattedTime} remaining. Price at ${close.toFixed(2)}, Open was ${open.toFixed(2)}. Home Sweet Home pattern forming!`;
@@ -358,14 +358,15 @@ function calcLotSize(userModal) {
   if (!userModal || userModal <= 0) return { lot: 0, risk: 0, description: 'Invalid modal' };
 
   const lot = userModal / 25000;
-  const risk = lot * 100; // approximate USD risk per pip for XAUUSD
+  const risk = 0; // approximate USD risk per pip for XAUUSD
   const minLot = 0.01;
   const roundedLot = Math.max(Math.round(lot * 100) / 100, minLot);
 
   return {
     lot: roundedLot,
     rawLot: lot,
-    risk: risk.toFixed(2),
+    risk: null,
+    accountRiskVerified: false,
     description: `With modal $${userModal.toFixed(2)}, recommended lot size is ${roundedLot} (Theory: Modal ÷ 25,000)`,
     formula: `${userModal} / 25,000 = ${lot.toFixed(4)}`,
   };
@@ -420,7 +421,7 @@ function generateStoryline(jika, perahu, busur, rsMatrix, hsh, lotCalc, symbol, 
     lines.push(hsh.hshMessage);
   } else {
     lines.push(`Status: ✅ HSH Inactive — Candle ${hsh.percentElapsed}% complete (${hsh.timeToClose} remaining)`);
-    lines.push(`Price (${hsh.currentClose.toFixed(decimals)}) behavior is normal relative to Open (${hsh.openPrice.toFixed(decimals)})`);
+    lines.push(`Price (${hsh.currentClose.toFixed(decimals)}) belum memenuhi seluruh syarat HSH terhadap Open (${hsh.openPrice.toFixed(decimals)})`);
   }
   lines.push(``);
 
@@ -440,23 +441,14 @@ function generateStoryline(jika, perahu, busur, rsMatrix, hsh, lotCalc, symbol, 
 /**
  * Determine trading session based on UTC time
  */
-function getTradingSession() {
-  const now = new Date();
-  const utcHour = now.getUTCHours();
-  const utcMinute = now.getUTCMinutes();
-  const utcTime = utcHour + utcMinute / 60;
-
-  const sessions = {
-    tokyo: { active: utcTime >= 0 && utcTime < 9, open: '00:00', close: '09:00', color: 'blue' },
-    london: { active: utcTime >= 8 && utcTime < 17, open: '08:00', close: '17:00', color: 'yellow' },
-    newYork: { active: utcTime >= 13 && utcTime < 22, open: '13:00', close: '22:00', color: 'green' },
+function getTradingSession(timestamp = Date.now()) {
+  const now=new Date(timestamp),h=(now.getUTCHours()+7)%24;
+  const sessions={
+    tokyo:{active:h>=6&&h<14,open:'06:00',close:'14:00',color:'blue'},
+    london:{active:h>=14&&h<20,open:'14:00',close:'20:00',color:'yellow'},
+    newYork:{active:h>=20||h<4,open:'20:00',close:'04:00',color:'green'},
   };
-
-  const activeSessions = Object.entries(sessions)
-    .filter(([_, s]) => s.active)
-    .map(([name, _]) => name);
-
-  return { sessions, activeSessions, utcTime: `${String(utcHour).padStart(2, '0')}:${String(utcMinute).padStart(2, '0')} UTC` };
+  return {sessions,activeSessions:Object.keys(sessions).filter(k=>sessions[k].active),timeZone:'Asia/Jakarta',convention:'Sesi metode COP TAH · WIB',utcTime:now.toISOString().slice(11,19)+' UTC'};
 }
 
 /**
@@ -754,9 +746,10 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
 
   // 9 Period Definitions as displayed in NexTrumFX
   const rowDefs = [
+    { key:'1m',label:'M1' },{ key:'5m',label:'M5' },{ key:'15m',label:'M15' },{ key:'30m',label:'M30' },
     { key: '1h', label: 'HOUR_1' },
     { key: '4h', label: 'HOUR_4' },
-    { key: 'market', label: 'LONDON' },
+    { key: 'market', label: tfCandlesMap.market?.sessionName || 'MARKET' },
     { key: '1d', label: currentDayName },
     { key: '1w', label: currentWeekLabel },
     { key: '1M', label: currentMonthName },
@@ -826,6 +819,7 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     const touchedSummary = touchedLabels.length > 0 ? touchedLabels.join(', ') : 'Belum Ada';
 
     tableRows.push({
+      periodStart:N.timestamp,periodEnd:N.periodEnd,
       timeframe: def.key,
       label: def.label,
       openN: openN.toFixed(decimals),
@@ -858,9 +852,10 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     else if (def.label.startsWith('QTR')) rsLabel = 'QRTR';
     else if (def.label.startsWith('SMTR')) rsLabel = 'SMTR';
     else if (def.label === `${currentYear}`) rsLabel = 'YEAR';
-    else if (def.key === 'market') rsLabel = 'MARKET';
+    else if (def.key === 'market') rsLabel = `MARKET · ${pair.sessionName || def.label}`;
 
     rsColumns.push({
+      periodStart:N.timestamp,periodEnd:N.periodEnd,
       timeframe: def.key,
       label: rsLabel,
       openN: openN.toFixed(decimals),
@@ -902,20 +897,12 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
   const utcMinute = now.getUTCMinutes();
   const fmtTime = (h, m) => `${String(((h % 24) + 24) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
-  const sessions = [
-    { city: 'SERVER', time: fmtTime(utcHour + 2, utcMinute), status: 'STATUS' },
-    { city: 'AUCKLAND', time: fmtTime(utcHour + 12, utcMinute), status: getSessionStatus(20, 5, utcHour) },
-    { city: 'SYDNEY', time: fmtTime(utcHour + 10, utcMinute), status: getSessionStatus(21, 6, utcHour) },
-    { city: 'TOKYO', time: fmtTime(utcHour + 9, utcMinute), status: getSessionStatus(0, 8, utcHour) },
-    { city: 'FRANKFURT', time: fmtTime(utcHour + 2, utcMinute), status: getSessionStatus(6, 15, utcHour) },
-    { city: 'LONDON', time: fmtTime(utcHour + 1, utcMinute), status: getSessionStatus(7, 16, utcHour) },
-    { city: 'NEWYORK', time: fmtTime(utcHour - 4, utcMinute), status: getSessionStatus(12, 21, utcHour) },
-  ];
-
-  // HSH New York calculation (midpoint between candle open & current price)
-  const d1Pair = tfCandlesMap['1d'] || tfCandlesMap['1h'] || {};
-  const d1Open = d1Pair.ohlcv_N?.open || currentPrice;
-  const hshNewYork = (Number(d1Open) + (Number(currentPrice) - Number(d1Open)) * 0.5).toFixed(decimals);
+  const method=getTradingSession(now.getTime());
+  const sessions=[['ASIA',method.sessions.tokyo],['EROPA',method.sessions.london],['USA',method.sessions.newYork]].map(([city,s])=>({city,time:`${s.open}–${s.close} WIB`,status:s.active?'OPEN':'CLOSED'}));
+  const market=tfCandlesMap.market;
+  // USA HSH must be an actual session Open, never a synthetic midpoint.
+  const usa=market?.sessionName==='USA'?market.ohlcv_N:null;
+  const hshNewYork=usa?Number(usa.open).toFixed(decimals):'Belum tersedia';
 
   return {
     tableRows,
