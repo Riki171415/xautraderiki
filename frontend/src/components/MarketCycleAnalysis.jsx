@@ -304,8 +304,10 @@ export default function MarketCycleAnalysis({ data }) {
               <tbody className="divide-y divide-cop-border/40 bg-cop-surface/40">
                 {subAlurCerita?.allSchedules?.map((sched) => (
                   <tr key={sched.tf} className="hover:bg-white/5 transition-colors">
-                    <td className="py-2.5 px-3 font-bold text-white flex items-center gap-1.5">
-                      <span className="text-cop-cyan">{sched.name}</span>
+                    <td className="py-2.5 px-3 font-bold text-white whitespace-nowrap align-middle">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-cop-cyan">{sched.name}</span>
+                      </div>
                     </td>
                     <td className="py-2.5 px-3">
                       <span

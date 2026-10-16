@@ -426,19 +426,19 @@ export default function GlobalStoryline({ data, liveTick }) {
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-cop-border">
-            <table className="w-full min-w-[1050px] text-left font-mono text-xs border-collapse">
+            <table className="w-full min-w-[1350px] text-left font-mono text-xs border-collapse">
               <thead>
-                <tr className="bg-cop-card text-[10px] text-slate-400 font-extrabold uppercase tracking-wider border-b border-cop-border">
-                  <th className="py-2.5 px-3 whitespace-nowrap">Tahun</th>
-                  <th className="py-2.5 px-2 whitespace-nowrap">Open</th>
-                  <th className="py-2.5 px-2 whitespace-nowrap">High</th>
-                  <th className="py-2.5 px-2 whitespace-nowrap">Low</th>
-                  <th className="py-2.5 px-2 whitespace-nowrap">Close</th>
-                  <th className="py-2.5 px-2 whitespace-nowrap">Hukum JIKA</th>
-                  <th className="py-2.5 px-2 whitespace-nowrap">Perahu</th>
-                  <th className="py-2.5 px-3 min-w-[200px]">Fase Busur (S1)</th>
-                  <th className="py-2.5 px-3 min-w-[220px]">Fase Target (S2)</th>
-                  <th className="py-2.5 px-3 min-w-[250px]">Status HSH Akhir Tahun</th>
+                <tr className="bg-cop-card text-[10px] uppercase tracking-wider border-b border-cop-border">
+                  <th className="py-3 px-3 text-slate-400 font-extrabold whitespace-nowrap">Tahun</th>
+                  <th className="py-3 px-2 text-slate-400 font-extrabold whitespace-nowrap">Open</th>
+                  <th className="py-3 px-2 text-slate-400 font-extrabold whitespace-nowrap">High</th>
+                  <th className="py-3 px-2 text-slate-400 font-extrabold whitespace-nowrap">Low</th>
+                  <th className="py-3 px-2 text-slate-400 font-extrabold whitespace-nowrap">Close</th>
+                  <th className="py-3 px-2 text-slate-400 font-extrabold whitespace-nowrap">Hukum JIKA</th>
+                  <th className="py-3 px-2 text-slate-400 font-extrabold whitespace-nowrap">Perahu</th>
+                  <th className="py-3 px-3 min-w-[280px] text-amber-400 font-extrabold">Fase Busur (S1)</th>
+                  <th className="py-3 px-3 min-w-[280px] text-emerald-400 font-extrabold">Fase Target (S2)</th>
+                  <th className="py-3 px-3 min-w-[300px] text-slate-300 font-extrabold">Status HSH Akhir Tahun</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cop-border/40 text-[11px]">
@@ -456,19 +456,21 @@ export default function GlobalStoryline({ data, liveTick }) {
                           : 'hover:bg-white/[0.03]'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-bold text-white flex items-center gap-1.5 whitespace-nowrap">
-                        <span className={isCurrent ? 'text-cop-gold font-black' : ''}>{row.year}</span>
-                        {isCurrent && (
-                          <span className="text-[8px] px-1 py-0.2 rounded bg-amber-500 text-slate-950 font-black">
-                            LIVE
-                          </span>
-                        )}
+                      <td className="py-3 px-3 font-bold text-white whitespace-nowrap align-top">
+                        <div className="flex items-center gap-1.5">
+                          <span className={isCurrent ? 'text-cop-gold font-black' : ''}>{row.year}</span>
+                          {isCurrent && (
+                            <span className="text-[8px] px-1 py-0.2 rounded bg-amber-500 text-slate-950 font-black">
+                              LIVE
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      <td className="py-2.5 px-2 tabular-nums text-slate-300">${row.open}</td>
-                      <td className="py-2.5 px-2 tabular-nums text-emerald-400 font-semibold">${row.high}</td>
-                      <td className="py-2.5 px-2 tabular-nums text-rose-400 font-semibold">${row.low}</td>
-                      <td className="py-2.5 px-2 tabular-nums text-white">${row.close}</td>
-                      <td className="py-2.5 px-2">
+                      <td className="py-3 px-2 tabular-nums text-slate-300 align-top whitespace-nowrap">${row.open}</td>
+                      <td className="py-3 px-2 tabular-nums text-emerald-400 font-semibold align-top whitespace-nowrap">${row.high}</td>
+                      <td className="py-3 px-2 tabular-nums text-rose-400 font-semibold align-top whitespace-nowrap">${row.low}</td>
+                      <td className="py-3 px-2 tabular-nums text-white align-top whitespace-nowrap">${row.close}</td>
+                      <td className="py-3 px-2 align-top whitespace-nowrap">
                         <span
                           className={`px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap ${
                             row.jika === 'UP'
@@ -479,15 +481,15 @@ export default function GlobalStoryline({ data, liveTick }) {
                           {row.jika}
                         </span>
                       </td>
-                      <td className="py-2.5 px-2 font-bold text-cop-gold whitespace-nowrap">{row.perahu}</td>
-                      <td className="py-2.5 px-3 min-w-[200px]">
-                        <div className="text-slate-300 text-[11px] leading-relaxed">{row.busurS1}</div>
+                      <td className="py-3 px-2 font-bold text-cop-gold whitespace-nowrap align-top">{row.perahu}</td>
+                      <td className="py-3 px-3 min-w-[280px] align-top">
+                        <div className="text-amber-200/90 text-[11px] leading-relaxed break-words">{row.busurS1}</div>
                       </td>
-                      <td className="py-2.5 px-3 min-w-[220px]">
-                        <div className="text-emerald-300 font-semibold text-[11px] leading-relaxed">{row.targetS2}</div>
+                      <td className="py-3 px-3 min-w-[280px] align-top">
+                        <div className="text-emerald-300 font-semibold text-[11px] leading-relaxed break-words">{row.targetS2}</div>
                       </td>
-                      <td className="py-2.5 px-3 min-w-[250px]">
-                        <div className="text-slate-300 text-[11px] leading-relaxed">{row.hsh}</div>
+                      <td className="py-3 px-3 min-w-[300px] align-top">
+                        <div className="text-slate-300 text-[11px] leading-relaxed break-words">{row.hsh}</div>
                       </td>
                     </tr>
                   );
