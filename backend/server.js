@@ -469,11 +469,11 @@ let multiTfCandlesCache = {
 
 async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
   const now = Date.now();
-  if (now - multiTfCandlesCache.lastFetch < 30000 && Object.keys(multiTfCandlesCache.data).length >= 5) {
+  if (now - multiTfCandlesCache.lastFetch < 30000 && Object.keys(multiTfCandlesCache.data).length >= 8) {
     return { ...multiTfCandlesCache.data };
   }
 
-  const tfs = ['1h', '4h', '1d', '1w', '1M', '3M', '6M', '1Y'];
+  const tfs = ['5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M', '3M', '6M', '1Y'];
   const res = {};
 
   for (const tf of tfs) {
@@ -490,6 +490,7 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
             low: ohlcv[ohlcv.length - 1][3],
             close: ohlcv[ohlcv.length - 1][4],
             volume: ohlcv[ohlcv.length - 1][5],
+            timestamp: ohlcv[ohlcv.length - 1][0],
           },
           ohlcv_B: {
             open: ohlcv[ohlcv.length - 2][1],
@@ -497,6 +498,7 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
             low: ohlcv[ohlcv.length - 2][3],
             close: ohlcv[ohlcv.length - 2][4],
             volume: ohlcv[ohlcv.length - 2][5],
+            timestamp: ohlcv[ohlcv.length - 2][0],
           },
         };
       }
@@ -511,6 +513,103 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
 
   multiTfCandlesCache = { data: res, annualCandles: multiTfCandlesCache.annualCandles, lastFetch: now };
   return { ...res };
+}
+
+// ─── Entry Recommendations for 5m, 15m, 30m, 1h, 4h, 1d with COP TAH Warnings ───
+function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 10000, decimals = 3) {
+  const lotCalc = calcLotSize(userModal);
+  const targetTfs = [
+    { tf: '5m', name: '5 Menit', style: 'Scalping Kilat', category: 'Mikro Intraday' },
+    { tf: '15m', name: '15 Menit', style: 'Intraday Momentum', category: 'Eksekusi Cepat' },
+    { tf: '30m', name: '30 Menit', style: 'Pivot Sesi London/NY', category: 'Transisi Sesi' },
+    { tf: '1h', name: '1 Jam', style: 'Tulang Punggung Harian', category: 'Intraday Standar' },
+    { tf: '4h', name: '4 Jam', style: 'Swing Sesi Mayor', category: 'Swing Sesi' },
+    { tf: '1d', name: 'Harian (1D)', style: 'Trend Utama (Filter King)', category: 'Makro Harian' },
+  ];
+
+  const dailyHtf = multiTfMap['1d'];
+  const dailyJika = dailyHtf ? calcHukumJIKA(dailyHtf.ohlcv_N, dailyHtf.ohlcv_B) : { trend: 'UP' };
+
+  return targetTfs.map(({ tf, name, style, category }) => {
+    const candleData = multiTfMap[tf];
+    if (!candleData || !candleData.ohlcv_N || !candleData.ohlcv_B) {
+      return null;
+    }
+
+    const { ohlcv_N, ohlcv_B } = candleData;
+    const jika = calcHukumJIKA(ohlcv_N, ohlcv_B);
+    const perahu = calcHukumPerahu(ohlcv_N, ohlcv_B);
+    const rs = calcRSMatrix(ohlcv_B, {});
+    const busur = calcHukumBusur(jika, rs, ohlcv_N, lotCalc, decimals);
+    const timeInfo = getCandleTimeInfo(ohlcv_N, tf);
+    const hsh = calcHukumHSH(ohlcv_N, timeInfo.duration, ohlcv_N.timestamp, timeInfo.remaining);
+
+    // Contextual Warnings & Rambu-Rambu based on COP TAH Rules
+    const warnings = [];
+
+    // 1. Rambu Hukum JIKA
+    if (jika.trend === 'UP') {
+      warnings.push(`🟢 Rambu JIKA: Status BULLISH (Open N $${ohlcv_N.open.toFixed(decimals)} > Open B $${ohlcv_B.open.toFixed(decimals)}). Fokus pasang BUY LIMIT di lantai Busur Bawah.`);
+    } else if (jika.trend === 'DOWN') {
+      warnings.push(`🔴 Rambu JIKA: Status BEARISH (Open N $${ohlcv_N.open.toFixed(decimals)} < Open B $${ohlcv_B.open.toFixed(decimals)}). DILARANG BUY di tengah jalan. Entry SELL LIMIT di atap Busur Atas.`);
+    }
+
+    // 2. Rambu Hukum Busur (Entry Guardrails)
+    warnings.push(`🎯 Rambu Busur: Titik entry resmi di level ${busur.action === 'BUY LIMIT' ? 'Support S1' : 'Resistance R1'} ($${busur.entryPrice.toFixed(decimals)}). JANGAN entry instan (FOMO) jika harga sudah berada di atas Pivot!`);
+
+    // 3. Rambu Hukum Perahu (Pattern Warning)
+    if (perahu.pattern.includes('SDW')) {
+      warnings.push(`⚠️ Rambu Perahu: Terdeteksi pola Sideway (${perahu.pattern}). Rentang harga menyempit, waspadai ledakan volatilitas sesaat sebelum breakout.`);
+    } else if (perahu.pattern.includes('ANL')) {
+      warnings.push(`⚠️ Rambu Perahu: Terdeteksi Anomaly (${perahu.pattern}). Terjadi tarikan ekstrem berlawanan arah, waspadai penolakan harga semu (false breakout).`);
+    } else if (perahu.pattern.includes('BRK')) {
+      warnings.push(`⚡ Rambu Perahu: Breakout terkonfirmasi (${perahu.pattern}). Perahu melaju kencang searah tren momentum.`);
+    }
+
+    // 4. Rambu HSH (Home Sweet Home Warning)
+    if (hsh.percentElapsed >= 75) {
+      warnings.push(`🏠 Rambu HSH: Usia candle telah mencapai ${hsh.percentElapsed}%. Gaya magnetik HSH aktif — waspadai pembalikan harga pulang ke Open N ($${ohlcv_N.open.toFixed(decimals)}). Segera amankan profit!`);
+    } else {
+      warnings.push(`⏳ Rambu HSH: Usia candle baru berjalan ${hsh.percentElapsed}%. Fase ekspansi busur masih berlangsung aktif.`);
+    }
+
+    // 5. Rambu Fraktal & Hierarki Waktu
+    if (tf !== '1d') {
+      if (jika.trend !== dailyJika.trend) {
+        warnings.push(`🛑 Rambu Fraktal: Tren ${tf} (${jika.trend}) berlawanan dengan Harian (${dailyJika.trend}). Ambil target cepat di TP1 ($${busur.tp1.toFixed(decimals)}), pasang Stop Loss disiplin!`);
+      } else {
+        warnings.push(`✅ Rambu Fraktal: Tren ${tf} selaras penuh dengan Harian (${dailyJika.trend}). Konfluensi tinggi untuk mencapai Target Utama TP2 ($${busur.tp2.toFixed(decimals)}).`);
+      }
+    } else {
+      warnings.push(`👑 Rambu Filter King: Timeframe Harian adalah penentu arah utama. Seluruh timeframe intraday (5m–4h) wajib tunduk pada level Pivot Harian $${rs.pivot.toFixed(decimals)}.`);
+    }
+
+    return {
+      tf,
+      name,
+      style,
+      category,
+      currentPrice: currentPrice || ohlcv_N.close,
+      openN: ohlcv_N.open,
+      openB: ohlcv_B.open,
+      highN: ohlcv_N.high,
+      lowN: ohlcv_N.low,
+      jika,
+      perahu,
+      rs: {
+        pivot: rs.pivot,
+        r1: rs.r1,
+        r2: rs.r2,
+        r3: rs.r3,
+        s1: rs.s1,
+        s2: rs.s2,
+        s3: rs.s3,
+      },
+      busur,
+      hsh,
+      warnings,
+    };
+  }).filter(Boolean);
 }
 
 // ─── Core Analysis Function ────────────────────────────────────────────────────
@@ -695,6 +794,15 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       console.warn('[Leak4Reg Matrix Error]:', e.message);
     }
 
+    let entryRecommendations = [];
+    try {
+      const multiTfMap = await getMultiTfCandles(broker.id, marketSymbol);
+      multiTfMap[timeframe] = { ohlcv_N, ohlcv_B };
+      entryRecommendations = generateEntryRecommendations(multiTfMap, ohlcv_N.close, userModal, decimals);
+    } catch (e) {
+      console.warn('[Entry Recommendations Error]:', e.message);
+    }
+
     const result = {
       symbol: displaySymbol,
       marketSymbol,
@@ -720,6 +828,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       subAlurCerita,
       multiTfDecision,
       leak4RegMatrix,
+      entryRecommendations,
       yearlyCandles: (multiTfCandlesCache.annualCandles || []).map(([ts, o, h, l, c, v]) => ({
         year: new Date(ts).getUTCFullYear(),
         open: Number(Number(o).toFixed(decimals)),
@@ -743,6 +852,25 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now(), service: 'COP TAH Backend' });
+});
+
+// Multi-Timeframe Entry Recommendations Endpoint (5m, 15m, 30m, 1h, 4h, 1d) with COP TAH Warnings
+app.get('/api/entry-recommendations', async (req, res) => {
+  try {
+    const symbol = req.query.symbol || 'XAUUSD';
+    const broker = req.query.broker || 'EXNESS';
+    const analysis = await runAnalysis(symbol, '1h', broker);
+    res.json({
+      success: true,
+      data: analysis.entryRecommendations,
+      currentPrice: analysis.ohlcv_N?.close,
+      decimals: analysis.decimals,
+      userModal: analysis.userModal,
+      lot: analysis.lotCalc?.lot,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Annual historical candles (2020 - 2026)

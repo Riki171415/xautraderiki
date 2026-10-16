@@ -150,8 +150,10 @@ export default function RSMatrix({ data, liveTick }) {
           return (
             <div
               key={key}
-              className={`${rowClass} ${
-                isClosest ? 'ring-1 ring-cop-gold/80 shadow-glow-gold-sm' : ''
+              className={`${rowClass} transition-all duration-300 ${
+                isClosest
+                  ? 'border-2 border-amber-400 bg-amber-500/20 shadow-glow-gold rounded-xl scale-[1.01]'
+                  : ''
               }`}
             >
               {/* Level Badge */}
@@ -159,18 +161,24 @@ export default function RSMatrix({ data, liveTick }) {
                 <span className={getLabelBadgeClass(config.type, level.touched)}>
                   {config.label}
                 </span>
+                {isClosest && (
+                  <span className="flex items-center gap-1 text-[9px] font-mono font-black text-slate-950 bg-amber-400 px-2 py-0.5 rounded shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping" />
+                    📍 HARGA SAAT INI
+                  </span>
+                )}
                 <span className="text-[10px] text-slate-400 font-mono hidden xl:inline">
-                  {config.desc}
+                  {!isClosest && config.desc}
                 </span>
               </div>
 
               {/* Price Value */}
-              <span className="font-mono font-bold text-sm text-center tabular-nums text-white">
+              <span className={`font-mono text-sm text-center tabular-nums ${isClosest ? 'font-black text-amber-200 text-base' : 'font-bold text-white'}`}>
                 ${level.value.toFixed(decimals)}
               </span>
 
               {/* Distance from Market Price */}
-              <div className="flex items-center gap-2 justify-end w-28">
+              <div className="flex items-center gap-2 justify-end w-32">
                 {distance !== null && (
                   <span
                     className={`text-[11px] font-mono font-semibold tabular-nums ${
@@ -187,8 +195,8 @@ export default function RSMatrix({ data, liveTick }) {
                     TOUCH
                   </span>
                 ) : isClosest ? (
-                  <span className="text-[9px] font-mono font-bold text-cop-gold bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-500/50">
-                    MARKET
+                  <span className="text-[9px] font-mono font-black text-amber-300 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/80 shadow-glow-gold-sm">
+                    TERDEKAT
                   </span>
                 ) : null}
               </div>

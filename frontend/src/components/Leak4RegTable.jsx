@@ -108,59 +108,84 @@ export default function Leak4RegTable({ data, liveTick }) {
               <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-cyan-300 border-b border-cop-border">RANGE_N</th>
               <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-slate-400 border-b border-cop-border">RANGE_B</th>
               <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-amber-300 border-b border-cop-border">RANGE_D</th>
+              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-3 text-cop-gold border-b border-cop-border font-black">
+                📍 POSISI HARGA LIVE
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-cop-border/50 text-[11px]">
-            {tableRows.map((row) => (
-              <tr key={row.timeframe} className="hover:bg-amber-500/[0.04] transition-colors">
-                {/* Sticky Left Column: Timeframe Label */}
-                <td className="sticky left-0 z-10 bg-cop-surface py-2 px-3 text-left font-bold text-cop-gold border-r border-cop-border whitespace-nowrap">
-                  {row.label}
-                </td>
-                <td className="py-2 px-2 text-cyan-200 tabular-nums">{row.openN}</td>
-                <td className="py-2 px-2 text-slate-400 tabular-nums">{row.openB}</td>
-                <td className="py-2 px-2 text-cyan-200 tabular-nums">{row.highN}</td>
-                <td className="py-2 px-2 text-slate-400 tabular-nums">{row.highB}</td>
-                <td className="py-2 px-2 text-cyan-200 tabular-nums">{row.lowN}</td>
-                <td className="py-2 px-2 text-slate-400 tabular-nums">{row.lowB}</td>
+            {tableRows.map((row) => {
+              const currentNum = parseFloat(activePrice);
+              const openNum = parseFloat(row.openN);
+              const isAboveOpen = !isNaN(currentNum) && !isNaN(openNum) && currentNum >= openNum;
+              const distPts = !isNaN(currentNum) && !isNaN(openNum) ? Math.abs(currentNum - openNum).toFixed(decimals) : '—';
 
-                <td className="py-2 px-2">
-                  <span className={getDirectClass(row.direct)}>
-                    {row.direct}
-                  </span>
-                </td>
+              return (
+                <tr key={row.timeframe} className="hover:bg-amber-500/[0.04] transition-colors">
+                  {/* Sticky Left Column: Timeframe Label */}
+                  <td className="sticky left-0 z-10 bg-cop-surface py-2 px-3 text-left font-bold text-cop-gold border-r border-cop-border whitespace-nowrap">
+                    {row.label}
+                  </td>
+                  <td className="py-2 px-2 text-cyan-200 tabular-nums">{row.openN}</td>
+                  <td className="py-2 px-2 text-slate-400 tabular-nums">{row.openB}</td>
+                  <td className="py-2 px-2 text-cyan-200 tabular-nums">{row.highN}</td>
+                  <td className="py-2 px-2 text-slate-400 tabular-nums">{row.highB}</td>
+                  <td className="py-2 px-2 text-cyan-200 tabular-nums">{row.lowN}</td>
+                  <td className="py-2 px-2 text-slate-400 tabular-nums">{row.lowB}</td>
 
-                <td className={`py-2 px-2 ${getAboveBelowClass(row.opPv)}`}>
-                  {row.opPv}
-                </td>
-                <td className={`py-2 px-2 ${getAboveBelowClass(row.r1Hb)}`}>
-                  {row.r1Hb}
-                </td>
-                <td className={`py-2 px-2 ${getAboveBelowClass(row.s1Lb)}`}>
-                  {row.s1Lb}
-                </td>
+                  <td className="py-2 px-2">
+                    <span className={getDirectClass(row.direct)}>
+                      {row.direct}
+                    </span>
+                  </td>
 
-                <td className={`py-2 px-2 ${getPatternClass(row.pattern)}`}>
-                  {row.pattern}
-                </td>
+                  <td className={`py-2 px-2 ${getAboveBelowClass(row.opPv)}`}>
+                    {row.opPv}
+                  </td>
+                  <td className={`py-2 px-2 ${getAboveBelowClass(row.r1Hb)}`}>
+                    {row.r1Hb}
+                  </td>
+                  <td className={`py-2 px-2 ${getAboveBelowClass(row.s1Lb)}`}>
+                    {row.s1Lb}
+                  </td>
 
-                <td className="py-2 px-2 font-bold">
-                  <span className={row.move === 'UP' ? 'text-emerald-400' : 'text-rose-400'}>
-                    {row.move}
-                  </span>
-                </td>
+                  <td className={`py-2 px-2 ${getPatternClass(row.pattern)}`}>
+                    {row.pattern}
+                  </td>
 
-                <td className={`py-2 px-2 ${getTrackClass(row.track)}`}>
-                  {row.track}
-                </td>
+                  <td className="py-2 px-2 font-bold">
+                    <span className={row.move === 'UP' ? 'text-emerald-400' : 'text-rose-400'}>
+                      {row.move}
+                    </span>
+                  </td>
 
-                <td className="py-2 px-2 text-white font-medium tabular-nums">{row.rangeN}</td>
-                <td className="py-2 px-2 text-slate-400 tabular-nums">{row.rangeB}</td>
-                <td className={`py-2 px-2 tabular-nums ${getRangeDClass(row.rangeD)}`}>
-                  {row.rangeD}
-                </td>
-              </tr>
-            ))}
+                  <td className={`py-2 px-2 ${getTrackClass(row.track)}`}>
+                    {row.track}
+                  </td>
+
+                  <td className="py-2 px-2 text-white font-medium tabular-nums">{row.rangeN}</td>
+                  <td className="py-2 px-2 text-slate-400 tabular-nums">{row.rangeB}</td>
+                  <td className={`py-2 px-2 tabular-nums ${getRangeDClass(row.rangeD)}`}>
+                    {row.rangeD}
+                  </td>
+
+                  {/* KOTAK INDIKATOR POSISI HARGA SAAT INI */}
+                  <td className="py-2 px-3">
+                    <div
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono font-bold text-[10px] shadow-sm ${
+                        isAboveOpen
+                          ? 'bg-emerald-950/80 border-emerald-500/80 text-emerald-300 shadow-glow-green-sm'
+                          : 'bg-rose-950/80 border-rose-500/80 text-rose-300 shadow-glow-red-sm'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${isAboveOpen ? 'bg-emerald-400' : 'bg-rose-400'} animate-ping`} />
+                      <span>{isAboveOpen ? '▲ DI ATAS OPEN' : '▼ DI BAWAH OPEN'}</span>
+                      <span className="text-white font-black">({isAboveOpen ? '+' : '-'}{distPts})</span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -170,15 +195,37 @@ export default function Leak4RegTable({ data, liveTick }) {
          ────────────────────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Table 2: Multi-Timeframe Support & Resistance (9 Columns) */}
-        <div className="lg:col-span-8 overflow-x-auto border border-cop-border rounded-xl bg-cop-surface/90 p-3">
-          <div className="flex items-center justify-between mb-2">
+        <div className="lg:col-span-8 overflow-x-auto border border-cop-border rounded-xl bg-cop-surface/90 p-3.5 space-y-3">
+          
+          {/* KOTAK INDIKATOR HARGA SAAT INI DI LEVEL SUPPORT & RESISTANCE */}
+          <div className="p-3 rounded-xl bg-gradient-to-r from-amber-950/70 via-cop-card to-slate-900 border-2 border-amber-500/70 flex items-center justify-between flex-wrap gap-2 text-xs font-mono shadow-glow-gold-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
+              </span>
+              <span className="text-slate-300 font-extrabold uppercase text-[11px] tracking-wider">
+                Kotak Lokasi Harga Live:
+              </span>
+              <span className="px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-sm shadow-md tabular-nums">
+                ${activePrice}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-amber-200">
+              <span className="w-2.5 h-2.5 rounded border-2 border-amber-400 bg-amber-500/40 inline-block shadow-glow-gold-sm" />
+              <span>Sel bergaris kotak emas menyala = Level terdekat dengan posisi pasar saat ini</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
             <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-              Matriks Support & Resistance Multi-Timeframe
+              Matriks Support & Resistance Multi-Timeframe (9 Kolom)
             </span>
             <span className="text-[10px] font-mono text-slate-400">
-              9 Kolom Timeframe Terpadu
+              Deteksi Otomatis Level Terdekat
             </span>
           </div>
+
           <table className="w-full text-center border-collapse text-[10px] font-mono">
             <thead>
               <tr className="border-b border-cop-border text-slate-400 font-extrabold uppercase">
@@ -194,28 +241,100 @@ export default function Leak4RegTable({ data, liveTick }) {
               {['res4', 'res3', 'res2', 'res1'].map((rKey, idx) => (
                 <tr key={rKey} className="text-orange-300 hover:bg-orange-500/[0.04]">
                   <td className="py-1.5 px-2 text-left font-bold text-orange-400">{`RES_${4 - idx}`}</td>
-                  {rsColumns.map((col) => (
-                    <td key={col.timeframe} className="py-1.5 px-2 tabular-nums">{col[rKey]}</td>
-                  ))}
+                  {rsColumns.map((col) => {
+                    const currentNum = parseFloat(activePrice);
+                    const cellNum = parseFloat(col[rKey]);
+                    // Check if this level is closest in this column
+                    const allVals = ['res4', 'res3', 'res2', 'res1', 'pivot', 'sup1', 'sup2', 'sup3', 'sup4']
+                      .map((k) => ({ k, diff: Math.abs(parseFloat(col[k]) - currentNum) }))
+                      .sort((a, b) => a.diff - b.diff);
+                    const isClosest = allVals[0]?.k === rKey;
+
+                    return (
+                      <td
+                        key={col.timeframe}
+                        className={`py-1.5 px-2 tabular-nums transition-all ${
+                          isClosest
+                            ? 'bg-amber-500/25 text-amber-200 font-black border-2 border-amber-400 rounded-lg shadow-glow-gold'
+                            : ''
+                        }`}
+                      >
+                        {isClosest ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                            <span>{col[rKey]}</span>
+                          </div>
+                        ) : (
+                          col[rKey]
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
 
               {/* PIVOT ROW */}
               <tr className="bg-amber-500/10 text-white font-black border-y-2 border-amber-500/40">
                 <td className="py-2 px-2 text-left text-cop-gold font-bold">PIVOT</td>
-                {rsColumns.map((col) => (
-                  <td key={col.timeframe} className="py-2 px-2 text-white font-black tabular-nums">
-                    {col.pivot}
-                  </td>
-                ))}
+                {rsColumns.map((col) => {
+                  const currentNum = parseFloat(activePrice);
+                  const allVals = ['res4', 'res3', 'res2', 'res1', 'pivot', 'sup1', 'sup2', 'sup3', 'sup4']
+                    .map((k) => ({ k, diff: Math.abs(parseFloat(col[k]) - currentNum) }))
+                    .sort((a, b) => a.diff - b.diff);
+                  const isClosest = allVals[0]?.k === 'pivot';
+
+                  return (
+                    <td
+                      key={col.timeframe}
+                      className={`py-2 px-2 text-white font-black tabular-nums transition-all ${
+                        isClosest
+                          ? 'bg-amber-500/40 text-amber-200 border-2 border-amber-400 rounded-lg shadow-glow-gold'
+                          : ''
+                      }`}
+                    >
+                      {isClosest ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                          <span>{col.pivot}</span>
+                        </div>
+                      ) : (
+                        col.pivot
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
 
               {['sup1', 'sup2', 'sup3', 'sup4'].map((sKey, idx) => (
                 <tr key={sKey} className="text-rose-300 hover:bg-rose-500/[0.04]">
                   <td className="py-1.5 px-2 text-left font-bold text-rose-400">{`SUP_${idx + 1}`}</td>
-                  {rsColumns.map((col) => (
-                    <td key={col.timeframe} className="py-1.5 px-2 tabular-nums">{col[sKey]}</td>
-                  ))}
+                  {rsColumns.map((col) => {
+                    const currentNum = parseFloat(activePrice);
+                    const allVals = ['res4', 'res3', 'res2', 'res1', 'pivot', 'sup1', 'sup2', 'sup3', 'sup4']
+                      .map((k) => ({ k, diff: Math.abs(parseFloat(col[k]) - currentNum) }))
+                      .sort((a, b) => a.diff - b.diff);
+                    const isClosest = allVals[0]?.k === sKey;
+
+                    return (
+                      <td
+                        key={col.timeframe}
+                        className={`py-1.5 px-2 tabular-nums transition-all ${
+                          isClosest
+                            ? 'bg-amber-500/25 text-amber-200 font-black border-2 border-amber-400 rounded-lg shadow-glow-gold'
+                            : ''
+                        }`}
+                      >
+                        {isClosest ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                            <span>{col[sKey]}</span>
+                          </div>
+                        ) : (
+                          col[sKey]
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>

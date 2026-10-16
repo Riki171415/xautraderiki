@@ -244,20 +244,75 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
         </div>
       </div>
 
+      {/* ── Simulated Order Active Notification Banner ── */}
+      {orderExecuted && (
+        <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/90 via-cop-card to-slate-900 border-2 border-emerald-500/80 shadow-glow-green-sm font-mono text-xs text-emerald-200 space-y-2 animate-tick-flash">
+          <div className="flex items-center justify-between">
+            <span className="font-black flex items-center gap-2 text-white">
+              <Zap className="w-4 h-4 text-cop-gold animate-bounce" />
+              <span>SIMULASI TIKET ORDER AKTIF & TERSIMPAN</span>
+            </span>
+            <button
+              onClick={() => setOrderExecuted(false)}
+              className="text-[10px] text-slate-400 hover:text-white px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+            >
+              Batalkan
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] bg-slate-950/70 p-2.5 rounded-lg border border-emerald-500/30">
+            <div>
+              <span className="text-slate-400 block text-[9px] uppercase">Aksi Order</span>
+              <strong className="text-emerald-400 font-bold">{busur?.action}</strong>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[9px] uppercase">Harga Entry</span>
+              <strong className="text-white font-bold tabular-nums">${entryPrice.toFixed(decimals)}</strong>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[9px] uppercase">Lot Size</span>
+              <strong className="text-cop-gold font-bold tabular-nums">{lotCalc?.lot || '0.40'} Lot</strong>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[9px] uppercase">Est. Profit TP2</span>
+              <strong className="text-emerald-300 font-bold tabular-nums">+${busur?.estProfitTp2}</strong>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-slate-300 pt-0.5">
+            <span>
+              Status: <strong className="text-emerald-400 font-semibold">Simulasi Berjalan</strong> · Jarak ke Entry: <strong className="text-cop-gold font-bold tabular-nums">{liveDist} pts</strong>
+            </span>
+            <span className="text-slate-400">Modal Terproteksi</span>
+          </div>
+        </div>
+      )}
+
       {/* ── Action Buttons ── */}
       <div className="grid grid-cols-2 gap-2.5">
         <button
           onClick={handleExecuteOrder}
           disabled={!isBuy && !isSell}
           className={`py-2.5 px-4 rounded-xl font-bold text-xs font-mono tracking-wider transition-all duration-200 border flex items-center justify-center gap-2 shadow-sm ${
-            isBuy
+            orderExecuted
+              ? 'bg-emerald-600 text-white border-emerald-400 shadow-glow-green animate-pulse'
+              : isBuy
               ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white border-emerald-400 shadow-glow-green-sm'
               : isSell
               ? 'bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white border-rose-400 shadow-glow-red-sm'
               : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
           }`}
         >
-          {isBuy ? '▲ SIMULASI BUY LIMIT' : isSell ? '▼ SIMULASI SELL LIMIT' : '◆ STANDBY'}
+          {orderExecuted ? (
+            <span className="flex items-center gap-1.5 font-black">
+              <Check className="w-4 h-4 text-white stroke-[3]" />
+              ✓ SIMULASI AKTIF!
+            </span>
+          ) : isBuy ? (
+            '▲ SIMULASI BUY LIMIT'
+          ) : isSell ? (
+            '▼ SIMULASI SELL LIMIT'
+          ) : (
+            '◆ STANDBY'
+          )}
         </button>
 
         <button
