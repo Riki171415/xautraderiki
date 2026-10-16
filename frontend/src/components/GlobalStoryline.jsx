@@ -426,19 +426,19 @@ export default function GlobalStoryline({ data, liveTick }) {
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-cop-border">
-            <table className="w-full text-left font-mono text-xs border-collapse">
+            <table className="w-full min-w-[1050px] text-left font-mono text-xs border-collapse">
               <thead>
                 <tr className="bg-cop-card text-[10px] text-slate-400 font-extrabold uppercase tracking-wider border-b border-cop-border">
-                  <th className="py-2.5 px-3">Tahun</th>
-                  <th className="py-2.5 px-2">Open</th>
-                  <th className="py-2.5 px-2">High</th>
-                  <th className="py-2.5 px-2">Low</th>
-                  <th className="py-2.5 px-2">Close</th>
-                  <th className="py-2.5 px-2">Hukum JIKA</th>
-                  <th className="py-2.5 px-2">Perahu</th>
-                  <th className="py-2.5 px-3">Fase Busur (S1)</th>
-                  <th className="py-2.5 px-3">Fase Target (S2)</th>
-                  <th className="py-2.5 px-3">Status HSH Akhir Tahun</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Tahun</th>
+                  <th className="py-2.5 px-2 whitespace-nowrap">Open</th>
+                  <th className="py-2.5 px-2 whitespace-nowrap">High</th>
+                  <th className="py-2.5 px-2 whitespace-nowrap">Low</th>
+                  <th className="py-2.5 px-2 whitespace-nowrap">Close</th>
+                  <th className="py-2.5 px-2 whitespace-nowrap">Hukum JIKA</th>
+                  <th className="py-2.5 px-2 whitespace-nowrap">Perahu</th>
+                  <th className="py-2.5 px-3 min-w-[200px]">Fase Busur (S1)</th>
+                  <th className="py-2.5 px-3 min-w-[220px]">Fase Target (S2)</th>
+                  <th className="py-2.5 px-3 min-w-[250px]">Status HSH Akhir Tahun</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-cop-border/40 text-[11px]">
@@ -470,7 +470,7 @@ export default function GlobalStoryline({ data, liveTick }) {
                       <td className="py-2.5 px-2 tabular-nums text-white">${row.close}</td>
                       <td className="py-2.5 px-2">
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap ${
                             row.jika === 'UP'
                               ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/40'
                               : 'bg-rose-950/60 text-rose-300 border border-rose-600/40'
@@ -479,10 +479,16 @@ export default function GlobalStoryline({ data, liveTick }) {
                           {row.jika}
                         </span>
                       </td>
-                      <td className="py-2.5 px-2 font-bold text-cop-gold">{row.perahu}</td>
-                      <td className="py-2.5 px-3 text-slate-300 line-clamp-1 max-w-[200px]">{row.busurS1}</td>
-                      <td className="py-2.5 px-3 text-emerald-300 line-clamp-1 max-w-[200px]">{row.targetS2}</td>
-                      <td className="py-2.5 px-3 text-slate-400 line-clamp-1 max-w-[200px]">{row.hsh}</td>
+                      <td className="py-2.5 px-2 font-bold text-cop-gold whitespace-nowrap">{row.perahu}</td>
+                      <td className="py-2.5 px-3 min-w-[200px]">
+                        <div className="text-slate-300 text-[11px] leading-relaxed">{row.busurS1}</div>
+                      </td>
+                      <td className="py-2.5 px-3 min-w-[220px]">
+                        <div className="text-emerald-300 font-semibold text-[11px] leading-relaxed">{row.targetS2}</div>
+                      </td>
+                      <td className="py-2.5 px-3 min-w-[250px]">
+                        <div className="text-slate-300 text-[11px] leading-relaxed">{row.hsh}</div>
+                      </td>
                     </tr>
                   );
                 })}
