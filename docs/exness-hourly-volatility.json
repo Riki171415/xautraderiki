@@ -1,0 +1,643 @@
+{
+  "source": "MT5 Exness",
+  "symbol": "XAUUSDc",
+  "bars": 12000,
+  "first": "2024-10-04T15:00:00+00:00",
+  "last": "2026-10-16T12:00:00+00:00",
+  "all": [
+    {
+      "hour": 20,
+      "n": 523,
+      "medianRange": 19.075,
+      "meanRange": 23.344,
+      "medianPct": 0.5224,
+      "meanPct": 0.5938,
+      "medianSpreadPoints": 160
+    },
+    {
+      "hour": 21,
+      "n": 523,
+      "medianRange": 18.805,
+      "meanRange": 23.468,
+      "medianPct": 0.491,
+      "meanPct": 0.5947,
+      "medianSpreadPoints": 160
+    },
+    {
+      "hour": 8,
+      "n": 523,
+      "medianRange": 16.843,
+      "meanRange": 21.364,
+      "medianPct": 0.4381,
+      "meanPct": 0.5331,
+      "medianSpreadPoints": 160
+    },
+    {
+      "hour": 22,
+      "n": 524,
+      "medianRange": 15.717,
+      "meanRange": 20.436,
+      "medianPct": 0.4254,
+      "meanPct": 0.5098,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 19,
+      "n": 524,
+      "medianRange": 14.582,
+      "meanRange": 19.143,
+      "medianPct": 0.3798,
+      "meanPct": 0.4835,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 23,
+      "n": 524,
+      "medianRange": 11.887,
+      "meanRange": 16.35,
+      "medianPct": 0.3247,
+      "meanPct": 0.4091,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 7,
+      "n": 523,
+      "medianRange": 12.437,
+      "meanRange": 16.267,
+      "medianPct": 0.3239,
+      "meanPct": 0.4014,
+      "medianSpreadPoints": 160
+    },
+    {
+      "hour": 9,
+      "n": 524,
+      "medianRange": 12.719,
+      "meanRange": 15.836,
+      "medianPct": 0.3233,
+      "meanPct": 0.3961,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 13,
+      "n": 524,
+      "medianRange": 11.691,
+      "meanRange": 15.041,
+      "medianPct": 0.3137,
+      "meanPct": 0.3794,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 15,
+      "n": 524,
+      "medianRange": 11.184,
+      "meanRange": 14.587,
+      "medianPct": 0.3118,
+      "meanPct": 0.3695,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 12,
+      "n": 524,
+      "medianRange": 12.177,
+      "meanRange": 15.462,
+      "medianPct": 0.3087,
+      "meanPct": 0.384,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 14,
+      "n": 524,
+      "medianRange": 11.65,
+      "meanRange": 14.166,
+      "medianPct": 0.3086,
+      "meanPct": 0.3616,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 18,
+      "n": 524,
+      "medianRange": 10.738,
+      "meanRange": 14.196,
+      "medianPct": 0.2851,
+      "meanPct": 0.3574,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 16,
+      "n": 524,
+      "medianRange": 10.183,
+      "meanRange": 13.224,
+      "medianPct": 0.2773,
+      "meanPct": 0.3344,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 0,
+      "n": 521,
+      "medianRange": 10.166,
+      "meanRange": 13.648,
+      "medianPct": 0.2709,
+      "meanPct": 0.3411,
+      "medianSpreadPoints": 160
+    },
+    {
+      "hour": 17,
+      "n": 524,
+      "medianRange": 9.812,
+      "meanRange": 12.66,
+      "medianPct": 0.268,
+      "meanPct": 0.3213,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 10,
+      "n": 524,
+      "medianRange": 10.407,
+      "meanRange": 12.187,
+      "medianPct": 0.263,
+      "meanPct": 0.3094,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 1,
+      "n": 520,
+      "medianRange": 9.33,
+      "meanRange": 13.811,
+      "medianPct": 0.249,
+      "meanPct": 0.3407,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 2,
+      "n": 512,
+      "medianRange": 9.452,
+      "meanRange": 12.832,
+      "medianPct": 0.2424,
+      "meanPct": 0.3191,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 6,
+      "n": 523,
+      "medianRange": 8.855,
+      "meanRange": 13.556,
+      "medianPct": 0.2305,
+      "meanPct": 0.3302,
+      "medianSpreadPoints": 160
+    },
+    {
+      "hour": 5,
+      "n": 348,
+      "medianRange": 9.296,
+      "meanRange": 12.98,
+      "medianPct": 0.2283,
+      "meanPct": 0.3237,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 11,
+      "n": 524,
+      "medianRange": 8.302,
+      "meanRange": 9.831,
+      "medianPct": 0.2138,
+      "meanPct": 0.2489,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 3,
+      "n": 506,
+      "medianRange": 7.247,
+      "meanRange": 10.974,
+      "medianPct": 0.199,
+      "meanPct": 0.2711,
+      "medianSpreadPoints": 160.0
+    },
+    {
+      "hour": 4,
+      "n": 166,
+      "medianRange": 5.662,
+      "meanRange": 9.717,
+      "medianPct": 0.1584,
+      "meanPct": 0.2333,
+      "medianSpreadPoints": 160.0
+    }
+  ],
+  "recent90": [
+    {
+      "hour": 20,
+      "n": 64,
+      "medianRange": 25.88,
+      "meanRange": 28.223,
+      "medianPct": 0.6111,
+      "meanPct": 0.6576,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 8,
+      "n": 65,
+      "medianRange": 23.501,
+      "meanRange": 23.769,
+      "medianPct": 0.5541,
+      "meanPct": 0.553,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 21,
+      "n": 64,
+      "medianRange": 22.516,
+      "meanRange": 24.974,
+      "medianPct": 0.5216,
+      "meanPct": 0.5794,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 19,
+      "n": 65,
+      "medianRange": 22.875,
+      "meanRange": 28.614,
+      "medianPct": 0.5135,
+      "meanPct": 0.6664,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 22,
+      "n": 64,
+      "medianRange": 18.323,
+      "meanRange": 21.003,
+      "medianPct": 0.4294,
+      "meanPct": 0.4871,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 12,
+      "n": 65,
+      "medianRange": 18.055,
+      "meanRange": 18.004,
+      "medianPct": 0.4136,
+      "meanPct": 0.4194,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 7,
+      "n": 65,
+      "medianRange": 17.834,
+      "meanRange": 20.084,
+      "medianPct": 0.4129,
+      "meanPct": 0.4685,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 9,
+      "n": 65,
+      "medianRange": 16.776,
+      "meanRange": 19.306,
+      "medianPct": 0.3984,
+      "meanPct": 0.4509,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 23,
+      "n": 64,
+      "medianRange": 15.403,
+      "meanRange": 16.502,
+      "medianPct": 0.3529,
+      "meanPct": 0.3838,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 15,
+      "n": 65,
+      "medianRange": 13.995,
+      "meanRange": 16.043,
+      "medianPct": 0.341,
+      "meanPct": 0.3744,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 13,
+      "n": 65,
+      "medianRange": 14.213,
+      "meanRange": 15.35,
+      "medianPct": 0.3278,
+      "meanPct": 0.3574,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 14,
+      "n": 65,
+      "medianRange": 13.737,
+      "meanRange": 14.852,
+      "medianPct": 0.3266,
+      "meanPct": 0.3466,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 1,
+      "n": 64,
+      "medianRange": 13.134,
+      "meanRange": 16.648,
+      "medianPct": 0.3113,
+      "meanPct": 0.3886,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 0,
+      "n": 64,
+      "medianRange": 12.998,
+      "meanRange": 14.215,
+      "medianPct": 0.3108,
+      "meanPct": 0.3316,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 2,
+      "n": 63,
+      "medianRange": 13.238,
+      "meanRange": 14.664,
+      "medianPct": 0.3085,
+      "meanPct": 0.3424,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 18,
+      "n": 65,
+      "medianRange": 12.912,
+      "meanRange": 15.188,
+      "medianPct": 0.3006,
+      "meanPct": 0.3549,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 10,
+      "n": 65,
+      "medianRange": 12.402,
+      "meanRange": 13.36,
+      "medianPct": 0.2866,
+      "meanPct": 0.3115,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 16,
+      "n": 65,
+      "medianRange": 12.311,
+      "meanRange": 13.206,
+      "medianPct": 0.2815,
+      "meanPct": 0.3077,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 17,
+      "n": 65,
+      "medianRange": 11.614,
+      "meanRange": 12.806,
+      "medianPct": 0.2758,
+      "meanPct": 0.2989,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 6,
+      "n": 65,
+      "medianRange": 10.774,
+      "meanRange": 11.887,
+      "medianPct": 0.2534,
+      "meanPct": 0.2761,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 5,
+      "n": 65,
+      "medianRange": 10.061,
+      "meanRange": 11.01,
+      "medianPct": 0.2396,
+      "meanPct": 0.257,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 11,
+      "n": 65,
+      "medianRange": 10.101,
+      "meanRange": 10.749,
+      "medianPct": 0.2291,
+      "meanPct": 0.2511,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 3,
+      "n": 63,
+      "medianRange": 8.112,
+      "meanRange": 9.513,
+      "medianPct": 0.1974,
+      "meanPct": 0.2223,
+      "medianSpreadPoints": 240
+    }
+  ],
+  "recent30": [
+    {
+      "hour": 20,
+      "n": 22,
+      "medianRange": 23.299,
+      "meanRange": 24.26,
+      "medianPct": 0.5463,
+      "meanPct": 0.5743,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 19,
+      "n": 23,
+      "medianRange": 22.875,
+      "meanRange": 26.239,
+      "medianPct": 0.5363,
+      "meanPct": 0.6234,
+      "medianSpreadPoints": 240
+    },
+    {
+      "hour": 8,
+      "n": 22,
+      "medianRange": 20.711,
+      "meanRange": 20.614,
+      "medianPct": 0.4858,
+      "meanPct": 0.4891,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 21,
+      "n": 22,
+      "medianRange": 19.872,
+      "meanRange": 22.141,
+      "medianPct": 0.4786,
+      "meanPct": 0.5246,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 12,
+      "n": 22,
+      "medianRange": 17.313,
+      "meanRange": 16.419,
+      "medianPct": 0.4074,
+      "meanPct": 0.3888,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 7,
+      "n": 22,
+      "medianRange": 16.761,
+      "meanRange": 18.552,
+      "medianPct": 0.3964,
+      "meanPct": 0.44,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 22,
+      "n": 22,
+      "medianRange": 16.119,
+      "meanRange": 17.147,
+      "medianPct": 0.3843,
+      "meanPct": 0.4074,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 9,
+      "n": 22,
+      "medianRange": 16.608,
+      "meanRange": 17.664,
+      "medianPct": 0.3807,
+      "meanPct": 0.4198,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 18,
+      "n": 22,
+      "medianRange": 15.323,
+      "meanRange": 15.563,
+      "medianPct": 0.3601,
+      "meanPct": 0.368,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 15,
+      "n": 22,
+      "medianRange": 14.541,
+      "meanRange": 15.938,
+      "medianPct": 0.3512,
+      "meanPct": 0.3775,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 23,
+      "n": 22,
+      "medianRange": 13.831,
+      "meanRange": 16.018,
+      "medianPct": 0.3272,
+      "meanPct": 0.38,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 14,
+      "n": 22,
+      "medianRange": 13.414,
+      "meanRange": 14.42,
+      "medianPct": 0.3221,
+      "meanPct": 0.3418,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 0,
+      "n": 22,
+      "medianRange": 13.246,
+      "meanRange": 14.667,
+      "medianPct": 0.3193,
+      "meanPct": 0.3483,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 1,
+      "n": 22,
+      "medianRange": 13.134,
+      "meanRange": 18.317,
+      "medianPct": 0.3113,
+      "meanPct": 0.4313,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 13,
+      "n": 22,
+      "medianRange": 12.066,
+      "meanRange": 13.887,
+      "medianPct": 0.2877,
+      "meanPct": 0.3302,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 10,
+      "n": 22,
+      "medianRange": 12.018,
+      "meanRange": 13.299,
+      "medianPct": 0.2864,
+      "meanPct": 0.3151,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 16,
+      "n": 22,
+      "medianRange": 11.404,
+      "meanRange": 12.572,
+      "medianPct": 0.2755,
+      "meanPct": 0.2971,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 17,
+      "n": 22,
+      "medianRange": 11.308,
+      "meanRange": 12.781,
+      "medianPct": 0.2726,
+      "meanPct": 0.3034,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 2,
+      "n": 22,
+      "medianRange": 10.15,
+      "meanRange": 12.9,
+      "medianPct": 0.2452,
+      "meanPct": 0.3054,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 11,
+      "n": 22,
+      "medianRange": 10.187,
+      "meanRange": 10.561,
+      "medianPct": 0.2397,
+      "meanPct": 0.251,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 6,
+      "n": 22,
+      "medianRange": 8.494,
+      "meanRange": 9.349,
+      "medianPct": 0.2043,
+      "meanPct": 0.2219,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 5,
+      "n": 22,
+      "medianRange": 8.338,
+      "meanRange": 9.798,
+      "medianPct": 0.197,
+      "meanPct": 0.2324,
+      "medianSpreadPoints": 240.0
+    },
+    {
+      "hour": 3,
+      "n": 22,
+      "medianRange": 7.981,
+      "meanRange": 8.672,
+      "medianPct": 0.1842,
+      "meanPct": 0.2061,
+      "medianSpreadPoints": 240.0
+    }
+  ]
+}

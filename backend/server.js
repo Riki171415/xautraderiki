@@ -9,6 +9,7 @@ const http = require('http');
 const path = require('path');
 const { buildH4Compass } = require('./h4_compass');
 const { buildMarketEntry } = require('./market_entry');
+const {observePlan,alternativeEntries}=require('./plan_monitor');
 const { DIRECT_TIMEFRAMES, validCandles, getExnessCandles, aggregateMonths, aggregateDecades } = require('./mt5_data');
 const WebSocket = require('ws');
 const ccxt = require('ccxt');
@@ -741,6 +742,23 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       }
       marketEntry=buildMarketEntry(hierarchy.market,h4Compass,marketCycle,marketQuote,Date.now(),decimals);
     } catch (error) { console.warn('[H4 Compass] ' + error.message); }
+    try {
+      const hierarchy=await getMultiTfCandles(broker.id,marketSymbol);
+      const minuteBars=await fetchBrokerOHLCV(broker.id,marketSymbol,'1m');
+      const fiveBars=await fetchBrokerOHLCV(broker.id,marketSymbol,'5m');
+      const monitor=(tf,plan,n)=>{
+        const minute=observePlan(plan,n,minuteBars,60000);
+        return minute.status==='UNCONFIRMED'?observePlan(plan,n,fiveBars,300000):minute;
+      };
+      entryRecommendations=entryRecommendations.map(rec=>{
+        const observation=monitor(rec.tf,rec.busur,hierarchy[rec.tf]?.ohlcv_N);
+        return {...rec,observation,alternatives:alternativeEntries(rec.tf,rec.busur,hierarchy,ohlcv_N.close,observation,h4Compass.h4)};
+      });
+      if(marketEntry.plan) {
+        marketEntry.observation=monitor('market',marketEntry.plan,marketEntry.current);
+        marketEntry.alternatives=alternativeEntries('market',marketEntry.plan,hierarchy,marketEntry.quote?.bid,marketEntry.observation,h4Compass.h4);
+      }
+    } catch(error) {console.warn('[Plan observation] '+error.message);}
     // All narrative consumers use the same actual hierarchy, not calendar assumptions.
     subAlurCerita={activeTimeframe:timeframe,trend:h4Compass.h4.jika,
       fundamentalLaw:h4Compass.description,
@@ -764,6 +782,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     const result = {
       h4Compass,
       marketEntry,
+      planObservation: entryRecommendations.find(r=>r.tf===timeframe)?.observation || null,
       symbol: displaySymbol,
       marketSymbol,
       timeframe,

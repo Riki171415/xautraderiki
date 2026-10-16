@@ -41,9 +41,9 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
 
   // Institutional Touch Detection
   const crossed = level => Number.isFinite(level) && ohlcv_N?.low<=level && ohlcv_N?.high>=level;
-  const isEntryTouched = crossed(entryPrice);
-  const isTp1Touched = crossed(busur?.tp1);
-  const isTp2Touched = crossed(busur?.tp2);
+  const isEntryTouched = data.planObservation?.entryObserved === true;
+  const isTp1Touched = data.planObservation?.tp1Observed === true;
+  const isTp2Touched = data.planObservation?.tp2Observed === true;
 
   const handleModalSubmit = async (e) => {
     e.preventDefault();

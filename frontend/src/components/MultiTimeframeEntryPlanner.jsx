@@ -79,9 +79,9 @@ function TimeframeEntryPlanner({ data, liveTick, marketMode=false }) {
 
   // Institutional Touch Detection for Entry Signal & TP Targets
   const crossed = level => Number.isFinite(level) && currentRec.lowN<=level && currentRec.highN>=level;
-  const isEntryTouched = crossed(entryPrice);
-  const isTp1Touched = crossed(tp1Price);
-  const isTp2Touched = crossed(tp2Price);
+  const isEntryTouched = currentRec.observation?.entryObserved === true;
+  const isTp1Touched = currentRec.observation?.tp1Observed === true;
+  const isTp2Touched = currentRec.observation?.tp2Observed === true;
 
   const handleCopyPlan = async (rec) => {
     const text =
@@ -267,23 +267,9 @@ function TimeframeEntryPlanner({ data, liveTick, marketMode=false }) {
                 const recTp2 = rec.busur.tp2;
                 const recDist = Math.abs(currentPrice - recEntry).toFixed(decimals);
 
-                const touchedEntry = Boolean(
-                  recIsBuy
-                    ? (currentPrice <= recEntry || (rec.lowN !== undefined && rec.lowN <= recEntry))
-                    : (currentPrice >= recEntry || (rec.highN !== undefined && rec.highN >= recEntry))
-                );
-
-                const touchedTp1 = Boolean(
-                  recIsBuy
-                    ? (currentPrice >= recTp1 || (rec.highN !== undefined && rec.highN >= recTp1))
-                    : (currentPrice <= recTp1 || (rec.lowN !== undefined && rec.lowN <= recTp1))
-                );
-
-                const touchedTp2 = Boolean(
-                  recIsBuy
-                    ? (currentPrice >= recTp2 || (rec.highN !== undefined && rec.highN >= recTp2))
-                    : (currentPrice <= recTp2 || (rec.lowN !== undefined && rec.lowN <= recTp2))
-                );
+                const touchedEntry = rec.observation?.entryObserved === true;
+                const touchedTp1 = rec.observation?.tp1Observed === true;
+                const touchedTp2 = rec.observation?.tp2Observed === true;
 
                 return (
                   <tr
@@ -469,51 +455,21 @@ function TimeframeEntryPlanner({ data, liveTick, marketMode=false }) {
               </div>
             </div>
 
-            {/* BANNER STATUS SENTUHAN HARGA & TARGET (BESAR & JELAS) */}
-            {isTp2Touched ? (
-              <div className="p-3.5 rounded-2xl bg-purple-950/70 border-2 border-purple-400 shadow-glow-purple flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-2.5 text-purple-200 font-black text-sm">
-                  <Sparkles className="w-5 h-5 text-purple-300 animate-spin" />
-                  <span>LEVEL TP2 MASUK RENTANG PERIODE</span>
-                </div>
-                <span className="text-xs bg-purple-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
-                  BUKAN BUKTI PROFIT
-                </span>
-              </div>
-            ) : isTp1Touched ? (
-              <div className="p-3.5 rounded-2xl bg-emerald-950/70 border-2 border-emerald-400 shadow-glow-green-sm flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-2.5 text-emerald-200 font-black text-sm">
-                  <Target className="w-5 h-5 text-emerald-300 animate-pulse" />
-                  <span>LEVEL PIVOT/TP1 MASUK RENTANG</span>
-                </div>
-                <span className="text-xs bg-emerald-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
-                  OBSERVASI LEVEL
-                </span>
-              </div>
-            ) : isEntryTouched ? (
-              <div className="p-3.5 rounded-2xl bg-amber-500/25 border-2 border-amber-400 text-amber-200 font-black shadow-glow-gold flex items-center justify-between text-xs font-mono animate-pulse">
-                <div className="flex items-center gap-2.5">
-                  <span className="relative flex h-3.5 w-3.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500" />
-                  </span>
-                  <span className="text-sm">LEVEL ENTRY MASUK RENTANG PERIODE</span>
-                </div>
-                <span className="text-xs bg-amber-500 text-slate-950 px-3 py-1 rounded-lg font-black shadow-md">
-                  BELUM ADA ORDER
-                </span>
-              </div>
-            ) : (
-              <div className="p-3 rounded-2xl bg-slate-900 border border-slate-700/80 text-slate-300 flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Clock className="w-4 h-4 text-cop-cyan" />
-                  <span>Menunggu Koreksi Sentuhan Harga:</span>
-                </div>
-                <span className="text-xs font-black text-cop-gold tabular-nums bg-cop-bg px-2.5 py-1 rounded-lg border border-cop-border">
-                  Sisa {distToEntry} satuan harga ke Titik Entry
-                </span>
-              </div>
-            )}
+            <div className="p-4 rounded-2xl bg-slate-900 border border-amber-500/40 text-sm text-slate-200 space-y-2">
+              <strong className="text-amber-300">Urutan skenario: entry → TP / SL</strong>
+              <p>{currentRec.observation?.note || 'Urutan entry dan target belum terkonfirmasi. Target belum dihitung tercapai.'}</p>
+              <p className="text-xs text-slate-400">Sisa jarak ke entry: {distToEntry} satuan harga. Sentuhan level bukan bukti order tereksekusi.</p>
+            </div>
+            {!!currentRec.alternatives?.length && <div className="p-4 rounded-2xl border border-cyan-800 bg-cyan-950/20 space-y-3">
+              <h4 className="font-bold text-cyan-300">Alternatif entry · acuan timeframe lebih kecil</h4>
+              <p className="text-xs text-slate-400">Prioritas dari timeframe pertama. Skenario baru menunggu konfirmasi; tidak dihitung sebagai entry yang sudah terjadi.</p>
+              {currentRec.alternatives.map((a,i)=><div key={a.tf} className="rounded-xl bg-slate-950/60 p-3 space-y-2">
+                <strong className="text-sm text-white">{i+1}. {a.tf.toUpperCase()} · {a.action} · {a.level} {a.entryPrice.toFixed(decimals)}</strong>
+                <p className="text-xs text-slate-300">TP1 {a.tp1.toFixed(decimals)} · TP2 {a.tp2.toFixed(decimals)} · SL {a.stopLoss.toFixed(decimals)}</p>
+                <p className="text-xs text-slate-400">{a.reason}</p>
+                <span className="text-xs text-amber-300">{a.status==='WAIT_H4'?'TUNGGU KESELARASAN H4':'TUNGGU KONFIRMASI'}</span>
+              </div>)}
+            </div>}
 
             {/* KOTAK INDIKATOR LOKASI HARGA LIVE */}
             <div className="p-4 rounded-2xl bg-slate-950/90 border-2 border-amber-500/60 space-y-2 shadow-lg">
