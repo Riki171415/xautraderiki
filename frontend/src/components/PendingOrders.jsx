@@ -35,7 +35,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
   const isSell = busur?.action === 'SELL LIMIT';
 
   // Live price & distance calculation
-  const currentPrice = liveTick?.price || ohlcv_N?.close || 0;
+  const currentPrice = liveTick?.bid || ohlcv_N?.close || 0;
   const entryPrice = busur?.entryPrice || 0;
   const liveDist = currentPrice && entryPrice ? Math.abs(currentPrice - entryPrice).toFixed(decimals) : busur?.distToEntry || '0.000';
 

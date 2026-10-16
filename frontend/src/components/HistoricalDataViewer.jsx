@@ -159,7 +159,7 @@ export default function HistoricalDataViewer({ liveTick }) {
     }
   };
 
-  const currentLivePrice = liveTick?.price || summary?.latestPrice || 4184.51;
+  const currentLivePrice = liveTick?.bid || summary?.latestPrice || 4184.51;
 
   if (loading) {
     return (

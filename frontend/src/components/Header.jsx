@@ -238,7 +238,7 @@ export default function Header({
                     : 'text-white'
                 }`}
               >
-                ${liveTick.price.toFixed(liveTick?.decimals ?? (broker !== 'BINANCE' ? 3 : 2))}
+                ${(liveTick.bid ?? liveTick.price).toFixed(liveTick?.decimals ?? (broker !== 'BINANCE' ? 3 : 2))}
               </span>
               {liveTick.direction === 'UP' ? (
                 <span className="text-emerald-400 text-xs font-black flex items-center">
@@ -549,7 +549,7 @@ export default function Header({
                   </span>
                   {liveTick?.price && (
                     <span className="text-[10px] text-slate-400 font-mono">
-                      Feed: <strong className="text-white">${liveTick.price.toFixed(liveTick?.decimals ?? (broker !== 'BINANCE' ? 3 : 2))}</strong>
+                      Feed: <strong className="text-white">${(liveTick.bid ?? liveTick.price).toFixed(liveTick?.decimals ?? (broker !== 'BINANCE' ? 3 : 2))}</strong>
                     </span>
                   )}
                 </div>

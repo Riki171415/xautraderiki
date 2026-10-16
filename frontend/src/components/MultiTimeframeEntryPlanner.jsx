@@ -56,7 +56,7 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
   if (!data) return null;
 
   const { entryRecommendations = [], broker, userModal = 10000, lotCalc, decimals = 3 } = data;
-  const currentPrice = liveTick?.price || data?.ohlcv_N?.close || 4184.25;
+  const currentPrice = liveTick?.bid || data?.ohlcv_N?.close || 4184.25;
 
   // Selected recommendation object
   const currentRec = entryRecommendations.find((r) => r.tf === selectedTf) || entryRecommendations[0];

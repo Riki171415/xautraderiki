@@ -31,7 +31,7 @@ import {
   Eye
 } from 'lucide-react';
 
-export default function WeeklyTradingPlan({ data, liveTick }) {
+function WeeklyTradingPlanDetails({ data, liveTick }) {
   const [copied, setCopied] = useState(false);
   // Default tab: 'compare' so user sees both clearly, with options 'trend', 'hsh', 'roadmap'
   const [activeTab, setActiveTab] = useState('compare');
@@ -39,7 +39,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
   if (!data) return null;
 
   const { leak4RegMatrix, broker, userModal = 10000, lotCalc, decimals = 3 } = data;
-  const currentPrice = liveTick?.price || data?.ohlcv_N?.close || 4174.5;
+  const currentPrice = liveTick?.bid || data?.ohlcv_N?.close || 4174.5;
 
   // ── Extract Multi-Timeframe Rows & RS Columns ──────────────────────────────
   // 1W (Weekly)
@@ -82,7 +82,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
   const yearLow = yearRow ? parseFloat(yearRow.lowN) : 3944.57;
 
   // Real Weekly 5 Laws Calculations
-  const isWeeklyUp = openN >= openB;
+  const isWeeklyUp = openN > openB;
   const weeklyTrend = isWeeklyUp ? 'UP' : 'DOWN';
   const weeklyPerahu = weeklyRow?.pattern || 'BRK UP';
 
@@ -146,13 +146,13 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
   const hshLossSl = (parseFloat(lot) * parseFloat(hshSlPts) * 10).toFixed(2);
 
   // Institutional Touch Detection for Weekly Levels
-  const isTrendEntryTouched = Boolean(currentPrice <= trendEntry || (lowN && lowN <= trendEntry));
-  const isTrendTp1Touched = Boolean(currentPrice >= trendTp1 || (highN && highN >= trendTp1));
-  const isTrendTp2Touched = Boolean(currentPrice >= trendTp2 || (highN && highN >= trendTp2));
-
-  const isHshEntryTouched = Boolean(currentPrice >= hshEntryPrimary || (highN && highN >= hshEntryPrimary));
-  const isHshTp1Touched = Boolean(currentPrice <= hshTp1 || (lowN && lowN <= hshTp1));
-  const isHshTp2Touched = Boolean(currentPrice <= hshTp2 || (lowN && lowN <= hshTp2));
+  const crossed = level => lowN <= level && highN >= level;
+  const isTrendEntryTouched = crossed(trendEntry);
+  const isTrendTp1Touched = crossed(trendTp1);
+  const isTrendTp2Touched = crossed(trendTp2);
+  const isHshEntryTouched = crossed(hshEntryPrimary);
+  const isHshTp1Touched = crossed(hshTp1);
+  const isHshTp2Touched = crossed(hshTp2);
 
   // Calendar & Week Calculation (WIB)
   const now = new Date();
@@ -447,7 +447,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
                     <span className="text-[10px] text-emerald-400 font-bold">TARGET 1 (PIVOT)</span>
                     {isTrendTp1Touched && (
                       <span className="text-[8px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
-                        ✓ HIT
+                        ✓ LEVEL TERSENTUH
                       </span>
                     )}
                   </div>
@@ -462,7 +462,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
                     <span className="text-[10px] text-emerald-300 font-black">TARGET 2 (R1)</span>
                     {isTrendTp2Touched && (
                       <span className="text-[8px] bg-emerald-400 text-slate-950 font-black px-1.5 py-0.2 rounded shadow-sm">
-                        ✓ HIT
+                        ✓ LEVEL TERSENTUH
                       </span>
                     )}
                   </div>
@@ -533,7 +533,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
                     <span className="text-[10px] text-rose-400 font-bold">TP 1 (OPEN PEKAN)</span>
                     {isHshTp1Touched && (
                       <span className="text-[8px] bg-rose-400 text-white font-black px-1.5 py-0.2 rounded shadow-sm">
-                        ✓ HIT
+                        ✓ LEVEL TERSENTUH
                       </span>
                     )}
                   </div>
@@ -548,7 +548,7 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
                     <span className="text-[10px] text-rose-300 font-black">RS TAMBAHAN (PIVOT)</span>
                     {isHshTp2Touched && (
                       <span className="text-[8px] bg-rose-400 text-white font-black px-1.5 py-0.2 rounded shadow-sm">
-                        ✓ HIT
+                        ✓ LEVEL TERSENTUH
                       </span>
                     )}
                   </div>
@@ -700,4 +700,13 @@ export default function WeeklyTradingPlan({ data, liveTick }) {
       )}
     </div>
   );
+}
+
+export default function WeeklyTradingPlan(props) {
+ const rows=props.data?.leak4RegMatrix?.tableRows || [];
+ const rs=props.data?.leak4RegMatrix?.rsColumns || [];
+ if(!['1w','1M','1Y'].every(tf=>rows.some(r=>r.timeframe===tf) && rs.some(r=>r.timeframe===tf))) return <div className="cop-panel text-sm text-slate-400">Plan mingguan menunggu data W1, MN1, dan tahunan asli yang lengkap. Tidak memakai angka contoh.</div>;
+ const week=rows.find(r=>r.timeframe==='1w');
+ if(Number(week.openN)===Number(week.openB)) return <div className="cop-panel text-sm text-slate-400">JIKA W1 NETRAL · Open N sama dengan Open B. Tunggu arah; tidak membuat plan BUY/SELL.</div>;
+ return <WeeklyTradingPlanDetails {...props}/>;
 }

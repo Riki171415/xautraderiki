@@ -14,6 +14,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import OHLPanel from './components/OHLPanel';
 import CandlestickChart from './components/CandlestickChart';
+import H4CompassPanel from './components/H4CompassPanel';
+import HSHOverview from './components/HSHOverview';
 import RSMatrix from './components/RSMatrix';
 import OperationalStatus from './components/OperationalStatus';
 import StorylineGenerator from './components/StorylineGenerator';
@@ -132,7 +134,7 @@ export default function App() {
   }, [symbol, showNotification]);
 
   // ── Current Telemetry Quick Stats ──────────────────────────────────────────
-  const currentPrice = liveTick?.price ?? data?.ohlcv_N?.close ?? null;
+  const currentPrice = liveTick?.bid ?? data?.ohlcv_N?.close ?? null;
   const weeklyRow = data?.leak4RegMatrix?.tableRows?.find(
     (r) => r.timeframe === '1w' || r.label?.includes('WEEK') || r.label?.includes('1w')
   );
@@ -356,6 +358,8 @@ export default function App() {
 
       {/* ── 4. MAIN WORKSPACE CONTAINER ── */}
       <main className="workspace-main flex-1 p-4 lg:p-6 space-y-6">
+        <H4CompassPanel analysis={data?.h4Compass} decimals={data?.decimals} selected={timeframe} onSelect={setTimeframe} />
+        <HSHOverview data={data} liveTick={liveTick} onSelect={setTimeframe} />
         {(viewMode === 'candles' || viewMode === 'all') && (
           <CandlestickChart data={data} liveTick={liveTick} symbol={symbol} timeframe={timeframe} broker={broker} />
         )}

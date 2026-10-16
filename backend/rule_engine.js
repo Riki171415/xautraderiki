@@ -49,7 +49,8 @@ function calcHukumPerahu(ohlcv_N, ohlcv_B) {
   const lowBreak = L_N < L_B;
   const highEqual = Math.abs(H_N - H_B) < 0.01;
   const lowEqual = Math.abs(L_N - L_B) < 0.01;
-  const trendUp = O_N >= O_B;
+  const trendUp = O_N > O_B;
+  if (O_N === O_B) return {pattern: 'NEUTRAL', status: 'Netral', description: 'Open N sama dengan Open B; arah belum ditentukan', highBreak, lowBreak};
 
   let pattern, status, description;
 
@@ -783,44 +784,19 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     const closeB = Number(B.close || currentPrice);
 
     // DIRECT (Hukum JIKA: UP jika Open_N > Open_B)
-    const direct = openN >= openB ? 'UP' : 'DOWN';
-
-    // Pivot & Levels of Candle B
-    const pivotB = (highB + lowB + closeB) / 3;
-    const rangeB_val = highB - lowB;
-    const r1B = (2 * pivotB) - lowB;
-    const s1B = (2 * pivotB) - highB;
-    const r2B = pivotB + rangeB_val;
-    const s2B = pivotB - rangeB_val;
-    const r3B = highB + 2 * (pivotB - lowB);
-    const s3B = lowB - 2 * (highB - pivotB);
-    const r4B = r3B + rangeB_val;
-    const s4B = s3B - rangeB_val;
+    const direct = calcHukumJIKA(N,B).trend;
+    const rs = calcRSMatrix(B);
+    const {pivot:pivotB,r1:r1B,r2:r2B,r3:r3B,r4:r4B,s1:s1B,s2:s2B,s3:s3B,s4:s4B}=rs;
+    const rangeB_val = highB-lowB;
 
     // OP_PV, R1_HB, S1_LB
     const opPv = openN >= pivotB ? 'ABOVE' : 'BELOW';
     const r1Hb = r1B >= highB ? 'ABOVE' : 'BELOW';
     const s1Lb = s1B >= lowB ? 'ABOVE' : 'BELOW';
 
-    // PATTERN
-    let pattern = 'NRM UP';
-    if (highN <= highB && lowN >= lowB) {
-      pattern = 'INSIDE';
-    } else if (openN >= openB) {
-      pattern = closeN >= openN ? 'NRM UP' : 'ANL UP';
-    } else {
-      pattern = closeN <= openN ? 'NRM DN' : 'ANL DN';
-    }
-
-    // MOVE
-    const move = closeN >= openN ? 'UP' : 'DOWN';
-
-    // TRACK
-    let track = 'TRGET UP';
-    if (direct === 'UP' && move === 'UP') track = 'TRGET UP';
-    else if (direct === 'UP' && move === 'DOWN') track = 'PBACK UP';
-    else if (direct === 'DOWN' && move === 'UP') track = 'PBACK UP';
-    else track = 'TRGET DN';
+    const pattern = calcHukumPerahu(N,B).pattern;
+    const move = closeN > openN ? 'UP' : closeN < openN ? 'DOWN' : 'FLAT';
+    const track = direct === 'NEUTRAL' || move === 'FLAT' ? 'WAIT' : direct === move ? `TARGET ${move}` : `BUSUR ${move}`;
 
     // RANGES in points
     const rangeN = Math.round(Math.abs(highN - lowN) * 100);

@@ -7,6 +7,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const path = require('path');
+const { buildH4Compass } = require('./h4_compass');
 const { DIRECT_TIMEFRAMES, validCandles, getExnessCandles } = require('./mt5_data');
 const WebSocket = require('ws');
 const ccxt = require('ccxt');
@@ -533,7 +534,7 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
     return { ...multiTfCandlesCache.data };
   }
 
-  const tfs = ['5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M', '3M', '6M', '1Y'];
+  const tfs = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M', '3M', '6M', '1Y'];
   const res = {};
   let ohlcv1hRaw = null;
 
@@ -674,12 +675,10 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
     };
 
     const globalMacroStoryline = {
-      decadeCycle: 'Supercycle Emas Makro 10 Tahun (2021–2030): Reli ekspansi dari dasar akumulasi $1,680–$1,800 menuju All-Time High makro.',
-      year2026Phase: 'Konsolidasi Pasca ATH $5,240: Kuartal 4 (>80% waktu tahunan) berada di fase penyeimbangan magnet HSH tahunan koridor $4,100–$4,250.',
-      fractalRole: fractalRoleMap[tf] || fractalRoleMap['1h'],
-      alignmentRecommendation: isActionBuy
-        ? `Order BUY TF ${tf.toUpperCase()} memanfaatkan pantulan busur di zona ekuilibrium $4,100–$4,200. Ambil profit disiplin di TP1 ($${busur.tp1.toFixed(decimals)}) dan TP2 ($${busur.tp2.toFixed(decimals)}).`
-        : `Order SELL TF ${tf.toUpperCase()} selaras dengan penarikan HSH Kuartal 4 pasca rekor ATH, menguji kembali area keseimbangan Open & Pivot tahunan.`,
+      decadeCycle: 'Konteks global dibaca dari candle tahunan hingga harian sumber broker; tidak memakai proyeksi harga tetap.',
+      year2026Phase: 'Posisi global mengikuti Open N, Open B, dan gerak tiap timeframe yang tersedia.',
+      fractalRole: `Timeframe ${tf} dibaca sebagai bagian perkembangan gerakan terhadap pusat analisis H4.`,
+      alignmentRecommendation: 'Gunakan Kompas H4 untuk membaca keselarasan dan konflik; akhir busur belum otomatis terkonfirmasi.',
     };
 
     return {
@@ -887,7 +886,6 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     try {
       const multiTfMap = await getMultiTfCandles(broker.id, marketSymbol);
       multiTfMap[timeframe] = { ohlcv_N, ohlcv_B };
-      if (!multiTfMap['market']) multiTfMap['market'] = multiTfMap['1h'];
       leak4RegMatrix = calcLeak4RegMatrix(multiTfMap, ohlcv_N.close, Math.round((broker.spread || 0.12) * 100), decimals);
     } catch (e) {
       console.warn('[Leak4Reg Matrix Error]:', e.message);
@@ -902,7 +900,18 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       console.warn('[Entry Recommendations Error]:', e.message);
     }
 
+    let h4Compass = buildH4Compass();
+    try {
+      const hierarchy = await getMultiTfCandles(broker.id, marketSymbol);
+      h4Compass = buildH4Compass(hierarchy);
+    } catch (error) { console.warn('[H4 Compass] ' + error.message); }
+    entryRecommendations = entryRecommendations.map(rec => ({...rec,
+      h4Context: {jika:h4Compass.h4.jika,phase:h4Compass.h4.phase,macroStatus:h4Compass.macroStatus},
+      warnings:[`H4 pusat analisis: ${h4Compass.label}. ${h4Compass.confirmationNote}`, ...rec.warnings],
+    }));
+
     const result = {
+      h4Compass,
       symbol: displaySymbol,
       marketSymbol,
       timeframe,
