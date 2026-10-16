@@ -715,181 +715,189 @@ export default function MultiTimeframeEntryPlanner({ data, liveTick }) {
         </div>
 
         {/* ── 4. Alur Cerita Metode COP TAH & Hubungan Peta Global (Tahunan 2026 & Dekade 2021–2030) ── */}
-        <div className="pt-5 border-t border-cop-border/80 space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-cop-gold shadow-glow-gold-sm">
-                <BookOpen className="w-5 h-5" />
+        <div className="pt-4 border-t border-slate-800 space-y-3 font-mono">
+          {/* Subtle Clean Header */}
+          <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-cop-surface border border-cop-border text-cop-gold shadow-sm">
+                <Compass className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-white flex items-center gap-2">
-                  <span>Alur Cerita Metode COP TAH & Sinkronisasi Peta Makro Global</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-950 text-blue-300 border border-blue-500/40 uppercase">
+                <h3 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                  <span>Alur Cerita & Rasional Entry COP TAH</span>
+                  <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-slate-800 text-cop-gold border border-slate-700">
                     TF {currentRec.tf.toUpperCase()}
                   </span>
                 </h3>
-                <p className="text-[11px] text-slate-400">
-                  Mengapa kita entry di titik ini menurut 5 Hukum COP TAH dan bagaimana hubungannya dengan siklus Tahun 2026 & Dekade 2021–2030.
-                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-[10px] font-mono">
-              <span className="px-2.5 py-1 rounded-lg bg-cop-card border border-cop-border text-slate-300 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-cop-cyan" />
-                <span>Dekade 2021–2030</span>
+            <div className="flex items-center gap-2 text-[10px] text-slate-400">
+              <span className="px-2 py-0.5 rounded bg-cop-bg border border-cop-border text-slate-300">
+                Dekade: <strong className="text-cop-cyan">2021–2030</strong>
               </span>
-              <span className="px-2.5 py-1 rounded-lg bg-cop-card border border-cop-border text-slate-300 flex items-center gap-1.5">
-                <Compass className="w-3.5 h-3.5 text-cop-gold" />
-                <span>Tahun 2026 Q4</span>
+              <span className="px-2 py-0.5 rounded bg-cop-bg border border-cop-border text-slate-300">
+                Makro: <strong className="text-cop-gold">2026 Q4</strong>
               </span>
             </div>
           </div>
 
-          {/* 2-Card Layout: Rationale 5 Hukum COP TAH (Kiri) & Peta Makro Global (Kanan) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Panel 1: Alasan Entry Berdasarkan 5 Hukum COP TAH */}
-            <div className="p-4 rounded-2xl bg-slate-950/90 border-2 border-amber-500/40 space-y-3.5 shadow-lg flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-amber-900/40 pb-2">
-                  <span className="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
-                    <Target className="w-4 h-4 text-cop-gold" />
-                    1. Kenapa Entry di Level Ini? (5 Hukum COP TAH)
+          {/* 2-Column Institutional Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+            {/* ── KIRI: Rasional 5 Hukum COP TAH ── */}
+            <div className="p-3.5 rounded-xl bg-cop-surface/60 border border-slate-800 space-y-3">
+              {/* Header Card */}
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-cop-gold" />
+                  Rasional 5 Hukum COP TAH
+                </span>
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                  R:R {currentRec.busur.riskReward}
+                </span>
+              </div>
+
+              {/* Logika Hukum Busur (Hero Tag) */}
+              <div className={`p-3 rounded-lg border text-xs leading-relaxed ${
+                isBuy
+                  ? 'bg-emerald-950/25 border-emerald-800/40 text-emerald-200'
+                  : 'bg-rose-950/25 border-rose-800/40 text-rose-200'
+              }`}>
+                <div className="flex items-center justify-between font-black text-[10px] uppercase tracking-wider mb-1">
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-cop-gold" />
+                    Logika Hukum Busur ({currentRec.busur.action}):
                   </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    Hukum Busur
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-cop-bg border border-slate-700 text-slate-300">
+                    Anti-FOMO
                   </span>
                 </div>
+                <p className="text-[11px] font-sans font-medium text-slate-200 leading-snug">
+                  {currentRec.coptahRationale?.whyEntryHere ||
+                    `Menunggu harga menarik busur ke ${isBuy ? 'Support S1' : 'Resistance R1'} ($${entryPrice.toFixed(decimals)}) agar tidak FOMO di atas Pivot.`}
+                </p>
+              </div>
 
-                {/* Highlight Callout: Filosofi Hukum Busur */}
-                <div className="p-3 rounded-xl bg-gradient-to-r from-amber-950/40 to-slate-900 border border-amber-500/50 shadow-inner">
-                  <div className="text-[10px] font-black uppercase tracking-wider text-amber-400 mb-1 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Filosofi Tarikan Busur Sebelum Peluru Melesat:
+              {/* 3 Micro Metrics: JIKA, Perahu, HSH */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px]">
+                {/* JIKA */}
+                <div className="p-2 rounded-lg bg-cop-card/80 border border-slate-800/80 space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 font-bold">1. JIKA</span>
+                    <span className={`text-[8px] font-black px-1 rounded ${
+                      currentRec.jika.trend === 'UP' ? 'bg-emerald-500 text-slate-950' : 'bg-rose-500 text-white'
+                    }`}>
+                      {currentRec.jika.trend}
+                    </span>
                   </div>
-                  <p className="text-xs text-slate-100 leading-relaxed font-sans font-medium">
-                    {currentRec.coptahRationale?.whyEntryHere ||
-                      `Menunggu harga menarik busur ke ${isBuy ? 'Support S1' : 'Resistance R1'} ($${entryPrice.toFixed(decimals)}) agar tidak FOMO di atas Pivot.`}
+                  <div className="text-white font-bold truncate">Arah {currentRec.jika.direction}</div>
+                  <p className="text-[9px] text-slate-400 font-sans leading-tight">
+                    Pijakan di {isBuy ? 'S1' : 'R1'}
                   </p>
                 </div>
 
-                {/* 3 Hukum Breakdown: JIKA, Perahu, HSH */}
-                <div className="space-y-2 pt-1">
-                  {/* Hukum JIKA */}
-                  <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border/60 hover:border-cop-border transition-colors">
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-cop-gold mb-1">
-                      <TrendingUp className="w-3.5 h-3.5 text-cop-gold" />
-                      <span>Peran Hukum JIKA ({currentRec.jika.trend}):</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {currentRec.coptahRationale?.jikaRole ||
-                        `Open N ($${currentRec.openN.toFixed(decimals)}) menentukan arah perahu ${currentRec.jika.direction}. Level ${isBuy ? 'S1' : 'R1'} adalah pijakan perahu.`}
-                    </p>
+                {/* Perahu */}
+                <div className="p-2 rounded-lg bg-cop-card/80 border border-slate-800/80 space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 font-bold">2. PERAHU</span>
+                    <span className="text-[8px] font-bold px-1 rounded bg-slate-800 text-cyan-300 border border-slate-700">
+                      {currentRec.perahu.pattern}
+                    </span>
                   </div>
-
-                  {/* Hukum Perahu */}
-                  <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border/60 hover:border-cop-border transition-colors">
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-cop-cyan mb-1">
-                      <Anchor className="w-3.5 h-3.5 text-cop-cyan" />
-                      <span>Peran Hukum Perahu ({currentRec.perahu.pattern}):</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {currentRec.coptahRationale?.perahuRole ||
-                        `${currentRec.perahu.description}. Pola ini mencerminkan dorongan momentum sebelum target tercapai.`}
-                    </p>
-                  </div>
-
-                  {/* Hukum HSH */}
-                  <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border/60 hover:border-cop-border transition-colors">
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-purple-300 mb-1">
-                      <Compass className="w-3.5 h-3.5 text-purple-400" />
-                      <span>Peran Hukum HSH (Home Sweet Home):</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {currentRec.coptahRationale?.hshRole ||
-                        `Pivot ($${currentRec.rs.pivot.toFixed(decimals)}) bertindak sebagai 'Rumah' ekuilibrium magnetik tempat TP1 diamankan bertahap.`}
-                    </p>
-                  </div>
+                  <div className="text-white font-bold truncate">{currentRec.perahu.status}</div>
+                  <p className="text-[9px] text-slate-400 font-sans leading-tight">
+                    Kapasitas daya pacu
+                  </p>
                 </div>
-              </div>
 
-              {/* R:R Footer Badge */}
-              <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Rasio Risiko : Imbalan Resmi:</span>
-                <strong className="text-cop-gold font-mono">{currentRec.busur.riskReward}</strong>
+                {/* HSH */}
+                <div className="p-2 rounded-lg bg-cop-card/80 border border-slate-800/80 space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 font-bold">3. HSH</span>
+                    <span className="text-[8px] font-bold px-1 rounded bg-purple-950 text-purple-300 border border-purple-800/60">
+                      TP1
+                    </span>
+                  </div>
+                  <div className="text-cop-gold font-bold tabular-nums">${currentRec.rs.pivot.toFixed(decimals)}</div>
+                  <p className="text-[9px] text-slate-400 font-sans leading-tight">
+                    Magnet Rumah Pivot
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Panel 2: Koneksi ke Alur Cerita Global (Tahunan 2026 & Dekade 2021–2030) */}
-            <div className="p-4 rounded-2xl bg-slate-950/90 border-2 border-cop-border/80 space-y-3.5 shadow-lg flex flex-col justify-between">
+            {/* ── KANAN: Peta Fraktal Makro (2026 Q4 & Dekade) ── */}
+            <div className="p-3.5 rounded-xl bg-cop-surface/60 border border-slate-800 space-y-3 flex flex-col justify-between">
               <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-cop-border/60 pb-2">
-                  <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-cop-cyan" />
-                    2. Koneksi ke Peta Global (2026 Q4 & Dekade)
+                {/* Header Card */}
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                  <span className="text-[11px] font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-cop-cyan" />
+                    Peta Fraktal Global (2026 Q4 & Dekade)
                   </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-500/40">
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-950 text-blue-300 border border-blue-500/30">
                     Siklus Makro
                   </span>
                 </div>
 
-                {/* Peta Siklus Dekade 2021–2030 */}
-                <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border/60">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-cop-cyan mb-1">
-                    <span className="flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5" />
-                      Siklus 10 Tahun (Dekade 2021–2030):
+                {/* 3 Step Ribbon */}
+                <div className="space-y-1.5 text-xs">
+                  {/* Step 1: Dekade */}
+                  <div className="p-2 rounded-lg bg-cop-card/80 border border-slate-800/80 flex items-start gap-2">
+                    <span className="w-4 h-4 rounded-full bg-cyan-950 text-cop-cyan flex items-center justify-center flex-shrink-0 text-[9px] font-black border border-cyan-800/60 mt-0.5">
+                      1
                     </span>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
-                      Supercycle
-                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <strong className="text-white">Dekade 2021–2030</strong>
+                        <span className="text-[9px] text-slate-400">Supercycle Emas</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-sans leading-tight mt-0.5">
+                        {currentRec.globalMacroStoryline?.decadeCycle || 'Ekspansi makro 10 tahun dari dasar akumulasi $1,680–$1,800 ke rekor baru.'}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    {currentRec.globalMacroStoryline?.decadeCycle ||
-                      'Emas berada dalam siklus ekspansi supercycle dekade (dari dasar akumulasi $1,680-$1,800 tahun 2021–2022 menuju All-Time High makro). Di peta 10 tahun, arah jangka panjang tetap didominasi akumulasi makro.'}
-                  </p>
-                </div>
 
-                {/* Konteks Tahun 2026 (Fase Q4 Pasca ATH $5,240) */}
-                <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border/60">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-amber-300 mb-1">
-                    <span className="flex items-center gap-1.5">
-                      <Compass className="w-3.5 h-3.5 text-cop-gold" />
-                      Konteks Tahun 2026 (Q4 Pasca ATH $5,240):
+                  {/* Step 2: 2026 Q4 */}
+                  <div className="p-2 rounded-lg bg-cop-card/80 border border-slate-800/80 flex items-start gap-2">
+                    <span className="w-4 h-4 rounded-full bg-amber-950 text-cop-gold flex items-center justify-center flex-shrink-0 text-[9px] font-black border border-amber-800/60 mt-0.5">
+                      2
                     </span>
-                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-800">
-                      Q4 Konsolidasi
-                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <strong className="text-white">Tahun 2026 (Kuartal 4)</strong>
+                        <span className="text-[9px] text-amber-400">Pasca ATH $5,240</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-sans leading-tight mt-0.5">
+                        {currentRec.globalMacroStoryline?.year2026Phase || 'Konsolidasi & keseimbangan HSH di koridor $4,100–$4,250.'}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    {currentRec.globalMacroStoryline?.year2026Phase ||
-                      'Pada Q1 2026 emas mencetak ATH $5,240. Saat ini di Q4 2026 (>80% waktu), pasar berada dalam fase distribusi korektif & keseimbangan magnet HSH tahunan di koridor $4,100–$4,250.'}
-                  </p>
-                </div>
 
-                {/* Peran Fraktal Timeframe Ini */}
-                <div className="p-2.5 rounded-xl bg-cop-surface/80 border border-cop-border/60">
-                  <div className="flex items-center gap-2 text-[11px] font-bold text-white mb-1">
-                    <Layers className="w-3.5 h-3.5 text-cop-gold" />
-                    <span>Peran Fraktal Timeframe {currentRec.name} ({currentRec.tf}):</span>
+                  {/* Step 3: TF Role */}
+                  <div className="p-2 rounded-lg bg-cop-card/80 border border-slate-800/80 flex items-start gap-2">
+                    <span className="w-4 h-4 rounded-full bg-blue-950 text-blue-300 flex items-center justify-center flex-shrink-0 text-[9px] font-black border border-blue-800/60 mt-0.5">
+                      3
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <strong className="text-white">Peran Fraktal TF {currentRec.tf.toUpperCase()}</strong>
+                        <span className="text-[9px] text-slate-400">{currentRec.style}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-sans leading-tight mt-0.5">
+                        {currentRec.globalMacroStoryline?.fractalRole || 'Menjadi bagian gelombang fraktal yang selaras dengan siklus lebih besar.'}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    {currentRec.globalMacroStoryline?.fractalRole ||
-                      `Entry di level ini menjadi bagian pembentuk gelombang fraktal yang selaras dengan peta pergerakan harga yang lebih besar.`}
-                  </p>
                 </div>
               </div>
 
-              {/* Rekomendasi Penyelarasan Makro */}
-              <div className="p-3 rounded-xl bg-gradient-to-r from-blue-950/40 to-slate-900 border border-blue-500/40 text-xs">
-                <div className="text-[10px] font-black uppercase tracking-wider text-blue-300 mb-1 flex items-center gap-1.5">
-                  <Info className="w-3.5 h-3.5 text-blue-400" />
-                  Sintesis Penyelarasan Makro 2026:
-                </div>
-                <p className="text-[11px] text-slate-200 leading-relaxed font-sans">
-                  {currentRec.globalMacroStoryline?.alignmentRecommendation ||
-                    `Gunakan titik entry TF ${currentRec.tf} ini dengan disiplin risiko rasio ${currentRec.busur.riskReward} sesuai fase koreksi ekuilibrium Kuartal 4 tahun 2026.`}
-                </p>
+              {/* Action Synthesis Pill */}
+              <div className="p-2.5 rounded-lg bg-gradient-to-r from-blue-950/40 via-cop-card to-slate-900 border border-blue-500/30 flex items-center gap-2 text-[11px] text-slate-200">
+                <Info className="w-3.5 h-3.5 text-cop-cyan flex-shrink-0" />
+                <span className="font-sans font-medium text-[10px] leading-tight">
+                  <strong className="text-white">Sintesis:</strong> {currentRec.globalMacroStoryline?.alignmentRecommendation || `Gunakan titik entry TF ${currentRec.tf} ini dengan disiplin risiko rasio ${currentRec.busur.riskReward}.`}
+                </span>
               </div>
             </div>
           </div>
