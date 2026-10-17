@@ -1,0 +1,6 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {microH4Guide}from './microH4Guide.mjs';import {matrixPlan,planBadges}from './matrixPlan.mjs';
+const h4={timeframe:'4h',periodStart:0,periodEnd:200,pivot:100,res1:110,sup1:90};const daily={timeframe:'1d',label:'DAILY',pivot:110,res1:100,sup1:90};const micro={timeframe:'15m',openN:101,closeN:105,plan:{action:'BUY LIMIT'}};
+test('micro is observation only, referencing matching H4 level in actual move direction',()=>{const r=microH4Guide(micro,[h4,daily],105,{now:100});assert.equal(r.target,110);assert.equal(r.direction,'UP');assert.equal(r.observerOnly,true);assert.equal(r.entryPrice,undefined);assert.deepEqual(planBadges(r,'sup1'),[]);});
+test('downward micro move can point to lower H4 without overriding H4 plan',()=>{const r=microH4Guide({...micro,openN:108},[h4,daily],105,{now:100});assert.equal(r.target,100);assert.equal(r.direction,'DOWN');});
+test('missing H4 never uses independent micro plan',()=>{const r=matrixPlan(micro,null);assert.equal(r.observerOnly,true);assert.equal(r.target,null);assert.notEqual(r.action,'BUY LIMIT');});
+test('expired H4 and flat micro cannot fabricate direction target',()=>{assert.equal(microH4Guide(micro,[h4,daily],105,{now:201}).target,null);assert.equal(microH4Guide({...micro,closeN:101},[h4,daily],105,{now:100}).target,null);});

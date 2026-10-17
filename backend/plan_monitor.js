@@ -29,7 +29,8 @@ function alternativeEntries(tf,plan,hierarchy,price,observation,h4) {
  const order=({market:['30m','15m','5m'],'4h':['30m','15m','5m'],'1d':['4h','1h','30m'],'1h':['15m','5m'],'30m':['5m'],'15m':['5m'],'5m':['1m']})[tf] || [];
  return order.flatMap(lower=>{
   const pair=hierarchy[lower];if(!pair?.ohlcv_B || !pair?.ohlcv_N) return [];
-  const rs=calcRSMatrix(pair.ohlcv_B,{});
+  const rs=calcRSMatrix(pair.ohlcv_B,pair.ohlcv_N,lower,{});
+  if(!rs.available || rs.anomalies.length)return [];
   const levels=[1,2,3,4].map(i=>({level:`${buy?'S':'R'}${i}`,value:rs[`${buy?'s':'r'}${i}`]})).filter(l=>Number.isFinite(l.value)&&(buy?l.value<price:l.value>price)).sort((a,b)=>Math.abs(a.value-price)-Math.abs(b.value-price));
   const best=levels[0];if(!best) return [];
   const risk=Math.abs(pair.ohlcv_B.high-pair.ohlcv_B.low);if(!(risk>0)) return [];

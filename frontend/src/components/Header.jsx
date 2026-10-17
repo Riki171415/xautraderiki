@@ -32,6 +32,7 @@ export default function Header({
   onSymbolChange,
   onTimeframeChange,
   onBrokerChange,
+  onOpenSources,
 }) {
   const [showMt5Modal, setShowMt5Modal] = useState(false);
   const [syncPriceInput, setSyncPriceInput] = useState('');
@@ -129,6 +130,7 @@ export default function Header({
   };
 
   const BROKERS_LIST = [
+    {id:'TWELVE',label:'Twelve Data (XAU/USD)',server:'Twelve Data',tag:'XAU/USD'},
     { id: 'EXNESS', label: 'Exness (MT5Real36)', server: 'Exness-MT5Real36', tag: '🔵 Real 36' },
     { id: 'BINANCE', label: 'Binance (Live)', server: 'Binance Live', tag: '🟡 Spot/Futures' },
   ];
@@ -153,10 +155,12 @@ export default function Header({
   const ALL_SYMBOLS = [
     { id: 'XAUUSD', label: 'XAU/USD · Gold Spot' },
     { id: 'PAXG/USDT', label: 'PAXG/USDT · Paxos Gold' },
+    {id:'BTCUSD',label:'BTC/USD · Exness'},
+    {id:'BTC/USDC',label:'BTC/USDC · Bitcoin'},
     { id: 'XAUT/USDT', label: 'XAUT/USDT · Tether Gold' },
   ];
 
-  const SYMBOLS = ALL_SYMBOLS.filter(s => broker === 'BINANCE' ? s.id !== 'XAUUSD' : s.id === 'XAUUSD');
+  const SYMBOLS = ALL_SYMBOLS.filter(s => broker === 'BINANCE' ? !['XAUUSD','BTCUSD'].includes(s.id) : broker==='EXNESS'?['XAUUSD','BTCUSD'].includes(s.id):s.id==='XAUUSD');
 
   const isConnected = wsStatus === 'connected';
   const now = new Date().toLocaleTimeString('id-ID', { hour12: false, timeZone: 'Asia/Jakarta' });
@@ -175,7 +179,7 @@ export default function Header({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base font-extrabold tracking-tight text-white leading-none">
-                COP TAH <span className="text-cop-gold">{broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}</span>
+                COP TAH <span className="text-cop-gold">{broker === 'TWELVE' ? 'Twelve Data' : broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}</span>
               </h1>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
                 PRO v2.5
@@ -272,22 +276,7 @@ export default function Header({
         {/* ── Controls & Selectors ── */}
         <div className="header-controls flex items-center gap-2 flex-wrap">
 
-          {/* Broker Selector */}
-          <div className="relative">
-            <select
-              value={broker}
-              onChange={(e) => onBrokerChange && onBrokerChange(e.target.value)}
-              className="appearance-none bg-cop-card/90 border border-cop-border hover:border-cop-gold/60 text-white text-xs font-mono font-semibold px-3 py-1.5 pr-7 rounded-xl cursor-pointer transition-all shadow-sm focus:outline-none"
-              title="Pilih Server Broker"
-            >
-              {BROKERS_LIST.map((b) => (
-                <option key={b.id} value={b.id} className="bg-slate-900 text-slate-100">
-                  {b.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+          <button type="button" className="chart-toggle" onClick={onOpenSources} title="Buka pengaturan sumber data">{broker==='TWELVE'?'Twelve Data':broker==='BINANCE'?'Binance':'Exness MT5'} · Sumber</button>
 
           {/* MT5 Direct Bridge Pill */}
           <button

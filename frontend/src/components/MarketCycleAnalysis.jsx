@@ -39,6 +39,9 @@ export default function MarketCycleAnalysis({data,liveTick}) {
   const rs=data?.leak4RegMatrix?.rsColumns?.find(r=>r.timeframe==='1d');
   if(!data) return null;
   if(!daily || !rs) return <section className="cop-panel space-y-4"><h2 className="font-bold">Analisis Siklus Pasar</h2><MarketSessionCycle cycle={data.marketCycle} decimals={data.decimals}/><p className="text-xs text-amber-200">Plan harian ditahan: data D1/RS asli belum lengkap.</p></section>;
+ const planRS=rs;
+ const levels=['sup2','sup1','pivot','res1','res2'].map(k=>Number(planRS[k]));
+ if(!levels.every(Number.isFinite)||levels.some((v,i)=>i>0&&v<=levels[i-1]))return <section className="cop-panel text-sm text-amber-200">WAIT · Urutan SL–entry–TP tidak valid. Periksa anomali level Excel pada tabel; nilai asli tidak ditukar.</section>;
   return <MarketCycleDetails data={data} liveTick={liveTick}/>;
 }
 function MarketCycleDetails({ data, liveTick }) {

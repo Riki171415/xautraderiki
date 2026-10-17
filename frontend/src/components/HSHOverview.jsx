@@ -6,7 +6,7 @@ export default function HSHOverview({data,liveTick,onSelect}) {
  const fmt=n=>Number.isFinite(n)?n.toFixed(decimals):'—';
  const compass=data?.h4Compass;
  const frames=[...(compass?.minute?[compass.minute]:[]),...(compass?.macro || []),...(compass?.h4?[compass.h4]:[]),...(compass?.micro || [])];
- const price=liveTick?.broker===data?.broker?.id && liveTick?.symbol===data?.symbol ? liveTick.bid : null;
+ const price=Number.isFinite(liveTick?.bid) && liveTick.broker===data?.broker?.id && liveTick.symbol===data?.symbol ? liveTick.bid : null;
  const asRow=f=>({id:f.timeframe,label:LABELS[f.timeframe] || f.timeframe,open:f.available?f.openN:null,price:Number.isFinite(price)?price:f.close,available:f.available,scope:'Open N periode ini'});
  const rows=frames.map(asRow);
  const session=data?.marketCycle?.sessions?.find(s=>s.name===data?.marketCycle?.activeSession);

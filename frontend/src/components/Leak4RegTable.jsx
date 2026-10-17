@@ -1,3 +1,6 @@
+import {useLiveMatrix} from '../hooks/useLiveMatrix';
+import TimeframeTerminal from './TimeframeTerminal';
+import {matrixPlan,planBadges} from '../matrixPlan.mjs';
 import {projectMatrix,activeSessionAt} from '../liveMatrix.mjs';
 /**
  * Leak4RegTable — Multi-Timeframe Matrix Terminal
@@ -12,17 +15,24 @@ import {projectMatrix,activeSessionAt} from '../liveMatrix.mjs';
 import React from 'react';
 import { ArrowUp, ArrowDown, Activity, Globe, Clock, Shield, Info } from 'lucide-react';
 
-export default function Leak4RegTable({ data, liveTick }) {
+function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimeframes, tolerance=0, onTolerance }) {
   const [now,setNow]=React.useState(Date.now);
   React.useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
+  const liveMatrix=useLiveMatrix(data,liveTick,now);
   if (!data) return null;
 
   const { leak4RegMatrix, broker, decimals = 3 } = data;
   if (!leak4RegMatrix) return null;
 
-  const { tableRows = [], rsColumns = [], sessions = [], hshNewYork, dateString, currentPrice, spreadPoints } = projectMatrix(leak4RegMatrix,liveTick,decimals,now);
+  const { tableRows = [], rsColumns: allRsColumns = [], sessions = [], hshNewYork, dateString, currentPrice, spreadPoints } = liveMatrix;
 
-  const activePrice = liveTick?.bid !== undefined ? liveTick.bid.toFixed(decimals) : currentPrice;
+  const rsColumns=displayTimeframes?allRsColumns.filter(c=>displayTimeframes.includes(c.timeframe)):allRsColumns;
+  const matchingTick=liveTick&&liveTick.symbol===data.symbol&&liveTick.broker===data.broker?.id&&Number.isFinite(liveTick.bid)?liveTick:null;
+  const activePrice = matchingTick ? matchingTick.bid.toFixed(decimals) : currentPrice;
+  const badges=(col,key)=>planBadges(matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance}}),key).map(label=><span key={label} className={`matrix-plan-badge ${label==='SL'?'matrix-plan-sl':label.startsWith('TP')?'matrix-plan-tp':label.startsWith('BUY')?'matrix-plan-buy':'matrix-plan-sell'}`}>{label}</span>);
+  const hshReference=data.marketCycle?.hshReference;
+  const hshActive=data.marketCycle?.sessions?.find(s=>s.name===activeSessionAt(now));
+  const hshFmt=v=>Number.isFinite(v)?v.toFixed(decimals):'Menunggu riwayat sesi';
   const tickDirection = liveTick?.direction || 'SAME';
 
   // Helper styles
@@ -52,8 +62,8 @@ export default function Leak4RegTable({ data, liveTick }) {
   };
 
   return (
-    <div className="cop-panel space-y-4">
-      <p className="text-xs text-slate-400">Market aktif: <strong className="text-amber-200">{activeSessionAt(now)}</strong>{!tableRows.some(r=>r.timeframe==='market') && ' · Menunggu candle sesi baru dan riwayat pembanding lengkap. Data sesi lama tidak ditampilkan sebagai sesi aktif.'}</p>
+    <div className={`cop-panel space-y-4 ${rsOnly?'':'terminal-compact terminal-restored'}`} >
+      <div className="terminal-screen-tools"><p className="text-xs text-slate-400">Market aktif: <strong className="text-amber-200">{activeSessionAt(now)}</strong>{!tableRows.some(r=>r.timeframe==='market') && ' · Menunggu candle sesi baru dan riwayat pembanding lengkap. Data sesi lama tidak ditampilkan sebagai sesi aktif.'}</p></div>
       {/* ── Top Bar & Telemetry ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-cop-border pb-3 text-xs font-mono">
         <div className="flex items-center gap-2.5">
@@ -62,7 +72,7 @@ export default function Leak4RegTable({ data, liveTick }) {
             Multi-Timeframe Matrix Terminal
           </span>
           <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-600/40 font-bold text-[10px]">
-            Live Confluence
+            {data.marketDataStatus==='STALE_QUOTE'?'Harga terakhir':'Data tersinkron'}
           </span>
         </div>
         <div className="flex items-center gap-3 text-slate-400 text-[11px]">
@@ -72,148 +82,13 @@ export default function Leak4RegTable({ data, liveTick }) {
         </div>
       </div>
 
-      {/* ── Metric Legends Bar ── */}
-      <div className="flex items-center gap-3 text-[10px] font-mono text-slate-400 bg-cop-card/60 px-3 py-1.5 rounded-xl border border-cop-border overflow-x-auto">
-        <span className="text-cop-gold font-bold uppercase tracking-wider flex items-center gap-1">
-          <Info className="w-3 h-3" /> Legenda:
-        </span>
-        <span><strong>DIRECT</strong>: Posisi Open N vs B</span>
-        <span className="text-slate-600">·</span>
-        <span><strong>OP_PV</strong>: Open N vs Pivot</span>
-        <span className="text-slate-600">·</span>
-        <span><strong>R1_HB / S1_LB</strong>: Posisi Busur vs High/Low B</span>
-        <span className="text-slate-600">·</span>
-        <span><strong>RANGE_D</strong>: Delta Ekspansi Range N - B</span>
-      </div>
-
-      {/* ──────────────────────────────────────────────────────────────────────────
-          TABEL 1: MULTI-TIMEFRAME STATUS & OHL TABLE (STICKY HEADERS)
-         ────────────────────────────────────────────────────────────────────────── */}
-      <div className="overflow-x-auto rounded-xl border border-cop-border bg-cop-surface/80 max-h-[500px]">
-        <table className="w-full text-center font-mono text-[11px] border-separate border-spacing-0">
-          <thead>
-            <tr className="bg-cop-card/95 text-[10px] text-slate-300 font-extrabold uppercase tracking-wider border-b border-cop-border">
-              <th className="sticky top-0 left-0 z-30 bg-cop-card py-2.5 px-3 text-left text-cop-gold border-b border-r border-cop-border">
-                TF
-              </th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-cyan-300 border-b border-cop-border">OPEN_N</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-slate-400 border-b border-cop-border">OPEN_B</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-cyan-300 border-b border-cop-border">HIGH_N</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-slate-400 border-b border-cop-border">HIGH_B</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-cyan-300 border-b border-cop-border">LOW_N</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-slate-400 border-b border-cop-border">LOW_B</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-white border-b border-cop-border">DIRECT</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-slate-300 border-b border-cop-border">OP_PV</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-slate-300 border-b border-cop-border">R1_HB</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-slate-300 border-b border-cop-border">S1_LB</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-slate-300 border-b border-cop-border">PATTERN</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-white border-b border-cop-border">MOVE</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-white border-b border-cop-border">TRACK</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-cyan-300 border-b border-cop-border">RANGE_N</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-slate-400 border-b border-cop-border">RANGE_B</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-2 text-amber-300 border-b border-cop-border">RANGE_D</th>
-              <th className="sticky top-0 z-20 bg-cop-card py-2.5 px-3 text-cop-gold border-b border-cop-border font-black">
-                📍 POSISI HARGA LIVE
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-cop-border/50 text-[11px]">
-            {tableRows.map((row) => {
-              const currentNum = parseFloat(activePrice);
-              const openNum = parseFloat(row.openN);
-              const isAboveOpen = !isNaN(currentNum) && !isNaN(openNum) && currentNum >= openNum;
-              const distPts = !isNaN(currentNum) && !isNaN(openNum) ? Math.abs(currentNum - openNum).toFixed(decimals) : '—';
-
-              return (
-                <tr key={row.timeframe} className="hover:bg-amber-500/[0.04] transition-colors">
-                  {/* Sticky Left Column: Timeframe Label */}
-                  <td className="sticky left-0 z-10 bg-cop-surface py-2 px-3 text-left font-bold text-cop-gold border-r border-cop-border whitespace-nowrap">
-                    {row.label}
-                  </td>
-                  <td className="py-2 px-2 text-cyan-200 tabular-nums">{row.openN}</td>
-                  <td className="py-2 px-2 text-slate-400 tabular-nums">{row.openB}</td>
-                  <td className="py-2 px-2 text-cyan-200 tabular-nums">{row.highN}</td>
-                  <td className="py-2 px-2 text-slate-400 tabular-nums">{row.highB}</td>
-                  <td className="py-2 px-2 text-cyan-200 tabular-nums">{row.lowN}</td>
-                  <td className="py-2 px-2 text-slate-400 tabular-nums">{row.lowB}</td>
-
-                  <td className="py-2 px-2">
-                    <span className={getDirectClass(row.direct)}>
-                      {row.direct}
-                    </span>
-                  </td>
-
-                  <td className={`py-2 px-2 ${getAboveBelowClass(row.opPv)}`}>
-                    {row.opPv}
-                  </td>
-                  <td className={`py-2 px-2 ${getAboveBelowClass(row.r1Hb)}`}>
-                    {row.r1Hb}
-                  </td>
-                  <td className={`py-2 px-2 ${getAboveBelowClass(row.s1Lb)}`}>
-                    {row.s1Lb}
-                  </td>
-
-                  <td className={`py-2 px-2 ${getPatternClass(row.pattern)}`}>
-                    {row.pattern}
-                  </td>
-
-                  <td className="py-2 px-2 font-bold">
-                    <span className={row.move === 'UP' ? 'text-emerald-400' : 'text-rose-400'}>
-                      {row.move}
-                    </span>
-                  </td>
-
-                  <td className={`py-2 px-2 ${getTrackClass(row.track)}`}>
-                    {row.track}
-                  </td>
-
-                  <td className="py-2 px-2 text-white font-medium tabular-nums">{row.rangeN}</td>
-                  <td className="py-2 px-2 text-slate-400 tabular-nums">{row.rangeB}</td>
-                  <td className={`py-2 px-2 tabular-nums ${getRangeDClass(row.rangeD)}`}>
-                    {row.rangeD}
-                  </td>
-
-                  {/* KOTAK INDIKATOR POSISI HARGA SAAT INI & STATUS SENTUHAN LEVEL */}
-                  <td className="py-2 px-3">
-                    <div className="flex flex-col items-center gap-1">
-                      <div
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono font-bold text-[10px] shadow-sm ${
-                          isAboveOpen
-                            ? 'bg-emerald-950/80 border-emerald-500/80 text-emerald-300 shadow-glow-green-sm'
-                            : 'bg-rose-950/80 border-rose-500/80 text-rose-300 shadow-glow-red-sm'
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${isAboveOpen ? 'bg-emerald-400' : 'bg-rose-400'} animate-ping`} />
-                        <span>{isAboveOpen ? '▲ DI ATAS OPEN' : '▼ DI BAWAH OPEN'}</span>
-                        <span className="text-white font-black">({isAboveOpen ? '+' : '-'}{distPts})</span>
-                      </div>
-                      {/* Status Sentuhan Level R&S */}
-                      {row.touchedCount > 0 ? (
-                        <span className="text-[9px] bg-emerald-950/90 border border-emerald-500/70 text-emerald-300 px-2 py-0.5 rounded font-black flex items-center gap-1 shadow-sm">
-                          <span>✓</span>
-                          <span>{row.touchedSummary} Tersentuh</span>
-                        </span>
-                      ) : (
-                        <span className="text-[9px] bg-slate-800/80 border border-slate-700/60 text-slate-400 px-2 py-0.5 rounded font-mono flex items-center gap-1">
-                          <span>⏳</span>
-                          <span>Level Belum Tersentuh</span>
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
+      {!rsOnly&&<TimeframeTerminal data={data} rows={tableRows} columns={allRsColumns} price={activePrice} decimals={decimals} tolerance={tolerance} now={now} focusedTf={focusedTf} onTolerance={onTolerance}/>}
       {/* ──────────────────────────────────────────────────────────────────────────
           BOTTOM SECTION: 2-COLUMN (TABLE 2: R&S MATRIX + PANEL 3: SESSION & INFO)
          ────────────────────────────────────────────────────────────────────────── */}
-      <div className="matrix-workspace">
+      <div hidden={!rsOnly} className={`matrix-workspace ${rsOnly?'sr-dedicated-workspace':'terminal-only-workspace'}`}>
         {/* Table 2: Multi-Timeframe Support & Resistance (9 Columns) */}
-        <div className="matrix-levels border border-cop-border rounded-xl bg-cop-surface/90 p-3.5 space-y-3">
+        {rsOnly&&<div className="matrix-levels border border-cop-border rounded-xl bg-cop-surface/90 p-3.5 space-y-3">
           
           {/* KOTAK INDIKATOR HARGA SAAT INI DI LEVEL SUPPORT & RESISTANCE */}
           <div className="p-3 rounded-xl bg-gradient-to-r from-amber-950/70 via-cop-card to-slate-900 border-2 border-amber-500/70 flex items-center justify-between flex-wrap gap-2 text-xs font-mono shadow-glow-gold-sm">
@@ -256,7 +131,7 @@ export default function Leak4RegTable({ data, liveTick }) {
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-400">Geser tabel ke kanan untuk melihat seluruh timeframe. Kolom level tetap terlihat.</p>
+          <p className="text-[11px] text-slate-400">BUY/SELL LIMIT = area entry rencana; TP1–TP3 = sasaran; SL = batas risiko. Penanda mengikuti rencana tiap kolom. WAIT tidak menampilkan penanda order. Sentuhan level bukan bukti entry atau TP tercapai. Geser untuk melihat seluruh timeframe.</p>
           <div className="matrix-level-scroll" tabIndex={0} role="region" aria-label="Tabel RS seluruh timeframe, dapat digeser horizontal">
           <table className="matrix-level-table w-full text-center border-collapse text-[10px] font-mono">
             <thead>
@@ -284,6 +159,7 @@ export default function Leak4RegTable({ data, liveTick }) {
                           </span>
                         )}
                       </div>
+                      <div className="mt-2 text-[10px] font-semibold text-slate-200" title={matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance}}).reason||'Rencana bersyarat; belum merupakan order.'}>{matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance}}).action}</div>
                       <div className="text-[8px] font-mono font-normal mt-0.5">
                         {touchedCount > 0 ? (
                           <span className="text-emerald-400 font-bold">{touchedCount}/9 Tersentuh</span>
@@ -342,9 +218,10 @@ export default function Leak4RegTable({ data, liveTick }) {
                             </span>
                           )}
                           <span className="font-bold">{col[rKey]}</span>
+                          {badges(col,rKey)}
                           {isClosest && (
                             <span className="text-[8px] bg-amber-400 text-slate-950 px-1 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-950" />
                               SAAT INI
                             </span>
                           )}
@@ -401,9 +278,10 @@ export default function Leak4RegTable({ data, liveTick }) {
                           </span>
                         )}
                         <span className="font-black">{col.pivot}</span>
+                        {badges(col,'pivot')}
                         {isClosest && (
                           <span className="text-[8px] bg-amber-400 text-slate-950 px-1 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-950" />
                             SAAT INI
                           </span>
                         )}
@@ -457,9 +335,10 @@ export default function Leak4RegTable({ data, liveTick }) {
                             </span>
                           )}
                           <span className="font-bold">{col[sKey]}</span>
+                          {badges(col,sKey)}
                           {isClosest && (
                             <span className="text-[8px] bg-amber-400 text-slate-950 px-1 py-0.2 rounded font-black shadow-sm flex items-center gap-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-950" />
                               SAAT INI
                             </span>
                           )}
@@ -474,6 +353,7 @@ export default function Leak4RegTable({ data, liveTick }) {
           </div>
         </div>
 
+        }
         {/* Panel 3: Live Info, Date, & Global Sessions (4 Columns) */}
         <div className="matrix-session-strip border border-cop-border rounded-xl bg-cop-surface/90 p-4">
           <div className="space-y-1.5">
@@ -498,7 +378,8 @@ export default function Leak4RegTable({ data, liveTick }) {
 
             <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono text-slate-400 pt-1 border-t border-cop-border/60">
               <span>SPREAD : <strong className="text-cop-cyan">{spreadPoints} PTS</strong></span>
-              <span>HSH USA · OPEN SESI : <strong className="text-amber-300">{hshNewYork}</strong></span>
+              <span>HSH {activeSessionAt(now)} · OPEN SESI : <strong className="text-amber-300">{hshFmt(hshActive?.coverage?hshActive.open:null)}</strong></span>
+              <span className="block mt-1 text-xs text-slate-400">HSH {hshReference?.name||'pembanding'} sebelumnya : <strong className="text-cyan-200">{hshFmt(hshReference?.coverage&&hshReference?.status==='completed'?hshReference.hshOpen:null)}</strong></span>
             </div>
 
             <div className="text-[10px] text-slate-400 font-mono uppercase tracking-wider pt-1">
@@ -538,4 +419,13 @@ export default function Leak4RegTable({ data, liveTick }) {
       </div>
     </div>
   );
+}
+
+export default function Leak4RegTable(props) {
+ if(!props.data?.leak4RegMatrix)return <section className="cop-panel text-sm text-slate-400">Terminal menunggu data dari sumber aktif.</section>;
+ return <CompleteMatrix {...props}/>;
+}
+
+export function SupportResistanceMatrix(props){
+ return <CompleteMatrix {...props} rsOnly/>;
 }

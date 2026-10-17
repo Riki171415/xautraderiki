@@ -457,6 +457,7 @@ function TimeframeEntryPlanner({ data, liveTick, marketMode=false }) {
 
             <div className="p-4 rounded-2xl bg-slate-900 border border-amber-500/40 text-sm text-slate-200 space-y-2">
               <strong className="text-amber-300">Urutan skenario: entry → TP / SL</strong>
+              {currentRec.busur.action==='WAIT'&&<p className="text-rose-200">WAIT · {currentRec.busur.reason || currentRec.busur.rationale}</p>}
               <p>{currentRec.observation?.note || 'Urutan entry dan target belum terkonfirmasi. Target belum dihitung tercapai.'}</p>
               <p className="text-xs text-slate-400">Sisa jarak ke entry: {distToEntry} satuan harga. Sentuhan level bukan bukti order tereksekusi.</p>
             </div>

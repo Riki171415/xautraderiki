@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {PAGES,ANALYSIS_STEPS,stepNeighbors} from './navigation.mjs';
+test('guided order begins global, H4, session, chart, entry',()=>{assert.deepEqual(ANALYSIS_STEPS,['global','h4','cycle','candles','entries']);assert.deepEqual(stepNeighbors('h4'),{previous:'global',next:'cycle'});assert.equal(stepNeighbors('entries').next,null);});
+test('matrix remains directly addressable in references, weekly merges into entry',()=>{assert.equal(PAGES.some(p=>p.id==='table'),false);assert.equal(PAGES.find(p=>p.id==='entries').title,'Terminal & Entry');assert.equal(PAGES.some(p=>p.id==='weekly'),false);assert.equal(new Set(PAGES.map(p=>p.id)).size,PAGES.length);assert.equal(PAGES[0].id,'dashboard');});

@@ -2,7 +2,7 @@ const BASE='https://data-api.binance.vision/api/v3';
 const allowed=new Set(['1m','5m','15m','30m','1h','4h','1d','1w','1M']);
 const cache=new Map();
 export function binanceSymbol(symbol) {
- if(!['PAXG/USDT','XAUT/USDT'].includes(symbol)) throw new Error('Fallback Binance hanya untuk PAXG/USDT atau XAUT/USDT.');
+ if(!['PAXG/USDT','XAUT/USDT','BTC/USDC'].includes(symbol)) throw new Error('Fallback Binance hanya untuk PAXG/USDT, XAUT/USDT atau BTC/USDC.');
  return symbol.replace('/','');
 }
 export function parseKlines(raw) {

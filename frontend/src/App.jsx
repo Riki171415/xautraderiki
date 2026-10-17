@@ -1,3 +1,4 @@
+import H4DirectionStrip from './components/H4DirectionStrip';
 /**
  * COP TAH Analytics Dashboard — Main App
  * Platform Trading Institusional XAUUSD / Gold Berdasarkan 3 Core Theories & 5 Hukum COP TAH
@@ -14,6 +15,8 @@ import Header from './components/Header';
 import OHLPanel from './components/OHLPanel';
 import CandlestickChart from './components/CandlestickChart';
 import H4CompassPanel from './components/H4CompassPanel';
+import H4Workspace from './components/H4Workspace';
+import MarketHabitPanel from './components/MarketHabitPanel';
 import HSHOverview from './components/HSHOverview';
 import RSMatrix from './components/RSMatrix';
 import OperationalStatus from './components/OperationalStatus';
@@ -23,11 +26,12 @@ import SessionStatus from './components/SessionStatus';
 import LoadingScreen from './components/LoadingScreen';
 import MarketCycleAnalysis from './components/MarketCycleAnalysis';
 import Leak4RegTable from './components/Leak4RegTable';
+import MatrixSlideshow from './components/MatrixSlideshow';
 import GlobalStoryline from './components/GlobalStoryline';
-import WeeklyTradingPlan from './components/WeeklyTradingPlan';
-import MultiTimeframeEntryPlanner from './components/MultiTimeframeEntryPlanner';
 import HistoricalDataViewer from './components/HistoricalDataViewer';
 import AnalysisGuide from './components/AnalysisGuide';
+import {PAGES,ANALYSIS_STEPS,stepNeighbors} from './navigation.mjs';
+import {DEFAULT_BROKER} from './config';
 import {activeSessionAt} from './liveMatrix.mjs';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAnalysis, resetTouches } from './hooks/useAnalysis';
@@ -55,6 +59,10 @@ import {
   Database,
   PanelLeftClose,
   PanelLeftOpen,
+  BookOpen as BookIcon,
+  Bell,
+  Clock,
+  Menu as MenuIcon,
   CandlestickChart as CandlestickIcon
 } from 'lucide-react';
 
@@ -63,19 +71,24 @@ export default function App() {
   useEffect(() => { try { localStorage.setItem('coptah.sidebarHidden', String(sidebarHidden)); } catch {} }, [sidebarHidden]);
   const [symbol, setSymbol] = useState('XAUUSD');
   const [timeframe, setTimeframe] = useState('1h');
-  const [broker, setBroker] = useState('EXNESS');
+  const [h4Tolerance,setH4Tolerance]=useState(0);
+  const [broker, setBroker] = useState(DEFAULT_BROKER);
   // Default to Cockpit Eksekusi Live (Pilar 1) or Saran Entry (Pilar 2)
   const [viewMode, setViewMode] = useState('dashboard'); // 'dashboard' | 'entries' | 'weekly' | 'cycle' | 'table' | 'global' | 'all'
-  const [terminalTab, setTerminalTab] = useState('both'); // 'table' | 'cycle' | 'both'
   const [notification, setNotification] = useState(null);
-  useEffect(() => { document.title = `COP TAH · ${symbol} · ${broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}`; }, [symbol, broker]);
+  const [noticeHistory,setNoticeHistory]=useState([]),[noticesOpen,setNoticesOpen]=useState(false),[menuOpen,setMenuOpen]=useState(false);
+  const toastTimer=useRef(null);
+  useEffect(()=>{const close=e=>{if(e.key==='Escape'){setNoticesOpen(false);setMenuOpen(false);}};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close);},[]);
+  useEffect(()=>()=>clearTimeout(toastTimer.current),[]);
+  const navigate=useCallback(id=>{setViewMode(['table','terminal','weekly'].includes(id)?'entries':id);setMenuOpen(false);window.scrollTo({top:0,behavior:'instant'});},[]);
+  useEffect(() => { document.title = `COP TAH · ${symbol} · ${broker === 'TWELVE' ? 'Twelve Data' : broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}`; }, [symbol, broker]);
 
   // ── Data Sources ───────────────────────────────────────────────────────────
-  const { data: wsData, liveTick: rawTick, status: wsStatus, error: wsError, reconnectCount, isLoading: wsLoading, sendMessage } = useWebSocket();
+  const { data: wsData, liveTick: rawTick, status: wsStatus, error: wsError, reconnectCount, isLoading: wsLoading, sendMessage } = useWebSocket(broker==='EXNESS');
   const { data: restData, loading, error: restError, lastUpdated, refetch } = useAnalysis(symbol, timeframe, broker, 30000);
 
   useEffect(()=>{
-    if(restData?.fallback && (broker!==restData.broker.id || symbol!==restData.symbol)) {
+    if((restData?.fallback || restData?.externalFeed) && (broker!==restData.broker.id || symbol!==restData.symbol)) {
       setBroker(restData.broker.id);setSymbol(restData.symbol);
     }
   },[restData,broker,symbol]);
@@ -115,8 +128,9 @@ export default function App() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const showNotification = useCallback((type, message) => {
-    setNotification({ type, message, id: Date.now() });
-    setTimeout(() => setNotification(null), 5000);
+    const item={type,message,id:Date.now()+Math.random(),time:Date.now(),page:message.includes('Daily')||message.includes('Kebiasaan')?'cycle':'h4'};
+    setNotification(item);setNoticeHistory(items=>[item,...items].slice(0,50));
+    clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setNotification(null),7000);
   }, []);
 
   const handleRefresh = useCallback(async () => {
@@ -136,7 +150,7 @@ export default function App() {
 
   const handleSymbolChange = useCallback((newSymbol) => {
     setSymbol(newSymbol);
-    if (newSymbol.includes('PAXG') || newSymbol.includes('XAUT')) {
+    if (newSymbol.includes('PAXG') || newSymbol.includes('XAUT') || newSymbol==='BTC/USDC') {
       if (broker !== 'BINANCE') {
         setBroker('BINANCE');
         showNotification('info', `Simbol kripto ${newSymbol} dialihkan ke feed Binance Spot/Futures`);
@@ -146,11 +160,11 @@ export default function App() {
 
   const handleBrokerChange = useCallback((newBroker) => {
     setBroker(newBroker);
-    if (newBroker === 'BINANCE' && symbol === 'XAUUSD') {
-      setSymbol('PAXG/USDT');
+    if (newBroker === 'BINANCE' && ['XAUUSD','BTCUSD'].includes(symbol)) {
+      setSymbol(symbol==='BTCUSD'?'BTC/USDC':'PAXG/USDT');
       showNotification('info', 'Binance memakai instrumen PAXG/USDT, bukan harga XAUUSD Exness.');
     }
-    if (newBroker !== 'BINANCE' && (symbol.includes('PAXG') || symbol.includes('XAUT'))) {
+    if ((newBroker !== 'BINANCE' && (symbol.includes('PAXG') || symbol.includes('XAUT') || symbol==='BTC/USDC')) || (newBroker==='TWELVE'&&symbol==='BTCUSD')) {
       setSymbol('XAUUSD');
       showNotification('info', `Broker ${newBroker} disesuaikan ke instrumen Gold Spot XAUUSD`);
     }
@@ -165,80 +179,11 @@ export default function App() {
   const weekLabel = weeklyRow?.label || 'WEEK_3';
 
   // ── 6 Top-Level Workflow Navigation Pillars ────────────────────────────────
-  const WORKFLOW_PILLARS = [
-    {
-      id: 'dashboard',
-      pillarNum: '1',
-      title: 'Cockpit Live',
-      shortTitle: '1. Cockpit Live',
-      icon: Zap,
-      badge: 'Live',
-      desc: 'OHL Intraday, Tangga RS, Tiket Order & Telemetri Pasar'
-    },
-    {
-      id: 'candles',
-      title: 'Candlestick & Fractal',
-      shortTitle: 'Candlestick',
-      icon: CandlestickIcon,
-      badge: 'Chart',
-      desc: `Grafik ${symbol} · ${broker}, fractal, Open N, level RS dan plan COP TAH`
-    },
-    {
-      id: 'entries',
-      pillarNum: '2',
-      title: 'Saran Entry (5m–1D)',
-      shortTitle: '2. Saran Entry',
-      icon: Target,
-      badge: '6 TF + Rambu',
-      desc: 'Rekomendasi Titik Entry 5m, 15m, 30m, 1h, 4h, 1d dengan Rambu COP TAH'
-    },
-    {
-      id: 'weekly',
-      pillarNum: '3',
-      title: `Plan ${weekLabel}`,
-      shortTitle: `3. Plan ${weekLabel}`,
-      icon: Calendar,
-      badge: '2 Arah',
-      desc: 'Trading Plan Mingguan 2 Arah (BUY & SELL HSH)'
-    },
-    {
-      id: 'cycle',
-      pillarNum: '4',
-      title: 'Market Cycle',
-      shortTitle: '4. Market Cycle',
-      icon: Compass,
-      badge: '12 Sesi',
-      desc: 'Siklus 12 Sesi Harian, Angka Riil & Analisa 2 Arah Intraday'
-    },
-    {
-      id: 'table',
-      pillarNum: '5',
-      title: 'Tabel Matriks',
-      shortTitle: '5. Tabel Matriks',
-      icon: Table,
-      badge: '17 Kolom',
-      desc: 'Matriks 17 Kolom & 9 Level Support Resistance dengan Kotak Posisi Live'
-    },
-    {
-      id: 'global',
-      pillarNum: '6',
-      title: 'Peta Global (2021–2030)',
-      shortTitle: '6. Peta Global',
-      icon: Globe,
-      badge: 'Makro',
-      desc: 'Siklus 10 Tahun Emas & Posisi Real 2026 Q4'
-    },
-    {id:'guide',title:'Panduan Analisis',shortTitle:'Panduan',icon:Compass,desc:'Pembacaan 10 tahun sampai timeframe kecil, dengan H4 sebagai kunci'},
-    {
-      id: 'history',
-      pillarNum: '7',
-      title: `Historis ${broker === 'BINANCE' ? 'Binance' : 'Exness'}`,
-      shortTitle: '7. Historis',
-      icon: Database,
-      badge: 'MN1',
-      desc: `Riwayat bulanan ${symbol} dari ${broker === 'BINANCE' ? 'Binance Spot' : 'MT5 Exness'}`
-    }
-  ];
+  const icons={dashboard:LayoutDashboard,global:Globe,h4:Compass,cycle:Clock,candles:CandlestickIcon,entries:Target,table:Table,levels:Layers,history:Database,guide:BookIcon,sources:Radio};
+  const WORKFLOW_PILLARS=PAGES.map(p=>({...p,shortTitle:p.title,icon:icons[p.id]}));
+  const neighbors=stepNeighbors(viewMode);
+  const pageTitle=id=>PAGES.find(p=>p.id===id)?.title||id;
+  const openTable=()=>navigate('entries');
 
   // ── Loading State ──────────────────────────────────────────────────────────
   if (!data && loading && !restError) {
@@ -252,7 +197,7 @@ export default function App() {
   }
 
   return (
-    <div className={`premium-app min-h-screen bg-cop-bg flex flex-col overflow-hidden text-slate-100 ${sidebarHidden ? 'sidebar-hidden' : ''}`}>
+    <div className={`premium-app min-h-screen bg-cop-bg flex flex-col overflow-hidden text-slate-100 ${sidebarHidden ? 'sidebar-hidden' : ''} ${viewMode==='levels'?'matrix-slide-mode':''}`}>
       <button type="button" className="sidebar-toggle" onClick={() => setSidebarHidden(v => !v)} aria-expanded={!sidebarHidden} aria-controls="workspace-navigation" aria-label={sidebarHidden ? 'Tampilkan menu navigasi' : 'Sembunyikan menu navigasi'} title={sidebarHidden ? 'Tampilkan menu' : 'Sembunyikan menu'}>
         {sidebarHidden ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         <span>{sidebarHidden ? 'Menu' : 'Tutup menu'}</span>
@@ -269,12 +214,13 @@ export default function App() {
         onSymbolChange={handleSymbolChange}
         onTimeframeChange={setTimeframe}
         onBrokerChange={handleBrokerChange}
+        onOpenSources={()=>navigate('sources')}
       />
 
       {/* ── Notification Toast ── */}
       {notification && (
         <div
-          className={`fixed top-16 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border text-xs font-mono backdrop-blur-xl transition-all duration-300 max-w-md animate-tick-flash ${
+          className={`fixed top-16 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border text-xs font-mono backdrop-blur-xl transition-all duration-300 max-w-md ${
             notification.type === 'warning'
               ? 'bg-rose-950/90 border-rose-500/70 text-rose-200 shadow-glow-red'
               : 'bg-cop-surface/95 border-amber-500/40 text-amber-200 shadow-glow-gold-sm'
@@ -285,10 +231,11 @@ export default function App() {
           ) : (
             <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           )}
-          <span className="leading-relaxed">{notification.message}</span>
+          <span role="status" aria-live="polite" className="leading-relaxed">{notification.message}</span>
         </div>
       )}
 
+      {data?.marketDataStatus==='STALE_QUOTE'&&<div role="status" className="px-5 py-3 text-sm bg-amber-950/50 text-amber-200">MT5 Exness terhubung · menampilkan candle/harga terakhir. Tick harga belum baru; pasar mungkin tutup atau feed sedang tidak bergerak. Waktu tick: {data.quoteTimestamp?new Date(data.quoteTimestamp).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}):'belum tersedia'} WIB. Notifikasi harga baru ditahan.</div>}
       {/* ── Error Banner ── */}
       {(wsError || restError) && !data && (
         <div className="bg-rose-950/50 border-b border-rose-800/40 px-6 py-2 flex items-center gap-2 text-xs font-mono text-rose-300">
@@ -300,68 +247,27 @@ export default function App() {
       {!data && !loading && <section className="mx-4 my-5 p-5 rounded-2xl border border-amber-700 bg-slate-900 text-slate-200" role="status">
         <h2 className="text-lg font-bold text-amber-300">Aplikasi terbuka · sumber data belum terhubung</h2>
         <p className="mt-2 text-sm">{restError || 'Menunggu server analisis dan bridge MT5.'}</p>
-        <p className="mt-2 text-sm text-slate-400">Jika memakai Vercel, server analisis harus tersedia melalui HTTPS dan terhubung ke MT5 komputer atau VPS. MT5 di tablet tidak mengirim data langsung ke aplikasi ini. Angka analisis ditampilkan setelah sumber berhasil terhubung.</p>
+        <p className="mt-2 text-sm text-slate-400">Jika memakai Vercel, server analisis harus tersedia melalui HTTPS dan terhubung ke MT5 komputer atau VPS. MT5 di tablet tidak mengirim data langsung ke aplikasi ini. Versi online memakai Twelve Data: pasang TWELVEDATA_API_KEY pada server/Vercel. Angka analisis ditampilkan setelah sumber berhasil terhubung.</p>
         <div className="flex items-center gap-3 mt-4 flex-wrap">
           <button type="button" onClick={handleRefresh} className="chart-toggle">Coba hubungkan kembali</button>
           <button type="button" onClick={() => handleBrokerChange('BINANCE')} className="chart-toggle bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30">Gunakan Data Pasar Binance (PAXG/USDT)</button>
         </div>
       </section>}
 
+      {data?.externalFeed&&<div className="px-5 py-3 bg-sky-950 text-sky-200 text-sm">Twelve Data · XAU/USD · sumber terpisah dari Exness. Batas candle mengikuti penyedia; selisih ≤ $1 belum diverifikasi. Bid/Ask broker tidak tersedia.</div>}
       {data?.fallback && <div role="status" className="px-5 py-3 bg-amber-950/50 text-amber-200 text-sm border-b border-amber-800">Fallback Binance Spot · {data.symbol} · bukan XAUUSD Exness. Data langsung diperbarui setiap 30 detik; WebSocket server tidak diperlukan.</div>}
-      {/* ── 2. WORKFLOW NAVIGATION BAR (6 PILAR UTAMA COP TAH) ── */}
-      <div id="workspace-navigation" aria-label="Navigasi workspace" className="workflow-nav bg-cop-surface/95 border-b border-cop-border/80 backdrop-blur-md px-4 lg:px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap">
+      <aside id="workspace-navigation" className="workflow-nav step-sidebar" aria-label="Navigasi workspace">
         <div className="sidebar-brand"><div className="sidebar-monogram">CT<span>•</span></div><div><strong>COP TAH</strong><small>GOLD ANALYTICS</small></div></div>
-        <div className="sidebar-caption">WORKSPACE</div>
-        <label className="mobile-page-picker"><span>Menu analisis</span><select aria-label="Pilih menu analisis" value={viewMode} onChange={e=>setViewMode(e.target.value)}>{WORKFLOW_PILLARS.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select></label>
-        {/* Left: 6 Pilar Workflow Controller */}
-        <div className="flex items-center gap-1.5 p-1 bg-cop-card/90 rounded-2xl border border-cop-border shadow-sm flex-wrap">
-          {WORKFLOW_PILLARS.map((p) => {
-            const Icon = p.icon;
-            const isActive = viewMode === p.id;
-            return (
-              <button
-                key={p.id}
-                aria-current={viewMode === p.id ? 'page' : undefined}
-                onClick={() => setViewMode(p.id)}
-                className={`nav-item ${isActive ? 'nav-item-active' : ''}`}
-                title={p.desc}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? '' : 'text-slate-400'}`} />
-                <span className="hidden sm:inline nav-label">{p.title}</span>
-                <span className="sm:hidden nav-label">{p.shortTitle.replace(/^\d+\. /, '')}</span>
-              </button>
-            );
-          })}
-
-
-        </div>
-
-        <div className="sidebar-footnote"><span className="sidebar-status-dot"/> {broker} DATA<span>H4 COMPASS</span></div>
-        {/* Right: Quick Action Reset RS & Market Telemetry Pill */}
-        <div className="flex items-center gap-2.5 font-mono text-xs">
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-xl bg-cop-card border border-cop-border text-[11px]">
-            <span className="text-slate-400">Harga Live:</span>
-            <strong className="text-white tabular-nums">{currentPrice == null ? '—' : `$${currentPrice.toFixed(data?.decimals ?? 3)}`}</strong>
-            <span className="text-slate-600">·</span>
-            <span className={`font-bold ${isWeeklyUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-              1W JIKA {isWeeklyUp ? 'UP' : 'DOWN'}
-            </span>
-          </div>
-
-          <button
-            onClick={handleResetTouches}
-            className="btn-ghost text-[11px] flex items-center gap-1.5 px-2.5 py-1.5"
-            title="Reset sensor deteksi sentuhan level RS"
-          >
-            <RotateCcw className="w-3 h-3 text-slate-400" />
-            <span className="hidden sm:inline">Reset RS</span>
-          </button>
-        </div>
-      </div>
+        {['utama','referensi'].map(group=><div className="step-menu-group" key={group}><p className="sidebar-caption">{group==='utama'?'ALUR ANALISIS':'DATA & REFERENSI'}</p>{WORKFLOW_PILLARS.filter(p=>p.group===group).map(p=><button type="button" key={p.id} onClick={()=>navigate(p.id)} aria-current={viewMode===p.id?'page':undefined} className={`nav-item ${viewMode===p.id?'nav-item-active':''}`}><p.icon size={17}/><span className="nav-label">{p.title}</span></button>)}</div>)}
+      </aside>
+      <div className="app-utility"><button className="chart-toggle" onClick={()=>setNoticesOpen(v=>!v)} aria-expanded={noticesOpen}><Bell size={16}/> Notifikasi {noticeHistory.length||''}</button></div>
+      {noticesOpen&&<aside className="notice-drawer" aria-label="Pusat notifikasi"><header className="flex justify-between items-center"><h2 className="font-semibold">Pusat notifikasi</h2><button className="chart-toggle" onClick={()=>setNoticesOpen(false)}>Tutup</button></header><p className="text-xs text-slate-400 mt-2">50 kejadian terbaru selama sesi aplikasi.</p>{!noticeHistory.length&&<p className="text-sm p-4 text-slate-400">Belum ada notifikasi.</p>}{noticeHistory.map(n=><button key={n.id} className="notice-item" onClick={()=>{navigate(n.page);setNoticesOpen(false);}}><small>{new Date(n.time).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta'})} WIB</small><p>{n.message}</p><span>Buka {pageTitle(n.page)} →</span></button>)}</aside>}
+      {menuOpen&&<div className="mobile-menu-sheet" role="dialog" aria-label="Semua menu"><header className="flex justify-between items-center"><strong>Menu analisis</strong><button className="chart-toggle" onClick={()=>setMenuOpen(false)}>Tutup</button></header>{WORKFLOW_PILLARS.map(p=><button key={p.id} onClick={()=>navigate(p.id)} className={`nav-item ${viewMode===p.id?'nav-item-active':''}`}><p.icon size={18}/>{p.title}</button>)}</div>}
+      <nav className="mobile-bottom-nav" aria-label="Navigasi utama mobile">{[['dashboard','Beranda',LayoutDashboard],['global','Global',Globe],['h4','H4',Compass],['candles','Chart',CandlestickIcon]].map(([id,label,Icon])=><button key={id} aria-current={viewMode===id?'page':undefined} onClick={()=>navigate(id)}><Icon size={19}/><span>{label}</span></button>)}<button aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}><MenuIcon size={19}/><span>Menu</span></button></nav>
 
       <div className="workspace-summary" role="status" aria-live="polite">
         <div><span className="workspace-eyebrow">GOLD INTELLIGENCE <span className="mx-2">/</span> {symbol} <span className="mx-2">/</span> {timeframe}</span>
-          <h1>{WORKFLOW_PILLARS.find(p => p.id === viewMode)?.title || 'Analisis'} <span className="workspace-instrument">{symbol} · {broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}</span></h1>
+          <h1>{WORKFLOW_PILLARS.find(p => p.id === viewMode)?.title || 'Analisis'} <span className="workspace-instrument">{symbol} · {broker === 'TWELVE' ? 'Twelve Data' : broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}</span></h1>
           <p>{WORKFLOW_PILLARS.find(p => p.id === viewMode)?.desc || 'Pilih menu analisis'}</p>
         </div>
         <div className={`feed-health ${liveTick ? 'feed-health-fresh' : ''}`}>
@@ -373,11 +279,17 @@ export default function App() {
 
       {/* ── 4. MAIN WORKSPACE CONTAINER ── */}
       <main className="workspace-main flex-1 p-4 lg:p-6 space-y-6">
+        {viewMode!=='levels'&&<H4DirectionStrip data={data} liveTick={liveTick} tolerance={h4Tolerance} now={clock}/>}
+        {viewMode==='levels'&&<MatrixSlideshow data={data} liveTick={liveTick} focusedTf={timeframe} onTolerance={setH4Tolerance} tolerance={h4Tolerance} onBack={()=>navigate('entries')}/>}
+
         {viewMode === 'guide' && <AnalysisGuide data={data} />}
+        {viewMode==='h4'&&<div className="flex justify-end"><button className="chart-toggle" onClick={()=>{setTimeframe('4h');openTable();}}>Lihat H4 di Tabel</button></div>}
+        <div hidden={viewMode!=='cycle'}><MarketHabitPanel data={data} liveTick={liveTick} now={clock} onNotify={showNotification}/></div>
+        {viewMode==='sources'&&<section className="cop-panel space-y-4"><h2 className="text-lg font-semibold">Sumber Data</h2><label className="block text-sm">Penyedia<select className="block p-3 mt-2 rounded-xl bg-slate-900 border border-slate-600" value={broker} onChange={e=>handleBrokerChange(e.target.value)}><option value="EXNESS">Exness · MT5 lokal</option><option value="TWELVE">Twelve Data · XAU/USD</option><option value="BINANCE">Binance Spot</option></select></label><p className="text-sm text-slate-400">{data?.dataSource||restError||'Menunggu koneksi.'}</p><p className="text-xs text-slate-400">Lokal memilih Exness; online memilih Twelve Data. Twelve memerlukan TWELVEDATA_API_KEY pada server. Data antarpenyedia tidak dicampur.</p><button className="chart-toggle" onClick={handleRefresh}>Periksa koneksi</button></section>}
+        {ANALYSIS_STEPS.includes(viewMode)&&<nav className="analysis-progress" aria-label="Langkah analisis">{ANALYSIS_STEPS.map((id,i)=><button key={id} aria-current={id===viewMode?'step':undefined} onClick={()=>navigate(id)}><span>{i+1}</span>{pageTitle(id)}</button>)}</nav>}
         {data && clock-data.timestamp>45000 && <p role="status" className="p-3 border border-amber-700 rounded-xl text-sm text-amber-200">Analisis belum diperbarui lebih dari 45 detik. Angka terakhir bukan kondisi terbaru; periksa bridge dan koneksi.</p>}
-        <H4CompassPanel analysis={data?.h4Compass} decimals={data?.decimals} selected={timeframe} onSelect={setTimeframe} />
-        <HSHOverview data={data} liveTick={liveTick} onSelect={setTimeframe} />
-        <details className="data-notes"><summary>Informasi sumber data & perhitungan</summary><p className="text-[11px] text-slate-400 leading-relaxed mt-2">Basis harga: Bid {broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}. Perbedaan waktu snapshot dapat menyebabkan selisih sesaat antar-panel. Angka estimasi uang/lot pada plan masih memakai rumus metode, belum divalidasi terhadap ukuran kontrak dan mata uang akun; jangan dianggap sebagai profit/rugi akun. Level tersentuh bukan bukti transaksi atau profit.</p></details>
+        <div hidden={viewMode!=='h4'}><H4Workspace data={data} liveTick={liveTick} now={clock} onNotify={showNotification} timeframe={timeframe} onSelect={setTimeframe} onMarket={()=>navigate('cycle')} tolerance={h4Tolerance} onTolerance={setH4Tolerance}/></div>
+        <details className="data-notes"><summary>Informasi sumber data & perhitungan</summary><p className="text-[11px] text-slate-400 leading-relaxed mt-2">Basis harga: {broker === 'TWELVE' ? 'OHLC penyedia · ' : 'Bid · '} {broker === 'TWELVE' ? 'Twelve Data' : broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}. Perbedaan waktu snapshot dapat menyebabkan selisih sesaat antar-panel. Angka estimasi uang/lot pada plan masih memakai rumus metode, belum divalidasi terhadap ukuran kontrak dan mata uang akun; jangan dianggap sebagai profit/rugi akun. Level tersentuh bukan bukti transaksi atau profit.</p></details>
         {(viewMode === 'candles') && (
           <CandlestickChart data={data} liveTick={liveTick} symbol={symbol} timeframe={timeframe} broker={broker} />
         )}
@@ -388,6 +300,8 @@ export default function App() {
         {(viewMode === 'dashboard') && (
           <div className="space-y-5">
 
+            <button type="button" onClick={()=>setViewMode('h4')} className="h4-cockpit-link"><span><small>ACUAN ANALISIS</small><strong>H4 · area pertemuan & sasaran</strong><span>Periksa level yang bertemu dan konteks Daily dalam satu ruang analisis.</span></span><ArrowRight size={21}/></button>
+            <section className="cop-panel home-overview"><div><p className="workspace-eyebrow">BERANDA</p><h2>Kondisi market, dalam satu pandangan</h2><p>{data?.marketCycle?.activeSession||'Menunggu sesi'} · {data?.broker?.name||broker} · {symbol}</p></div><button className="chart-toggle chart-toggle-active" onClick={()=>navigate('global')}>Mulai analisis →</button></section>
             {/* 1. OHL Metrics & Intraday Range Bar */}
             <OHLPanel data={data} liveTick={liveTick} />
 
@@ -404,13 +318,13 @@ export default function App() {
 
             {/* 3. Bottom Grid: Operational Status, Session Status & AI Storyline */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              <div className="lg:col-span-4">
+              <div className="lg:col-span-6">
                 <OperationalStatus data={data} />
               </div>
-              <div className="lg:col-span-4">
+              <div className="lg:col-span-6">
                 <SessionStatus data={data} />
               </div>
-              <div className="lg:col-span-4">
+              <div className="lg:col-span-12">
                 <StorylineGenerator data={data} />
               </div>
             </div>
@@ -420,25 +334,18 @@ export default function App() {
         {/* ════════════════════════════════════════════════════════════════════════
             PILAR 2: REKOMENDASI ENTRY MULTI-TIMEFRAME (5M - 1D) + RAMBU COP TAH
             ════════════════════════════════════════════════════════════════════════ */}
-        {(viewMode === 'entries') && (
-          <div className="space-y-4">
-            <MultiTimeframeEntryPlanner data={data} liveTick={liveTick} />
-          </div>
-        )}
+        {(viewMode === 'entries') && <Leak4RegTable data={data} liveTick={liveTick} focusedTf={timeframe} onTolerance={setH4Tolerance} tolerance={h4Tolerance}/>}
+
 
         {/* ════════════════════════════════════════════════════════════════════════
             PILAR 3: TRADING PLAN MINGGUAN (REAL MARKET DATA 1W)
             ════════════════════════════════════════════════════════════════════════ */}
-        {(viewMode === 'weekly') && (
-          <div className="space-y-4">
-            <WeeklyTradingPlan data={data} liveTick={liveTick} />
-          </div>
-        )}
+
 
         {/* ════════════════════════════════════════════════════════════════════════
             PILAR 4: MARKET CYCLE (SIKLUS 12 SESI HARIAN)
             ════════════════════════════════════════════════════════════════════════ */}
-        {(viewMode === 'cycle' || viewMode === 'terminal') && (
+        {(viewMode === 'cycle') && (
           <div className="space-y-4">
             <MarketCycleAnalysis data={data} liveTick={liveTick} />
           </div>
@@ -447,11 +354,7 @@ export default function App() {
         {/* ════════════════════════════════════════════════════════════════════════
             PILAR 5: TABEL MATRIKS MULTI-TIMEFRAME (17 KOLOM)
             ════════════════════════════════════════════════════════════════════════ */}
-        {(viewMode === 'table' || viewMode === 'terminal') && (
-          <div className="space-y-4">
-            <Leak4RegTable data={data} liveTick={liveTick} />
-          </div>
-        )}
+
 
         {/* ════════════════════════════════════════════════════════════════════════
             PILAR 6: PETA GLOBAL COP TAH (2021 – 2030)
@@ -471,6 +374,7 @@ export default function App() {
           </div>
         )}
 
+        {(neighbors.previous||neighbors.next)&&<nav className="step-actions" aria-label="Pindah langkah"><button className="chart-toggle" disabled={!neighbors.previous} onClick={()=>navigate(neighbors.previous)}>← {neighbors.previous?pageTitle(neighbors.previous):'Awal analisis'}</button><button className="chart-toggle chart-toggle-active" disabled={!neighbors.next} onClick={()=>navigate(neighbors.next)}>{neighbors.next?`Lanjut · ${pageTitle(neighbors.next)} →`:'Akhir alur'}</button></nav>}
       </main>
 
       {/* ── 5. Terminal Footer ── */}

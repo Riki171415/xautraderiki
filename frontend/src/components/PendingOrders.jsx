@@ -31,6 +31,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
   const { busur, rsMatrix, userModal, lotCalc, broker, ohlcv_N } = data;
   const decimals = data.decimals ?? (broker?.id !== 'BINANCE' ? 3 : 2);
 
+  if(busur?.action==='WAIT')return <section className="cop-panel text-sm text-amber-200">WAIT · {busur.reason || busur.rationale}</section>;
   const isBuy = busur?.action === 'BUY LIMIT';
   const isSell = busur?.action === 'SELL LIMIT';
 

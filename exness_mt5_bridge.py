@@ -14,6 +14,19 @@ Cara Pakai:
 import time
 import requests
 import sys
+import socket
+import argparse
+
+# Single-instance protection using a localhost socket
+_lock_socket = None
+def ensure_single_instance(port=39871):
+    global _lock_socket
+    try:
+        _lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _lock_socket.bind(('127.0.0.1', port))
+    except socket.error:
+        print("[INFO] Instance bridge MT5 sudah aktif di latar belakang.")
+        sys.exit(0)
 
 try:
     import MetaTrader5 as mt5
@@ -38,9 +51,9 @@ TIMEFRAME_MAP = {
     "1M": mt5.TIMEFRAME_MN1,
 }
 
-import argparse
-
 def main():
+    ensure_single_instance()
+
     parser = argparse.ArgumentParser(description="Exness MT5 Direct Bridge")
     parser.add_argument("--login", type=int, help="Nomor akun Exness MT5 (Login)", default=None)
     parser.add_argument("--password", type=str, help="Password Akun / Investor Password", default=None)
@@ -51,11 +64,10 @@ def main():
     print("  COP TAH Analytics — Exness MT5 Direct Bridge")
     print("=" * 60)
 
-    # Inisialisasi koneksi ke MetaTrader 5 yang sedang berjalan di Windows
-    if not mt5.initialize():
-        print(f"[ERROR] Gagal inisialisasi MT5: {mt5.last_error()}")
-        print("Pastikan aplikasi MetaTrader 5 Exness Anda sudah terinstall dan terbuka di komputer ini.")
-        return
+    # Inisialisasi koneksi ke MetaTrader 5 dengan auto-retry
+    while not mt5.initialize():
+        print(f"[WAIT] Menunggu terminal MetaTrader 5 Exness terbuka... ({mt5.last_error()})", flush=True)
+        time.sleep(3)
 
     # Jika login dan password diberikan, lakukan login eksplisit
     if args.login and args.password:
@@ -66,10 +78,13 @@ def main():
             print("Periksa kembali nomor akun, password, dan nama server Anda.")
             return
 
-    account_info = mt5.account_info()
-    if account_info is None:
-        print("[ERROR] Tidak dapat membaca akun MT5.")
-        return
+    # Menunggu pembacaan akun MT5
+    account_info = None
+    while account_info is None:
+        account_info = mt5.account_info()
+        if account_info is None:
+            print("[WAIT] Menunggu akun MT5 login...", flush=True)
+            time.sleep(2)
 
     server_name = account_info.server
     login = account_info.login
@@ -93,65 +108,87 @@ def main():
     digits = mt5.symbol_info(target_symbol).digits
     print(f'[OK] Broker symbol: {target_symbol}, digits: {digits}')
 
+    target_symbols=[target_symbol]
+    for extra in ['BTCUSDc','BTCUSDm','BTCUSD']:
+        if mt5.symbol_info(extra) is not None and mt5.symbol_select(extra,True):
+            target_symbols.append(extra)
+            break
     loaded_timeframes = set()
     while True:
         try:
-            # Ambil live tick
-            tick = mt5.symbol_info_tick(target_symbol)
-            if tick is None:
-                time.sleep(1)
+            term = mt5.terminal_info()
+            if term is None or not term.connected:
+                print("[WARN] Terminal MT5 terputus dari broker Exness. Menunggu koneksi...", end="\r", flush=True)
+                time.sleep(2)
                 continue
 
-            if time.time() - tick.time > 10:
-                time.sleep(1)
-                continue
-            bid = float(tick.bid)
-            ask = float(tick.ask)
-            price = round((bid + ask) / 2.0, digits)
-            spread = round(ask - bid, digits)
+            for target_symbol in target_symbols:
+                digits=mt5.symbol_info(target_symbol).digits
+                # Ambil live tick
+                tick = mt5.symbol_info_tick(target_symbol)
+                if tick is None:
+                    time.sleep(1)
+                    continue
 
-            # Keep every native timeframe tied to the exact broker instrument.
-            timeframes = {}
-            for tf, mt5_tf in TIMEFRAME_MAP.items():
-                count = 120 if tf == '1M' else 50
-                rates = mt5.copy_rates_from_pos(target_symbol, mt5_tf, 0, count)
-                if rates is not None and len(rates) >= 2:
-                    if tf not in loaded_timeframes:
-                        print(f'[READY] {tf}: {len(rates)} bars', flush=True)
-                        loaded_timeframes.add(tf)
-                    timeframes[tf] = [
-                        [int(r['time']) * 1000, float(r['open']), float(r['high']),
-                         float(r['low']), float(r['close']), int(r['tick_volume'])]
-                        for r in rates
-                    ]
-            candles_list = timeframes.get('1h', [])
+                # Jika tick lebih tua dari 120 detik, pasar mungkin tutup atau libur
+                if time.time() - tick.time > 120:
+                    print(f"[WARN] Pasar {target_symbol} mungkin sedang tutup/libur (tick terakhir {int(time.time() - tick.time)}s lalu)", end="\r", flush=True)
 
-            payload = {
-                "broker": "EXNESS",
-                "server": server_name,
-                "account": login,
-                "symbol": target_symbol,
-                "bid": bid,
-                "ask": ask,
-                "price": price,
-                "spread": spread,
-                "timeframe": "1h",
-                "timeframes": timeframes,
-                "digits": digits,
-                "tickTimestamp": int(tick.time_msc),
-                "candles": candles_list,
-                "timestamp": int(time.time() * 1000),
-            }
+                bid = float(tick.bid)
+                ask = float(tick.ask)
+                price = round((bid + ask) / 2.0, digits)
+                spread = round(ask - bid, digits)
 
-            resp = requests.post(BACKEND_URL, json=payload, timeout=5)
-            resp.raise_for_status()
-            if resp.status_code == 200:
-                print(f"[STREAM] {server_name} | {target_symbol}: Bid={bid:.2f} Ask={ask:.2f} Mid={price:.2f} Spread={spread:.2f} -> OK", end="\r")
+                # Keep every native timeframe tied to the exact broker instrument.
+                timeframes = {}
+                for tf, mt5_tf in TIMEFRAME_MAP.items():
+                    count = 120 if tf == '1M' else 50
+                    rates = mt5.copy_rates_from_pos(target_symbol, mt5_tf, 0, count)
+                    if rates is not None and len(rates) >= 2:
+                        if (target_symbol,tf) not in loaded_timeframes:
+                            print(f'[READY] {tf}: {len(rates)} bars', flush=True)
+                            loaded_timeframes.add((target_symbol,tf))
+                        timeframes[tf] = [
+                            [int(r['time']) * 1000, float(r['open']), float(r['high']),
+                             float(r['low']), float(r['close']), int(r['tick_volume'])]
+                            for r in rates
+                        ]
+                candles_list = timeframes.get('1h', [])
 
+                payload = {
+                    "broker": "EXNESS",
+                    "server": server_name,
+                    "account": login,
+                    "symbol": target_symbol,
+                    "bid": bid,
+                    "ask": ask,
+                    "price": price,
+                    "spread": spread,
+                    "timeframe": "1h",
+                    "timeframes": timeframes,
+                    "digits": digits,
+                    "tickTimestamp": int(tick.time_msc),
+                    "candles": candles_list,
+                    "timestamp": int(time.time() * 1000),
+                }
+
+                resp = requests.post(BACKEND_URL, json=payload, timeout=5)
+                if resp.status_code == 200:
+                    print(f"[STREAM] {server_name} | {target_symbol}: Bid={bid:.2f} Ask={ask:.2f} Mid={price:.2f} Spread={spread:.2f} -> OK", end="\r", flush=True)
+
+        except requests.exceptions.RequestException:
+            print("[RETRY] Menunggu backend COP TAH (http://localhost:3001)...", end="\r", flush=True)
         except Exception as e:
             print(f"\n[ERROR] {e}")
 
         time.sleep(1.0)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n[INFO] Menutup koneksi MT5...")
+        try:
+            mt5.shutdown()
+        except:
+            pass

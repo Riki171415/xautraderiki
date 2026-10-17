@@ -4,7 +4,7 @@ function buildMarketEntryBase(pair,compass,cycle,quote,now=Date.now(),decimals=3
  if(!pair?.ohlcv_N || !pair?.ohlcv_B || pair.sessionName!==cycle?.activeSession) return result;
  const n=pair.ohlcv_N,b=pair.ohlcv_B;
  if(!(now>=n.timestamp && now<n.periodEnd)) return {...result,reason:'Snapshot sesi sudah berakhir; menunggu sesi baru.'};
- const jika=calcHukumJIKA(n,b),rs=calcRSMatrix(b),perahu=calcHukumPerahu(n,b);
+ const jika=calcHukumJIKA(n,b),rs=calcRSMatrix(b,n,'market'),perahu=calcHukumPerahu(n,b);
  const plan=calcHukumBusur(jika,rs,n,null,decimals);
  const hsh=calcHukumHSH(n,n.periodEnd-n.timestamp,n.timestamp,n.periodEnd-now);
  Object.assign(result,{current:n,previous:b,jika,perahu,rs,plan,hsh,h4:compass?.h4 || null,sourceComparison:'N = sesi aktif hari ini; B = sesi sejenis sebelumnya yang lengkap. Level RS dihitung dari B.'});
@@ -13,6 +13,7 @@ function buildMarketEntryBase(pair,compass,cycle,quote,now=Date.now(),decimals=3
  if(jika.trend==='NEUTRAL') return {...result,reason:'Open N sama dengan Open B Market. JIKA netral.'};
  if(!compass?.h4?.available || compass.h4.jika==='NEUTRAL') return {...result,reason:'Arah H4 belum tersedia atau netral.'};
  if(compass.h4.jika!==jika.trend) return {...result,reason:'JIKA Market berlawanan dengan H4. Tunggu keselarasan; skenario belum dipilih.'};
+ if(plan.action==='WAIT')return {...result,reason:plan.reason || 'Rencana belum valid.'};
  const buy=plan.action==='BUY LIMIT';
  if(buy?plan.entryPrice>=quote.ask:plan.entryPrice<=quote.bid) return {...result,reason:'Level entry sudah berada di sisi yang tidak sesuai untuk limit order. Tunggu evaluasi ulang.'};
  if(!(buy?plan.stopLoss<plan.entryPrice&&plan.entryPrice<plan.tp1&&plan.tp1<=plan.tp2:plan.stopLoss>plan.entryPrice&&plan.entryPrice>plan.tp1&&plan.tp1>=plan.tp2)) return {...result,reason:'Urutan entry, SL, dan TP tidak valid.'};

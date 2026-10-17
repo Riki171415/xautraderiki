@@ -103,6 +103,12 @@ function calcHukumPerahu(ohlcv_N, ohlcv_B) {
  * Generates actionable pending order instruction, targets (TP1, TP2), and Stop Loss
  */
 function calcHukumBusur(jikaResult, rsMatrix, ohlcv_N, lotCalc = null, decimals = 2) {
+  const valid=rsMatrix?.available;
+  const up=jikaResult.trend==='UP';
+  const ordering=valid && (up?rsMatrix.s2<rsMatrix.s1&&rsMatrix.s1<rsMatrix.pivot&&rsMatrix.pivot<rsMatrix.r1:rsMatrix.r2>rsMatrix.r1&&rsMatrix.r1>rsMatrix.pivot&&rsMatrix.pivot>rsMatrix.s1);
+  const blocked=!valid || (jikaResult.trend!=='NEUTRAL'&&!ordering);
+  const reason=!valid?'Data rumus R/S belum tersedia.':blocked?'Urutan entry–SL–TP tidak valid akibat susunan level. WAIT; nilai asli tidak ditukar.':null;
+  if(blocked) return {action:'WAIT',reason,rationale:reason,instruction:reason,entryPrice:valid?(up?rsMatrix.s1:rsMatrix.r1):NaN,tp1:rsMatrix?.pivot??NaN,tp2:valid?(up?rsMatrix.r1:rsMatrix.s1):NaN,stopLoss:valid?(up?rsMatrix.s2:rsMatrix.r2):NaN,riskReward:'—',tp1Points:'—',tp2Points:'—',slPoints:'—',estProfitTp1:'—',estProfitTp2:'—',estLossSl:'—'};
   const { trend } = jikaResult;
   const { pivot, s1, s2, s3, r1, r2, r3 } = rsMatrix;
   const currentPrice = ohlcv_N?.close || pivot;
@@ -206,23 +212,27 @@ function calcHukumBusur(jikaResult, rsMatrix, ohlcv_N, lotCalc = null, decimals 
  * 4. RS MATRIX — Pivot, Resistance, Support Calculation
  * Standard Pivot Point formula with dynamic touch color detection
  */
-function calcRSMatrix(ohlcv_B, touchedLevels = {}) {
-  const { high: H, low: L, close: C } = ohlcv_B;
-
-  const pivot = (H + L + C) / 3;
-  const range = H - L;
-
-  // Standard pivot levels
-  const r1 = 2 * pivot - L;
-  const r2 = pivot + range;
-  const r3 = r1 + range;
-  const r4 = r2 + range;
-
-  const s1 = 2 * pivot - H;
-  const s2 = pivot - range;
-  const s3 = s1 - range;
-  const s4 = s2 - range;
-
+function calcRSMatrix(ohlcv_B, ohlcv_N, timeframe, touchedLevels = {}) {
+  const {open:OB,high:H,low:L}=ohlcv_B || {};
+  const ON=ohlcv_N?.open;
+  const supported=['1m','5m','15m','30m','1h','4h','market','1d','1w','1M','3M','6M','1Y','10Y'];
+  if(![OB,H,L,ON].every(v=>Number.isFinite(v)&&v>0) || H<L || OB<L || OB>H || !supported.includes(timeframe))
+    return {available:false,reason:'OB, HB, LB, ON atau timeframe belum valid.',levels:{},anomalies:[]};
+  const correction=timeframe==='4h'?.08:.01;
+  const pivot=(OB+H+L+2*ON-correction)/5;
+  const r1=2*pivot-L,s1=2*pivot-H;
+  const r2=pivot-s1+r1,s2=pivot-(r1-s1);
+  const intraday=['1m','5m','15m','30m','1h','4h','market'].includes(timeframe);
+  const r3=intraday?pivot-s2+r2:2*pivot+H-2*L;
+  const s3=intraday?pivot-(r2-s2):2*pivot-2*H+L;
+  const r4=intraday?pivot-s3+r3:3*pivot+H-3*L;
+  const s4=intraday?pivot-(r3-s3):3*pivot-3*H+L;
+  const sequence={s4,s3,s2,s1,pivot,r1,r2,r3,r4};
+  const keys=Object.keys(sequence),anomalies=[];
+  for(let i=1;i<keys.length;i++) {
+    const lower=keys[i-1],upper=keys[i];
+    if(sequence[lower]>sequence[upper]+1e-9)anomalies.push({lower,upper,lowerValue:sequence[lower],upperValue:sequence[upper],difference:sequence[lower]-sequence[upper]});
+  }
   // Dynamic color detection based on price touch
   // Default colors: Pivot=White, Resistance=Orange, Support=Pink
   // Touched colors: Pivot=Violet, Resistance=Green, Support=Red
@@ -238,7 +248,7 @@ function calcRSMatrix(ohlcv_B, touchedLevels = {}) {
     s4: { value: s4, defaultColor: 'pink', touchColor: 'red', label: 'S4', touched: touchedLevels.s4 || false },
   };
 
-  return { pivot, r1, r2, r3, r4, s1, s2, s3, s4, levels };
+  return {available:true,formula:'COPTAH_RUSHART_XAU',family:intraday?'INTRADAY':'DAILY_YEAR',extension:['1m','5m','15m','30m','10Y'].includes(timeframe),correction,anomalies,pivot,r1,r2,r3,r4,s1,s2,s3,s4,levels};
 }
 
 /**
@@ -778,7 +788,8 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
 
     // DIRECT (Hukum JIKA: UP jika Open_N > Open_B)
     const direct = calcHukumJIKA(N,B).trend;
-    const rs = calcRSMatrix(B);
+    const rs = calcRSMatrix(B,N,def.key);
+    if(!rs.available) continue;
     const {pivot:pivotB,r1:r1B,r2:r2B,r3:r3B,r4:r4B,s1:s1B,s2:s2B,s3:s3B,s4:s4B}=rs;
     const rangeB_val = highB-lowB;
 
@@ -819,6 +830,7 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     const touchedSummary = touchedLabels.length > 0 ? touchedLabels.join(', ') : 'Belum Ada';
 
     tableRows.push({
+      anomalies:rs.anomalies,formula:rs.formula,
       periodStart:N.timestamp,periodEnd:N.periodEnd,
       timeframe: def.key,
       label: def.label,
@@ -855,6 +867,8 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     else if (def.key === 'market') rsLabel = `MARKET · ${pair.sessionName || def.label}`;
 
     rsColumns.push({
+      plan:calcHukumBusur(calcHukumJIKA(N,B),rs,N,null,decimals),
+      anomalies:rs.anomalies,formula:rs.formula,
       periodStart:N.timestamp,periodEnd:N.periodEnd,
       timeframe: def.key,
       label: rsLabel,

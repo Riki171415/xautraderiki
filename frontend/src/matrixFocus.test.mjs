@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import{focusRows}from'./matrixFocus.mjs';
+test('focus order is H4 Market Daily regardless of matrix column order',()=>{const rows=['1d','1h','market','4h'].map(timeframe=>({timeframe}));const c=rows.map(r=>({...r}));assert.deepEqual(focusRows(rows,c).map(x=>x.row.timeframe),['4h','market','1d']);});
+test('missing data is omitted, not cloned; micro and global kept separate',()=>{const r=['4h','1h','1M'].map(timeframe=>({timeframe}));assert.equal(focusRows(r,[]).length,0);assert.deepEqual(focusRows(r,r,'micro').map(x=>x.row.timeframe),['1h']);assert.deepEqual(focusRows(r,r,'global').map(x=>x.row.timeframe),['1M']);});

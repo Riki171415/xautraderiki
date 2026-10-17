@@ -20,6 +20,7 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
     let directMode=false;
     const timeout = setTimeout(() => controller.abort('timeout'), 12000);
     try {
+      if(broker==='TWELVE'){clearTimeout(timeout);const result=await browserBinanceAnalysis('XAUUSD',timeframe,controller.signal,'TWELVE');if(!controller.signal.aborted){setData(result);setLastUpdated(new Date());setError(null);return result;}}
       const params = new URLSearchParams({ symbol, timeframe, broker });
       const res = await fetch(`${API_BASE}/analysis?${params}`, { signal: controller.signal });
       if (res.status === 404) throw new Error('Server analisis belum tersedia pada alamat aplikasi ini (API 404).');
@@ -35,11 +36,12 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
       }
     } catch (err) {
       clearTimeout(timeout);
+      if(broker==='TWELVE'||(broker==='EXNESS'&&symbol==='BTCUSD')){if(!controller.signal.aborted)setError(err.message);return;}
       if (!controller.signal.aborted || controller.signal.reason === 'timeout') {
         const fallbackController=new AbortController();
         requestRef.current=fallbackController;directMode=true;
         try {
-          const fallback=await browserBinanceAnalysis(broker==='BINANCE'?symbol:'PAXG/USDT',timeframe,fallbackController.signal);
+          const fallback=await browserBinanceAnalysis(broker==='BINANCE'?symbol:'XAUUSD',timeframe,fallbackController.signal,broker==='BINANCE'?'BINANCE':'TWELVE');
           if(!fallbackController.signal.aborted){setData(fallback);setLastUpdated(new Date());setError(null);return fallback;}
         } catch(failure) {if(!fallbackController.signal.aborted)setError(`Server utama: ${err.message} Fallback: ${failure.message}`);}
         finally {if(!fallbackController.signal.aborted)setLoading(false);}

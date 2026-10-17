@@ -13,3 +13,24 @@ test('expired USA market removed while waiting for Asia, even without ticks',()=
  const r=projectMatrix({rsColumns:[old],tableRows:[old]},null,3,2000);
  assert.equal(r.rsColumns.length,0);assert.equal(r.tableRows.length,0);
 });
+
+test('touches persist after price retreats and a lagging snapshot arrives',()=>{
+ const first=projectMatrix(matrix,{bid:103,timestamp:1500});
+ const next=projectMatrix(matrix,{bid:100,timestamp:1600},3,1600,first);
+ assert.equal(next.rsColumns[0].touchedLevels.res1,true);
+ assert.equal(next.tableRows[0].touchedSummary.includes('R1'),true);
+ assert.equal(next.rsColumns[0].highN,'103.000');
+});
+test('touches reset on the next timeframe period',()=>{
+ const first=projectMatrix(matrix,{bid:103,timestamp:1500});
+ const nextCol={...col,periodStart:2000,periodEnd:3000};
+ const next=projectMatrix({rsColumns:[nextCol],tableRows:[{...nextCol,direct:'UP',rangeB:2}]},{bid:100,timestamp:2100},3,2100,first);
+ assert.equal(next.rsColumns[0].touchedLevels.res1,false);
+});
+test('each timeframe receives touches according to its own period and levels',()=>{
+ const daily={...col,timeframe:'1d',periodStart:500,periodEnd:10000,res1:'104'};
+ const both={rsColumns:[col,daily],tableRows:[{...col,direct:'UP',rangeB:2},{...daily,direct:'UP',rangeB:2}]};
+ const result=projectMatrix(both,{bid:103,timestamp:1500},3,1500);
+ assert.equal(result.rsColumns[0].touchedLevels.res1,true);
+ assert.equal(result.rsColumns[1].touchedLevels.res1,false);
+});

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { WS_URL } from '../config';
 
-export function useWebSocket() {
+export function useWebSocket(enabled=true) {
   const [data, setData] = useState(null);
   const [liveTick, setLiveTick] = useState(null);
   const [status, setStatus] = useState('connecting');
@@ -11,6 +11,7 @@ export function useWebSocket() {
   const wsRef = useRef(null);
   const subscription = useRef({ type: 'subscribe', symbol: 'XAUUSD', timeframe: '1h', broker: 'EXNESS' });
   useEffect(() => {
+    if(!enabled){setStatus('disconnected');setError(null);setData(null);setLiveTick(null);return;}
     let disposed = false, timer, attempts = 0;
     function connect() {
       if (disposed) return;
@@ -47,7 +48,7 @@ export function useWebSocket() {
     }
     connect();
     return () => { disposed = true; clearTimeout(timer); wsRef.current?.close(); };
-  }, []);
+  }, [enabled]);
   const sendMessage = useCallback((msg) => {
     if (msg.type === 'subscribe') {
       subscription.current = msg;

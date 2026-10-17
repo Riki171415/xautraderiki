@@ -18,7 +18,7 @@ export default function H4CompassPanel({analysis,decimals=3,onSelect,selected}) 
       <button type="button" className="chart-toggle" aria-expanded={expanded} onClick={()=>setExpanded(s=>!s)}>{expanded?'Ringkas':'Lihat alur timeframe'}</button>
     </div>
     <div className="h4-summary-grid">
-      <div><small>KONTEKS BESAR</small><strong className={analysis.macroStatus==='CONFLICT'?'text-amber-200':''}>{macroLabels[analysis.macroStatus]}</strong><p>Mulai 10 tahun, uraikan Busur/Target tiap tingkat; H4 kunci arah operasional.</p></div>
+      <div><small>KONTEKS BESAR</small><strong className={analysis.macroStatus==='CONFLICT'?'text-amber-200':''}>{macroLabels[analysis.macroStatus]}</strong><p>Mulai 10 tahun, uraikan Busur/Target tiap tingkat; Kunci H4: periksa pertemuan nilai level pada panel sasaran. Arah JIKA memberi konteks tambahan.</p></div>
       <div><small>H4 · {phase[h4.phase]}</small><strong>Busur {direction[analysis.bowDirection] || 'TUNGGU'} → Target {direction[analysis.targetDirection] || 'TUNGGU'}</strong><p>Open N {fmt(h4.openN)} · Open B {fmt(h4.openB)} · harga {fmt(h4.close)}</p><p>Rumah HSH H4 = Open N {fmt(h4.hshTarget)}</p></div>
       <div><small>PERKEMBANGAN TF KECIL</small><strong>{analysis.micro.filter(f=>f.alignment==='ALIGNED').length} searah · {analysis.micro.filter(f=>f.alignment==='OPPOSED').length} berlawanan JIKA H4</strong><p>H1 · M30 · M15 · M5 · akhir busur belum terkonfirmasi.</p></div>
     </div>

@@ -708,5 +708,8 @@ export default function WeeklyTradingPlan(props) {
  if(!['1w','1M','1Y'].every(tf=>rows.some(r=>r.timeframe===tf) && rs.some(r=>r.timeframe===tf))) return <div className="cop-panel text-sm text-slate-400">Plan mingguan menunggu data W1, MN1, dan tahunan asli yang lengkap. Tidak memakai angka contoh.</div>;
  const week=rows.find(r=>r.timeframe==='1w');
  if(Number(week.openN)===Number(week.openB)) return <div className="cop-panel text-sm text-slate-400">JIKA W1 NETRAL · Open N sama dengan Open B. Tunggu arah; tidak membuat plan BUY/SELL.</div>;
+ const planRS=rs.find(c=>c.timeframe==='1w');
+ const levels=['sup2','sup1','pivot','res1','res2'].map(k=>Number(planRS[k]));
+ if(!levels.every(Number.isFinite)||levels.some((v,i)=>i>0&&v<=levels[i-1]))return <section className="cop-panel text-sm text-amber-200">WAIT · Urutan SL–entry–TP tidak valid. Periksa anomali level Excel pada tabel; nilai asli tidak ditukar.</section>;
  return <WeeklyTradingPlanDetails {...props}/>;
 }
