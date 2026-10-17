@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { API_BASE } from '../config';
+import {binanceCandles} from '../binancePublic.mjs';
 import { applyBid, chartCandles, findFractals } from '../chartLogic.mjs';
 
 const COLORS = { up:'#54c9a0', down:'#e8949c', open:'#f5c66c', pivot:'#a1a9bd', resistance:'#ce9d76', support:'#8daadc' };
@@ -21,9 +22,13 @@ export default function CandlestickChart({data, liveTick, symbol, timeframe, bro
       const timeout=setTimeout(()=>controller.abort(),12000);
       try {
         const params=new URLSearchParams({broker,symbol,timeframe,limit:'100'});
+        let json;
+        if(data?.fallback && broker==='BINANCE') json={success:true,data:await binanceCandles(symbol,timeframe,controller.signal)};
+        else {
         const response=await fetch(`${API_BASE}/ohlcv?${params}`,{signal:controller.signal});
-        const json=await response.json();
+        json=await response.json();
         if(!response.ok || !json.success) throw new Error(json.error || 'Candle belum tersedia');
+        }
         const rows=chartCandles(json.data);
         if(rows.length<2) throw new Error('Riwayat belum cukup untuk N dan B');
         if(!disposed) {setSnapshot({rows,key});setReceived(Date.now());setError(null);}
@@ -32,7 +37,7 @@ export default function CandlestickChart({data, liveTick, symbol, timeframe, bro
     }
     refresh();
     return ()=>{disposed=true;clearTimeout(timer);controller?.abort();};
-  },[key,broker,symbol,timeframe]);
+  },[key,broker,symbol,timeframe,data?.fallback]);
 
   const candles=useMemo(()=>{
     if(snapshot.key!==key) return [];

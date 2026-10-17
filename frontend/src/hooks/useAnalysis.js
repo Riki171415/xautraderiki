@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { API_BASE } from '../config';
+import {browserBinanceAnalysis} from '../browserBinanceAnalysis';
 
 export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINANCE', pollInterval = 30000) {
   const [data, setData] = useState(null);
@@ -16,6 +17,7 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
+    let directMode=false;
     const timeout = setTimeout(() => controller.abort('timeout'), 12000);
     try {
       const params = new URLSearchParams({ symbol, timeframe, broker });
@@ -32,11 +34,19 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
         return json.data;
       }
     } catch (err) {
-      if (controller.signal.reason === 'timeout') setError('Server analisis tidak merespons dalam 12 detik.');
-      else if (!controller.signal.aborted) setError(err.message);
+      clearTimeout(timeout);
+      if (!controller.signal.aborted || controller.signal.reason === 'timeout') {
+        const fallbackController=new AbortController();
+        requestRef.current=fallbackController;directMode=true;
+        try {
+          const fallback=await browserBinanceAnalysis(broker==='BINANCE'?symbol:'PAXG/USDT',timeframe,fallbackController.signal);
+          if(!fallbackController.signal.aborted){setData(fallback);setLastUpdated(new Date());setError(null);return fallback;}
+        } catch(failure) {if(!fallbackController.signal.aborted)setError(`Server utama: ${err.message} Fallback: ${failure.message}`);}
+        finally {if(!fallbackController.signal.aborted)setLoading(false);}
+      }
     } finally {
       clearTimeout(timeout);
-      if (!controller.signal.aborted || controller.signal.reason === 'timeout') setLoading(false);
+      if (!directMode && (!controller.signal.aborted || controller.signal.reason === 'timeout')) setLoading(false);
     }
   }, [symbol, timeframe, broker]);
 

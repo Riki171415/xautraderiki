@@ -74,6 +74,12 @@ export default function App() {
   const { data: wsData, liveTick: rawTick, status: wsStatus, error: wsError, reconnectCount, isLoading: wsLoading, sendMessage } = useWebSocket();
   const { data: restData, loading, error: restError, lastUpdated, refetch } = useAnalysis(symbol, timeframe, broker, 30000);
 
+  useEffect(()=>{
+    if(restData?.fallback && (broker!==restData.broker.id || symbol!==restData.symbol)) {
+      setBroker(restData.broker.id);setSymbol(restData.symbol);
+    }
+  },[restData,broker,symbol]);
+
   const [clock, setClock] = useState(Date.now());
   useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 1000); return () => clearInterval(timer); }, []);
   const tickAge = rawTick ? Math.max(0, Math.floor((clock - rawTick.timestamp) / 1000)) : null;
@@ -295,9 +301,13 @@ export default function App() {
         <h2 className="text-lg font-bold text-amber-300">Aplikasi terbuka · sumber data belum terhubung</h2>
         <p className="mt-2 text-sm">{restError || 'Menunggu server analisis dan bridge MT5.'}</p>
         <p className="mt-2 text-sm text-slate-400">Jika memakai Vercel, server analisis harus tersedia melalui HTTPS dan terhubung ke MT5 komputer atau VPS. MT5 di tablet tidak mengirim data langsung ke aplikasi ini. Angka analisis ditampilkan setelah sumber berhasil terhubung.</p>
-        <button type="button" onClick={handleRefresh} className="chart-toggle mt-4">Coba hubungkan kembali</button>
+        <div className="flex items-center gap-3 mt-4 flex-wrap">
+          <button type="button" onClick={handleRefresh} className="chart-toggle">Coba hubungkan kembali</button>
+          <button type="button" onClick={() => handleBrokerChange('BINANCE')} className="chart-toggle bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30">Gunakan Data Pasar Binance (PAXG/USDT)</button>
+        </div>
       </section>}
 
+      {data?.fallback && <div role="status" className="px-5 py-3 bg-amber-950/50 text-amber-200 text-sm border-b border-amber-800">Fallback Binance Spot · {data.symbol} · bukan XAUUSD Exness. Data langsung diperbarui setiap 30 detik; WebSocket server tidak diperlukan.</div>}
       {/* ── 2. WORKFLOW NAVIGATION BAR (6 PILAR UTAMA COP TAH) ── */}
       <div id="workspace-navigation" aria-label="Navigasi workspace" className="workflow-nav bg-cop-surface/95 border-b border-cop-border/80 backdrop-blur-md px-4 lg:px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap">
         <div className="sidebar-brand"><div className="sidebar-monogram">CT<span>•</span></div><div><strong>COP TAH</strong><small>GOLD ANALYTICS</small></div></div>
