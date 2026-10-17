@@ -1,25 +1,17 @@
-import {useState,useEffect,useRef} from 'react';
+import {useState} from 'react';
 import {dailyH4Task} from '../dailyH4Task.mjs';
 import {habitWarnings} from '../habitWarnings.mjs';
-import {projectMatrix} from '../liveMatrix.mjs';
-export default function MarketHabitPanel({data,liveTick,now,onNotify}) {
- const [target,setTarget]=useState('AUTO'),[enabled,setEnabled]=useState(true);
- const seen=useRef(new Set());const prior=useRef(null);
- const matrix=projectMatrix(data?.leak4RegMatrix,liveTick,data?.decimals??3,now);
+import {useLiveMatrix} from '../hooks/useLiveMatrix';
+export default function MarketHabitPanel({data,liveTick,now,onNotify,target:sharedTarget,onTarget,alertSettings,onAlertSettings}) {
+ const [localTarget,setLocalTarget]=useState('AUTO');
+ const target=sharedTarget??localTarget,setTarget=onTarget??setLocalTarget;
+ const enabled=alertSettings?.dailyEnabled??true;
+ const setEnabled=value=>onAlertSettings?.(s=>({...s,dailyEnabled:value}));
+ const matrix=useLiveMatrix(data,liveTick,now);
  const price=liveTick?.bid??Number(matrix?.currentPrice);
  const w=habitWarnings(matrix?.rsColumns,data?.marketCycle,price,{target,now});
  const task=dailyH4Task(data?.dailyH4Context,w.daily?.value,now);
  const history=data?.marketHabits;
- useEffect(()=>{
-  if(!data||data.marketDataStatus==='STALE_QUOTE'||now-data.timestamp>45000||!enabled||!onNotify)return;
-  const scope=`${data.broker?.id}|${data.symbol}`;
-  if(prior.current!==scope){seen.current=new Set();prior.current=scope;}
-  const notes=[...w.notes,...(task.hit?[{id:`last-h4:${task.hitStart}:${task.target}`,text:task.reason}]:[])];
-  const pending=notes.filter(n=>!seen.current.has(`${n.id}:${data.marketCycle?.tradingDay}:${data.marketCycle?.activeSession}`));
-  if(!pending.length)return;
-  for(const n of pending)seen.current.add(`${n.id}:${data.marketCycle?.tradingDay}:${data.marketCycle?.activeSession}`);
-  onNotify('warning',`${data.symbol}: ${pending.map(n=>n.text).join(' ')}`);
- },[data,now,target,enabled]);
  const fmt=n=>Number.isFinite(n)?n.toFixed(data?.decimals??3):'—';
  const stat=s=>s?.coverage?`${s.bars} jam · O ${fmt(s.open)} / H ${fmt(s.high)} / L ${fmt(s.low)} / C ${fmt(s.close)} · median rentang H1 ${fmt(s.medianRange)}`:`Riwayat belum lengkap (${s?.bars??0}/${s?.expected??0} jam)`;
  return <section className="cop-panel space-y-4">

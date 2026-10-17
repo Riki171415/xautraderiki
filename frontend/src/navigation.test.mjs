@@ -1,3 +1,15 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import {PAGES,ANALYSIS_STEPS,stepNeighbors} from './navigation.mjs';
-test('guided order begins global, H4, session, chart, entry',()=>{assert.deepEqual(ANALYSIS_STEPS,['global','h4','cycle','candles','entries']);assert.deepEqual(stepNeighbors('h4'),{previous:'global',next:'cycle'});assert.equal(stepNeighbors('entries').next,null);});
-test('matrix remains directly addressable in references, weekly merges into entry',()=>{assert.equal(PAGES.some(p=>p.id==='table'),false);assert.equal(PAGES.find(p=>p.id==='entries').title,'Terminal & Entry');assert.equal(PAGES.some(p=>p.id==='weekly'),false);assert.equal(new Set(PAGES.map(p=>p.id)).size,PAGES.length);assert.equal(PAGES[0].id,'dashboard');});
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {PAGES,resolveNavigation} from './navigation.mjs';
+test('exactly six primary menus and three supporting destinations',()=>{
+ assert.deepEqual(PAGES.filter(p=>p.group==='utama').map(p=>p.id),['dashboard','analysis','entries','candles','ohlc','levels']);
+ assert.deepEqual(PAGES.filter(p=>p.group==='pendukung').map(p=>p.id),['history','guide','sources']);
+ assert.equal(new Set(PAGES.map(p=>p.id)).size,PAGES.length);
+});
+test('legacy destinations select the appropriate consolidated tab',()=>{
+ for(const id of ['global','h4','cycle'])assert.deepEqual(resolveNavigation(id),{page:'analysis',analysisTab:id});
+ for(const id of ['table','terminal'])assert.deepEqual(resolveNavigation(id),{page:'entries',terminalSection:'summary'});
+ assert.deepEqual(resolveNavigation('weekly'),{page:'entries',terminalSection:'weekly'});
+ assert.deepEqual(resolveNavigation('entries'),{page:'entries'});
+ assert.deepEqual(resolveNavigation('invalid'),{page:'dashboard'});
+});

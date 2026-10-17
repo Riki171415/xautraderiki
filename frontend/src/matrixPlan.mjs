@@ -8,9 +8,10 @@ export function matrixPlan(column,marketEntry,context={}){
   const keys=['res4','res3','res2','res1','pivot','sup1','sup2','sup3','sup4'];
   const cellRoles=Object.fromEntries(keys.map(key=>[key,confluenceCell(anchored,column,key).map(m=>m.role)]));
   if(column.timeframe==='4h')cellRoles[anchored.stopKey]=[...(cellRoles[anchored.stopKey]||[]),'SL'];
-  if(!Object.values(cellRoles).some(labels=>labels.length))return {action:'WAIT',reason:'Kolom ini belum memiliki level ekuivalen dengan rencana H4 pada toleransi aktif.'};
+  // All macro views share the H4 ticket; labels remain only on actual matching cells.
+  const matchedHere=Object.values(cellRoles).some(labels=>labels.length);
   const targets=anchored.areas.filter(a=>a.role.startsWith('TP'));
-  return {...anchored,cellRoles,tp1:targets[0]?.value,tp2:targets[1]?.value,tp3:targets[2]?.value};
+  return {...anchored,matchedHere,cellRoles,tp1:targets[0]?.value,tp2:targets[1]?.value,tp3:targets[2]?.value};
  }
  if(column.timeframe==='market'){
   if(!marketEntry?.plan||marketEntry.current?.timestamp!==column.periodStart)return {action:'WAIT',reason:'Menunggu skenario Market pada periode yang sama.'};

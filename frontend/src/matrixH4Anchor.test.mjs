@@ -15,3 +15,13 @@ test('WAIT area labels retain counterpart identity, not the H4 level name',async
  assert.deepEqual(planBadges(p,'res1'),['AREA H4']);
  assert.deepEqual(planBadges(p,'res4'),[]);
 });
+
+test('macro ticket remains identical even when selected column has no matching price cell',()=>{
+ const h={timeframe:'4h',periodStart:0,periodEnd:1000,sup1:90,sup2:80,pivot:100,res1:110,plan:{action:'BUY LIMIT',stopLoss:80}};
+ const d={timeframe:'1d',periodStart:0,periodEnd:1000,res1:90,pivot:100};
+ const w={timeframe:'1w',periodStart:0,periodEnd:1000,res1:500,pivot:400};
+ const context={columns:[h,d,w],price:105,options:{now:100}};
+ const a=matrixPlan(h,null,context),b=matrixPlan(w,null,context);
+ for(const key of ['action','entryPrice','tp1','tp2','tp3','stopLoss'])assert.equal(a[key],b[key]);
+ assert.equal(b.matchedHere,false);assert.deepEqual(planBadges(b,'res1'),[]);
+});

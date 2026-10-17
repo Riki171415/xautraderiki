@@ -13,7 +13,7 @@ test('every app page renders when feed is unavailable, including navigation icon
   if(id.includes('/hooks/useWebSocket.js'))return "export function useWebSocket(){return {data:null,liveTick:null,status:'disconnected',sendMessage:()=>{}}}";
   if(id.endsWith('/src/App.jsx'))return code.replace("useState('dashboard')","useState(globalThis.renderRegressionPage || 'dashboard')");
  }};
- const server=await createServer({configFile:fileURLToPath(new URL('../vite.config.js',import.meta.url)),root:fileURLToPath(new URL('..',import.meta.url)),plugins:[mock],server:{middlewareMode:true,hmr:false},appType:'custom'});
+ const server=await createServer({configFile:fileURLToPath(new URL('../vite.config.js',import.meta.url)),root:fileURLToPath(new URL('..',import.meta.url)),plugins:[mock],cacheDir:fileURLToPath(new URL('../node_modules/.vite-test-appRender',import.meta.url)),optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false},appType:'custom'});
  try{const {default:App}=await server.ssrLoadModule('/src/App.jsx');for(const page of PAGES){globalThis.renderRegressionPage=page.id;const html=renderToString(React.createElement(App));assert.ok(html.replaceAll('&amp;','&').includes(page.title),page.id);}
  const {default:Slide}=await server.ssrLoadModule('/src/components/MatrixSlideshow.jsx');
  const keys=['res4','res3','res2','res1','pivot','sup1','sup2','sup3','sup4'];

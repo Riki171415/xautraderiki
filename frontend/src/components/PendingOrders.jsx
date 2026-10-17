@@ -1,5 +1,6 @@
+import {useH4Plan} from '../hooks/useH4Plan';
 /**
- * PendingOrders — Target & Pending Order (Hukum Busur)
+ * PendingOrders — Rencana H4 · Entry & Sasaran
  * Institutional Execution Ticket with Risk:Reward Visualizer & Preset Lot Calculator
  */
 import {
@@ -21,14 +22,16 @@ import {
 import { useState } from 'react';
 import { updateModal } from '../hooks/useAnalysis';
 
-export default function PendingOrders({ data, liveTick, onModalUpdate }) {
+export default function PendingOrders({ data, liveTick, onModalUpdate,tolerance=0 }) {
   const [modalInput, setModalInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [orderExecuted, setOrderExecuted] = useState(false);
   const [copiedPlan, setCopiedPlan] = useState(false);
 
+  const anchored=useH4Plan(data,liveTick,tolerance);
   if (!data) return null;
-  const { busur, rsMatrix, userModal, lotCalc, broker, ohlcv_N } = data;
+  const {rsMatrix,userModal,broker}=data;
+  const lotCalc=null,busur=anchored.plan,ohlcv_N=anchored.h4?{open:Number(anchored.h4.openN),high:Number(anchored.h4.highN),low:Number(anchored.h4.lowN),close:anchored.price}:null;
   const decimals = data.decimals ?? (broker?.id !== 'BINANCE' ? 3 : 2);
 
   if(busur?.action==='WAIT')return <section className="cop-panel text-sm text-amber-200">WAIT · {busur.reason || busur.rationale}</section>;
@@ -36,15 +39,16 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
   const isSell = busur?.action === 'SELL LIMIT';
 
   // Live price & distance calculation
-  const currentPrice = liveTick?.bid || ohlcv_N?.close || 0;
+  const currentPrice = anchored.price;
+  if(!['BUY LIMIT','SELL LIMIT'].includes(busur?.action))return <section className="cop-panel text-sm text-amber-200">H4 · {busur.reason}</section>;
   const entryPrice = busur?.entryPrice || 0;
   const liveDist = currentPrice && entryPrice ? Math.abs(currentPrice - entryPrice).toFixed(decimals) : busur?.distToEntry || '0.000';
 
   // Institutional Touch Detection
   const crossed = level => Number.isFinite(level) && ohlcv_N?.low<=level && ohlcv_N?.high>=level;
-  const isEntryTouched = data.planObservation?.entryObserved === true;
-  const isTp1Touched = data.planObservation?.tp1Observed === true;
-  const isTp2Touched = data.planObservation?.tp2Observed === true;
+  const isEntryTouched = false;
+  const isTp1Touched = false;
+  const isTp2Touched = false;
 
   const handleModalSubmit = async (e) => {
     e.preventDefault();
@@ -74,12 +78,12 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
       `Asset: ${data.symbol || 'XAUUSD'} · Server: ${broker?.name || 'Exness'} (${broker?.server || 'MT5Real36'})\n` +
       `Action: ${busur.action} @ ${busur.entryPrice?.toFixed(decimals)}\n` +
       `────────────────────────────────\n` +
-      `Target TP1 (Pivot): ${busur.tp1?.toFixed(decimals)} (+${busur.tp1Points} satuan harga | Est +$${busur.estProfitTp1})\n` +
-      `Target TP2 (Busur): ${busur.tp2?.toFixed(decimals)} (+${busur.tp2Points} satuan harga | Est +$${busur.estProfitTp2})\n` +
-      `Target TP3 (Runner): ${busur.tp3?.toFixed(decimals)} (Trailing Stop)\n` +
+      `Target TP1 (level H4 ekuivalen): ${busur.tp1?.toFixed(decimals)} (+${busur.tp1Points} satuan harga | Est +$${busur.estProfitTp1})\n` +
+      `Target TP2 (level H4 ekuivalen): ${busur.tp2?.toFixed(decimals)} (+${busur.tp2Points} satuan harga | Est +$${busur.estProfitTp2})\n` +
+      `Target TP3 (Runner): ${busur.tp3?.toFixed(decimals)} (Sasaran bersyarat H4)\n` +
       `Stop Loss (SL): ${busur.stopLoss?.toFixed(decimals)} (-${busur.slPoints} satuan harga | Est -$${busur.estLossSl})\n` +
       `Risk/Reward: ${busur.riskReward}\n` +
-      `Rekomendasi Lot: ${lotCalc?.lot || '0.40'} Lot (Modal $${userModal?.toLocaleString() || '10,000'})`;
+      `Rekomendasi Lot: ${lotCalc?.lot || 'Belum terverifikasi'} Lot (Modal $${userModal?.toLocaleString() || '10,000'})`;
 
     await navigator.clipboard.writeText(planText);
     setCopiedPlan(true);
@@ -95,7 +99,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
             <Target className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white font-mono">Target & Pending Order (Hukum Busur)</h2>
+            <h2 className="text-sm font-bold text-white font-mono">Rencana H4 · Entry & Sasaran</h2>
             <p className="text-[10px] text-slate-400 font-mono">Tiket Eksekusi & Manajemen Risiko</p>
           </div>
         </div>
@@ -240,7 +244,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
               <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-600/60">
                 TP 1
               </span>
-              <span className="font-semibold text-emerald-300">Target Pivot (Amankan Sebagian)</span>
+              <span className="font-semibold text-emerald-300">Sasaran ekuivalen H4</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-emerald-400 font-semibold tabular-nums">+{busur?.tp1Points} satuan harga</span>
@@ -262,7 +266,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
               <span className="text-[9px] font-black px-2 py-0.5 rounded bg-emerald-500 text-slate-950">
                 TP 2
               </span>
-              <span className="font-bold text-emerald-300">Target Utama (Hukum Busur)</span>
+              <span className="font-bold text-emerald-300">Sasaran berikutnya H4</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-emerald-400 font-bold tabular-nums">+{busur?.tp2Points} satuan harga</span>
@@ -321,7 +325,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
             </div>
             <div>
               <span className="text-slate-400 block text-[9px] uppercase">Lot Size</span>
-              <strong className="text-cop-gold font-bold tabular-nums">{lotCalc?.lot || '0.40'} Lot</strong>
+              <strong className="text-cop-gold font-bold tabular-nums">{lotCalc?.lot || 'Belum terverifikasi'} Lot</strong>
             </div>
             <div>
               <span className="text-slate-400 block text-[9px] uppercase">Est. Profit TP2</span>
@@ -390,7 +394,7 @@ export default function PendingOrders({ data, liveTick, onModalUpdate }) {
             Modal Aktif: <strong className="text-cop-gold font-bold tabular-nums">${userModal?.toLocaleString() || '10,000'}</strong>
           </span>
           <span className="text-slate-400">
-            Lot Rekomendasi: <strong className="text-emerald-400 font-bold tabular-nums">{lotCalc?.lot || '0.40'} Lot</strong>
+            Lot Rekomendasi: <strong className="text-emerald-400 font-bold tabular-nums">{lotCalc?.lot || 'Belum terverifikasi'} Lot</strong>
           </span>
         </div>
 

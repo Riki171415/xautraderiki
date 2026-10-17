@@ -14,6 +14,9 @@ const sharedRules={name:'shared-coptah-rules',resolveId(id){if(id.startsWith('vi
 
 export default defineConfig({
   plugins: [sharedRules, react()],
+  cacheDir:'node_modules/.vite-runtime',
+  resolve:{dedupe:['react','react-dom']},
+  optimizeDeps:{include:['react','react-dom/client','react/jsx-runtime','lucide-react']},
   server: {
     host: '0.0.0.0',
     port: 5173,

@@ -1,3 +1,4 @@
+const {binanceRows,binanceQuote}=require('./binance_data');
 /**
  * COP TAH Analytics Dashboard — Backend Server
  * Express.js + CCXT + WebSocket
@@ -290,7 +291,7 @@ async function fetchForexGoldOHLCV(timeframe, spreadOffset = 0) {
 async function fetchOHLCVData(marketSymbol, timeframe) {
   if (!['PAXG/USDT','XAUT/USDT','BTC/USDC'].includes(marketSymbol)) throw new Error('Binance Spot: pilih PAXG/USDT, XAUT/USDT atau BTC/USDC. XAUUSD adalah instrumen Exness.');
   const months={'3M':3,'6M':6,'1Y':12,'10Y':120}[timeframe];
-  const rows=await exchange.fetchOHLCV(marketSymbol,months?'1M':timeframe,undefined,months?240:50);
+  const rows=await binanceRows(marketSymbol,months?'1M':timeframe);
   if(!validCandles(rows)) throw new Error('Binance mengirim candle tidak valid atau riwayat belum cukup.');
   const result=timeframe==='10Y'?aggregateDecades(rows,false):months?aggregateMonths(rows,months):rows;
   if(result.length<2) throw new Error(`Riwayat ${marketSymbol} ${timeframe} belum cukup. Tidak mengganti instrumen.`);
@@ -444,6 +445,7 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
     const rs = calcRSMatrix(ohlcv_B, ohlcv_N, tf, {});
     const busur = calcHukumBusur(jika, rs, ohlcv_N, lotCalc, decimals);
     const timeInfo = getCandleTimeInfo(ohlcv_N, tf);
+    ohlcv_N.periodEnd=timeInfo.closeTs;
     const hsh = calcHukumHSH(ohlcv_N, timeInfo.duration, ohlcv_N.timestamp, timeInfo.remaining);
 
     // Contextual Warnings & Rambu-Rambu based on COP TAH Rules
@@ -597,6 +599,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
 
     // HSH calculation with precise duration and remaining time
     const timeInfo = getCandleTimeInfo(ohlcv_N, timeframe);
+    ohlcv_N.periodEnd=timeInfo.closeTs;
     const hsh = calcHukumHSH(ohlcv_N, timeInfo.duration, ohlcv_N.timestamp, timeInfo.remaining);
 
     // Trading session
@@ -728,7 +731,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     try {
       const multiTfMap = await getMultiTfCandles(broker.id, marketSymbol);
       multiTfMap[timeframe] = { ohlcv_N, ohlcv_B };
-      leak4RegMatrix = calcLeak4RegMatrix(multiTfMap, ohlcv_N.close, Math.round((broker.spread || 0.12) * 100), decimals);
+      leak4RegMatrix = calcLeak4RegMatrix(multiTfMap, ohlcv_N.close, broker.id==='EXNESS'?Math.round((feedState.ask-feedState.bid)*10**decimals):Math.round((broker.spread??0)*10**decimals), decimals);
     } catch (e) {
       console.warn('[Leak4Reg Matrix Error]:', e.message);
     }
@@ -752,7 +755,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       let marketQuote=null;
       if(broker.id==='EXNESS') marketQuote={bid:feedState.bid,ask:feedState.ask,timestamp:feedState.quoteTimestamp || 0};
       else {
-        try {const q=await exchange.fetchTicker(marketSymbol);marketQuote={bid:q.bid,ask:q.ask,timestamp:q.timestamp || Date.now()};}catch(error){console.warn('[Market Quote] '+error.message);}
+        try {const q=await binanceQuote(marketSymbol);marketQuote={bid:q.bid,ask:q.ask,timestamp:q.timestamp || Date.now()};}catch(error){console.warn('[Market Quote] '+error.message);}
       }
       marketEntry=buildMarketEntry(hierarchy.market,h4Compass,marketCycle,marketQuote,Date.now(),decimals);
     } catch (error) { console.warn('[H4 Compass] ' + error.message); }
@@ -793,6 +796,8 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       warnings:[`H4 pusat analisis: ${h4Compass.label}. ${h4Compass.confirmationNote}`, ...rec.warnings],
     }));
 
+    let instrumentYears=[];
+    try{instrumentYears=await fetchBrokerOHLCV(broker.id,marketSymbol,'1Y');}catch{}
     const result = {
       h4Compass,
       dailyH4Context,
@@ -827,7 +832,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       multiTfDecision,
       leak4RegMatrix,
       entryRecommendations,
-      yearlyCandles: (multiTfCandlesCache.annualCandles || []).map(([ts, o, h, l, c, v]) => ({
+      yearlyCandles: (instrumentYears || []).map(([ts, o, h, l, c, v]) => ({
         year: new Date(ts).getUTCFullYear(),
         open: Number(Number(o).toFixed(decimals)),
         high: Number(Number(h).toFixed(decimals)),
@@ -1059,7 +1064,8 @@ app.post('/api/mt5/tick', async (req, res) => {
     const numBid = Number(bid || (livePrice - 0.06).toFixed(3));
     const numAsk = Number(ask || (livePrice + 0.06).toFixed(3));
     const numSpread = Number(spread || (numAsk - numBid).toFixed(3));
-    const spreadPts = (numSpread * 10).toFixed(1);
+    const quoteDigits=Number.isInteger(digits)&&digits>=0&&digits<=8?digits:3;
+    const spreadPts = Math.round(numSpread*10**quoteDigits);
 
     const priceKey='EXNESS:'+exnessSymbolKey(symbol);
     const prevPrice = lastBrokerPrices[priceKey] || livePrice;
@@ -1079,7 +1085,7 @@ app.post('/api/mt5/tick', async (req, res) => {
       ask: numAsk,
       price: livePrice,
       spread: numSpread,
-      spreadLabel: `${spreadPts} pips ($${numSpread.toFixed(2)})`,
+      spreadLabel: `${spreadPts} points (${numSpread.toFixed(quoteDigits)} satuan harga)`,
       lastTickTime: receivedAt,
       quoteTimestamp:Number.isFinite(tickTimestamp)?tickTimestamp:0,
       candles: Array.isArray(candles) && candles.length > 0 ? candles : symbolState.candles,
@@ -1407,7 +1413,7 @@ async function broadcastLiveTicks() {
     for (const symbol of symbols) {
       try {
         const { marketSymbol } = resolveBinanceMarket(symbol);
-        const quote = await exchange.fetchTicker(marketSymbol);
+        const quote = await binanceQuote(marketSymbol);
         const price = Number(quote.last ?? quote.close);
         if (!Number.isFinite(price) || price <= 0) continue;
         const timestamp = Number(quote.timestamp) || Date.now();

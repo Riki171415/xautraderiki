@@ -1,0 +1,9 @@
+const {validCandles}=require('./mt5_data');
+const cache=new Map(),pending=new Map();
+function symbolCode(symbol){if(!['PAXG/USDT','XAUT/USDT','BTC/USDC'].includes(symbol))throw new Error('Binance Spot: simbol tidak didukung.');return symbol.replace('/','');}
+function parseRows(raw){if(!Array.isArray(raw))throw new Error('Respons candle Binance tidak valid.');const rows=raw.map(r=>r.slice(0,6).map(Number));if(!validCandles(rows))throw new Error('Candle Binance tidak valid atau belum cukup.');return rows;}
+async function json(path,params){const response=await fetch(`https://data-api.binance.vision/api/v3/${path}?${new URLSearchParams(params)}`,{signal:AbortSignal.timeout(8000)});if(!response.ok)throw new Error(`Binance HTTP ${response.status}`);const result=await response.json();if(result?.code<0)throw new Error(result.msg);return result;}
+async function cached(key,ttl,load){const prior=cache.get(key);if(prior&&Date.now()-prior.time<ttl)return prior.value;if(pending.has(key))return pending.get(key);const task=load().then(value=>{cache.set(key,{time:Date.now(),value});return value;}).finally(()=>pending.delete(key));pending.set(key,task);return task;}
+async function binanceRows(symbol,tf){const code=symbolCode(symbol);if(!['1m','5m','15m','30m','1h','4h','1d','1w','1M'].includes(tf))throw new Error('Timeframe Binance tidak didukung.');return cached(`bars:${code}:${tf}`,5000,async()=>parseRows(await json('klines',{symbol:code,interval:tf,limit:tf==='1M'?240:300})));}
+async function binanceQuote(symbol){const code=symbolCode(symbol);return cached(`quote:${code}`,1000,async()=>{const raw=await json('ticker/bookTicker',{symbol:code}),bid=Number(raw.bidPrice),ask=Number(raw.askPrice);if(raw.symbol!==code||!Number.isFinite(bid)||!Number.isFinite(ask)||bid<=0||ask<bid)throw new Error('Quote Binance tidak valid.');return {bid,ask,last:bid,timestamp:Date.now()};});}
+module.exports={binanceRows,binanceQuote,parseRows,symbolCode};

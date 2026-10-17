@@ -1,0 +1,3 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const {parseRows,symbolCode}=require('./binance_data');
+test('Binance pairs remain exact, no XAU relabeling',()=>{assert.equal(symbolCode('BTC/USDC'),'BTCUSDC');assert.equal(symbolCode('PAXG/USDT'),'PAXGUSDT');assert.throws(()=>symbolCode('XAUUSD'));});
+test('public Binance OHLC parser rejects malformed data',()=>{assert.deepEqual(parseRows([[1,'100','110','90','105','10'],[2,'105','120','100','115','20']]),[[1,100,110,90,105,10],[2,105,120,100,115,20]]);assert.throws(()=>parseRows({code:-1}));assert.throws(()=>parseRows([[1,100,90,95,100,0],[2,100,110,90,100,0]]));});

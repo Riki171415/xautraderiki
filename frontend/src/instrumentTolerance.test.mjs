@@ -1,0 +1,2 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {instrumentTolerance} from './instrumentTolerance.mjs';
+test('BTC uses explicit price-unit tolerance, independent of XAU',()=>{for(const s of ['BTCUSD','BTCUSDc','BTC/USDC']){assert.equal(instrumentTolerance(s).defaultValue,25);assert.ok(instrumentTolerance(s).values.includes(100));}assert.equal(instrumentTolerance('XAUUSD').defaultValue,0);assert.equal(instrumentTolerance('PAXG/USDT').defaultValue,0);});

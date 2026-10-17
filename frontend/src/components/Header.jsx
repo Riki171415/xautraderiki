@@ -171,7 +171,7 @@ export default function Header({
       <div className="header-inner flex items-center justify-between gap-3 flex-wrap">
 
         {/* ── Brand Section ── */}
-        <div className="flex items-center gap-3">
+        <div className="header-brand flex items-center gap-3">
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 via-cop-surface to-slate-900 border border-cop-gold/40 shadow-glow-gold-sm">
             <BarChart2 className="w-5 h-5 text-cop-gold" />
             <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-cop-bg animate-pulse" />
@@ -276,7 +276,7 @@ export default function Header({
         {/* ── Controls & Selectors ── */}
         <div className="header-controls flex items-center gap-2 flex-wrap">
 
-          <button type="button" className="chart-toggle" onClick={onOpenSources} title="Buka pengaturan sumber data">{broker==='TWELVE'?'Twelve Data':broker==='BINANCE'?'Binance':'Exness MT5'} · Sumber</button>
+          <label className="header-source-picker">Pasar<select aria-label="Pilih pasar Exness Binance Twelve" value={broker} onChange={e=>onBrokerChange?.(e.target.value)}><option value="EXNESS">Exness MT5</option><option value="BINANCE">Binance Spot</option><option value="TWELVE">Twelve Data</option></select></label><button type="button" className="chart-toggle" onClick={onOpenSources} title="Buka pengaturan sumber data">{broker==='TWELVE'?'Twelve Data':broker==='BINANCE'?'Binance':'Exness MT5'} · Sumber</button>
 
           {/* MT5 Direct Bridge Pill */}
           <button
@@ -317,7 +317,7 @@ export default function Header({
           </div>
 
           {/* Ergonomic Timeframe Segmented Control (Intraday & Macro) */}
-          <div className="flex items-center gap-1 bg-cop-card/90 border border-cop-border rounded-xl p-1 shadow-sm">
+          <div className="header-timeframes flex items-center gap-1 bg-cop-card/90 border border-cop-border rounded-xl p-1 shadow-sm">
             {/* Intraday Group */}
             <div className="flex items-center gap-0.5 pr-1 border-r border-cop-border/60">
               {INTRADAY_TF.map((tf) => (

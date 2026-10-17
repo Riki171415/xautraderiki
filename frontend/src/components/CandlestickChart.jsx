@@ -1,3 +1,4 @@
+import {useH4Plan} from '../hooks/useH4Plan';
 import { useEffect, useMemo, useState } from 'react';
 import { API_BASE } from '../config';
 import {twelveCandles} from '../twelvePublic';
@@ -7,13 +8,14 @@ import { applyBid, chartCandles, findFractals } from '../chartLogic.mjs';
 const COLORS = { up:'#54c9a0', down:'#e8949c', open:'#f5c66c', pivot:'#a1a9bd', resistance:'#ce9d76', support:'#8daadc' };
 const timeLabel = (ts) => new Date(ts).toLocaleString('id-ID', {timeZone:'Asia/Jakarta',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
 
-export default function CandlestickChart({data, liveTick, symbol, timeframe, broker}) {
+export default function CandlestickChart({data, liveTick, symbol, timeframe, broker,tolerance=0}) {
   const [snapshot,setSnapshot] = useState({rows:[],key:''});
   const [error,setError] = useState(null);
   const [received,setReceived] = useState(null);
   const [visible,setVisible] = useState(40);
   const [hover,setHover] = useState(null);
   const [layers,setLayers] = useState({rs:true,plan:true,fractal:true});
+  const anchored=useH4Plan(data,liveTick,tolerance);
   const key = `${broker}|${symbol}|${timeframe}`;
   useEffect(()=>{
     let disposed=false, timer, controller;
@@ -61,7 +63,7 @@ export default function CandlestickChart({data, liveTick, symbol, timeframe, bro
   if(layers.rs && coherent && data.rsMatrix) {
     for(const name of ['r2','r1','pivot','s1','s2']) levels.push({name:name.toUpperCase(),value:data.rsMatrix[name],color:name.startsWith('r')?COLORS.resistance:name.startsWith('s')?COLORS.support:COLORS.pivot});
   }
-  const plan=coherent ? data?.busur : null;
+  const plan=coherent ? anchored.plan : null;
   if(layers.plan && plan && ['BUY LIMIT','SELL LIMIT'].includes(plan.action)) {
     levels.push({name:plan.action,value:plan.entryPrice,color:'#8bc5f4',priority:2});
     levels.push({name:'SL',value:plan.stopLoss,color:'#e8949c'});

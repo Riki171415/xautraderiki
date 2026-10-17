@@ -3,7 +3,7 @@ import TimeframeTerminal from './TimeframeTerminal';
 import {matrixPlan,planBadges} from '../matrixPlan.mjs';
 import {projectMatrix,activeSessionAt} from '../liveMatrix.mjs';
 /**
- * Leak4RegTable — Multi-Timeframe Matrix Terminal
+ * Leak4RegTable — Terminal Analisis
  * COP TAH Analytics Dashboard — Institutional Multi-Timeframe Analysis Matrix
  *
  * Implements modern-web-guidance responsive sticky table patterns:
@@ -15,7 +15,7 @@ import {projectMatrix,activeSessionAt} from '../liveMatrix.mjs';
 import React from 'react';
 import { ArrowUp, ArrowDown, Activity, Globe, Clock, Shield, Info } from 'lucide-react';
 
-function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimeframes, tolerance=0, onTolerance }) {
+function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimeframes, tolerance=0, onTolerance,dailyTarget='AUTO',onDailyTarget,terminalSection,onTerminalSection,onTerminalSelect,onOpenAnalysis }) {
   const [now,setNow]=React.useState(Date.now);
   React.useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
   const liveMatrix=useLiveMatrix(data,liveTick,now);
@@ -69,20 +69,20 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
         <div className="flex items-center gap-2.5">
           <span className="text-cop-gold font-bold text-sm">{data.symbol || 'XAUUSD'}</span>
           <span className="px-2 py-0.5 rounded-full bg-cop-card text-slate-300 border border-cop-border font-semibold">
-            Multi-Timeframe Matrix Terminal
+            Terminal Analisis
           </span>
           <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-600/40 font-bold text-[10px]">
             {data.marketDataStatus==='STALE_QUOTE'?'Harga terakhir':'Data tersinkron'}
           </span>
         </div>
         <div className="flex items-center gap-3 text-slate-400 text-[11px]">
-          <span>Server: <strong className="text-white">{data.broker?.name || 'Exness'} ({data.broker?.server || 'MT5Real36'})</strong></span>
+          <span>Server: <strong className="text-white">{data.broker?.name || 'Menunggu sumber'} ({data.broker?.server || 'sumber publik'})</strong></span>
           <span className="text-slate-600">·</span>
           <span>Spread: <strong className="text-cop-cyan">{spreadPoints} pts</strong></span>
         </div>
       </div>
 
-      {!rsOnly&&<TimeframeTerminal data={data} rows={tableRows} columns={allRsColumns} price={activePrice} decimals={decimals} tolerance={tolerance} now={now} focusedTf={focusedTf} onTolerance={onTolerance}/>}
+      {!rsOnly&&<TimeframeTerminal data={data} rows={tableRows} columns={allRsColumns} price={activePrice} decimals={decimals} tolerance={tolerance} now={now} focusedTf={focusedTf} onTolerance={onTolerance} dailyTarget={dailyTarget} onDailyTarget={onDailyTarget} terminalSection={terminalSection} onTerminalSection={onTerminalSection} onTerminalSelect={onTerminalSelect} onOpenAnalysis={onOpenAnalysis}/>}
       {/* ──────────────────────────────────────────────────────────────────────────
           BOTTOM SECTION: 2-COLUMN (TABLE 2: R&S MATRIX + PANEL 3: SESSION & INFO)
          ────────────────────────────────────────────────────────────────────────── */}
