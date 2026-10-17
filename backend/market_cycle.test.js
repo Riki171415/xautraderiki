@@ -99,3 +99,17 @@ test('status badge hours agree with aggregation at every session boundary',()=>{
  }
  assert.equal(getTradingSession(anchor+22*H).activeSessions.length,0);
 });
+
+test('strong requires strictly stepped extrema, not merely staying inside Asia',()=>{
+ const b=fixture('strongBear');for(let i=14;i<22;i++)b.hourly[i][2]=109.5;assert.equal(analyzeMarketSessions(b).marketType,'MIXED');
+ const u=fixture('strongBull');for(let i=14;i<22;i++)u.hourly[i][3]=90.5;assert.equal(analyzeMarketSessions(u).marketType,'MIXED');
+ const equal=fixture('strongBear');for(let i=8;i<14;i++)equal.hourly[i][2]=110;assert.notEqual(analyzeMarketSessions(equal).marketType,'STRONG');
+});
+
+test('normal bearish cannot accept equal USA and Europe highs',()=>{const c=fixture('normalBear');for(let i=14;i<22;i++)c.hourly[i][2]=120;assert.equal(analyzeMarketSessions(c).marketType,'MIXED');});
+test('normal same-H1 extrema do not prove event ordering',()=>{const r=analyzeMarketSessions(fixture('normalBear'));assert.equal(r.normalStory.status,'ORDER_UNVERIFIED');assert.equal(r.verification,'ORDER_UNVERIFIED');});
+test('normal bearish verifies low-high in Asia Europe and high-low in USA',()=>{
+ const c=fixture('normalBear');for(let i=0;i<22;i++){const group=i<8?0:i<14?1:2;const high=group===0?(i===3?110:109):group===1?(i===11?120:119):(i===15?119:118);const low=group===0?(i===1?90:91):group===1?(i===9?80:81):(i===19?70:71);c.hourly[i]=[anchor+i*H,100,high,low,100,1];}
+ const r=analyzeMarketSessions(c);assert.equal(r.marketType,'NORMAL');assert.equal(r.normalStory.status,'VERIFIED');
+ c.hourly[0][2]=111;assert.equal(analyzeMarketSessions(c).marketType,'MIXED');
+});

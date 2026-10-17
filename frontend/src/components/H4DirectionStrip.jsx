@@ -1,3 +1,4 @@
+import H4SessionOutlook from './H4SessionOutlook';
 import H4PlanMarkers from './H4PlanMarkers';
 import {useLiveMatrix} from '../hooks/useLiveMatrix';
 import {h4MicroMatches,levelName} from '../h4LevelMatches.mjs';
@@ -8,7 +9,7 @@ export default function H4DirectionStrip({data,liveTick,tolerance=0,now=Date.now
  const price=Number(tick?.bid??matrix?.currentPrice),decimals=data?.decimals??3;
  const result=h4MicroMatches(matrix?.rsColumns,price,{tolerance,decimals,now});
  const stale=data?.marketDataStatus==='STALE_QUOTE'||!data?.timestamp||now-data.timestamp>45000;
- return <section className="h4-direction-strip" aria-label="Penanda arah TF kecil ke H4"><header><strong>◈ PENANDA H4</strong><span>{data?.symbol||'Menunggu instrumen'} · selisih ≤ {tolerance}</span><small>{stale?'Harga/snapshot belum segar · indikasi ditahan':'Indikasi gerak · bukan sinyal entry'}</small><button className="chart-toggle" aria-expanded={expanded} onClick={()=>onExpanded?.(!expanded)}>{expanded?'Tutup penanda':'Lihat penanda H4'}</button></header>{expanded&&<><div className="h4-strip-items">{frames.map(([tf,label])=>{
+ return <section className="h4-direction-strip" aria-label="Penanda arah TF kecil ke H4"><H4SessionOutlook columns={matrix?.rsColumns} now={now} data={data}/><header><strong>◈ PENANDA H4</strong><span>{data?.symbol||'Menunggu instrumen'} · selisih ≤ {tolerance}</span><small>{stale?'Harga/snapshot belum segar · indikasi ditahan':'Indikasi gerak · bukan sinyal entry'}</small><button className="chart-toggle" aria-expanded={expanded} onClick={()=>onExpanded?.(!expanded)}>{expanded?'Tutup penanda':'Lihat penanda H4'}</button></header>{expanded&&<><div className="h4-strip-items">{frames.map(([tf,label])=>{
  const options=result.groups.flatMap(g=>g.matches.filter(m=>m.timeframe===tf).map(m=>({g,m}))).sort((a,b)=>(a.m.toward==='MENUJU'?0:a.m.toward==='DI AREA'?1:2)-(b.m.toward==='MENUJU'?0:b.m.toward==='DI AREA'?1:2)||a.g.distance-b.g.distance||a.m.delta-b.m.delta);
  const choice=options[0],g=choice?.g,m=choice?.m;
  const state=stale?'DATA LAMA':!result.available?'TUNGGU H4':!m?'BELUM COCOK':m.toward;

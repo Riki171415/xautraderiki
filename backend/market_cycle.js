@@ -46,22 +46,46 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
     evidence.push(`Low Eropa ${europe.low} ${lowBreak?'<':'≥'} Low Asia ${asia.low}`);
     const bearish=bias==='BEARISH';
     if(highBreak && lowBreak) marketType='NORMAL';
-    else if(bearish && !highBreak && lowBreak || !bearish && highBreak && !lowBreak) marketType='STRONG';
+    else if(bearish && europe.high<asia.high && europe.low<asia.low || !bearish && europe.high>asia.high && europe.low>asia.low) marketType='STRONG';
     else marketType='MIXED';
     if(usa.bars && ['NORMAL','STRONG'].includes(marketType)) {
-      const boundary=marketType==='STRONG'?asia:europe;
-      const violated=bearish?usa.high>boundary.high:usa.low<boundary.low;
+      const boundary=europe;
+      const violated=marketType==='STRONG'?(bearish?usa.high>=boundary.high:usa.low<=boundary.low):(bearish?usa.high>=boundary.high:usa.low<=boundary.low);
       const continuation=bearish?usa.low<europe.low:usa.high>europe.high;
+      evidence.push(`High USA ${usa.high} / High Eropa ${europe.high}; Low USA ${usa.low} / Low Eropa ${europe.low}.`);
       evidence.push(`USA ${continuation?'sudah':'belum'} melanjutkan ekstrem ${bearish?'Low':'High'} Eropa.`);
       if(violated || (usa.status==='completed' && !continuation)) marketType='MIXED';
     }
     const complete=[asia,europe,usa].every(s=>s.status==='completed' && s.coverage);
     verification=complete?'OBSERVED':'PROVISIONAL';
     description=marketType==='STRONG'
-      ? `Sesi Eropa menembus sisi ${bearish?'Low':'High'} Asia sambil menahan sisi sebaliknya. ${complete?'Pola sesi telah teramati.':'Masih indikasi; sesi yang berjalan dapat mengubah klasifikasi.'}`
+      ? `High dan Low Eropa ${bearish?'lebih rendah':'lebih tinggi'} dari Asia; USA harus melanjutkan High dan Low ${bearish?'lebih rendah':'lebih tinggi'} dari Eropa. ${complete?'Pola sesi telah teramati.':'Masih indikasi; sesi yang berjalan dapat mengubah klasifikasi.'}`
       :marketType==='NORMAL'
       ? `Rentang Eropa melewati High dan Low Asia. ${complete?'Pola sesi telah teramati.':'Belum final sampai sesi USA selesai.'}`
       :'Pergerakan antar-sesi belum sesuai pola NORMAL/STRONG. Tidak dipaksakan ke salah satu pola.';
+  }
+  const normalStory={direction:bias==='BEARISH'?'BEARISH':bias==='BULLISH'?'BULLISH':'UNAVAILABLE',status:'WAITING',checks:[]};
+  if(marketType==='NORMAL') {
+    const bearish=bias==='BEARISH';
+    const ordering=(session,first,second)=>{
+      if(!session.coverage||session.status!=='completed')return 'PENDING';
+      const a=session[first+'Time'],b=session[second+'Time'];
+      if(!Number.isFinite(a)||!Number.isFinite(b)||a===b)return 'UNVERIFIED';
+      return a<b?'PASS':'FAIL';
+    };
+    normalStory.checks=[
+      {id:'asia-order',text:`ASIA: ${bearish?'Low → High':'High → Low'}`,status:ordering(asia,bearish?'low':'high',bearish?'high':'low')},
+      {id:'europe-order',text:`EROPA: ${bearish?'Low → High':'High → Low'}`,status:ordering(europe,bearish?'low':'high',bearish?'high':'low')},
+      {id:'usa-order',text:`USA: ${bearish?'High → Low':'Low → High'}`,status:ordering(usa,bearish?'high':'low',bearish?'low':'high')}
+    ];
+    const failed=normalStory.checks.some(c=>c.status==='FAIL');
+    const all=normalStory.checks.every(c=>c.status==='PASS');
+    const complete=[asia,europe,usa].every(x=>x.coverage&&x.status==='completed');
+    normalStory.status=failed?'MISMATCH':!complete?'FORMING':all?'VERIFIED':'ORDER_UNVERIFIED';
+    evidence.push(...normalStory.checks.map(c=>`${c.text}: ${c.status}`));
+    if(failed){marketType='MIXED';verification='MISMATCH';description='Ekstrem sesi menyerupai NORMAL, tetapi urutan High/Low tidak sesuai cerita COP TAH.';}
+    else if(complete&&!all){verification='ORDER_UNVERIFIED';description='Ekstrem sesi sesuai kandidat NORMAL; urutan High/Low belum terbukti karena berada dalam candle H1 yang sama. Tidak diberi konfirmasi penuh.';}
+    else if(all){description=`NORMAL ${bias}: urutan ekstrem tiga sesi telah teramati. ${bearish?'High Eropa tertinggi dan Low USA terendah':'Low Eropa terendah dan High USA tertinggi'} dalam tiga sesi. Pencapaian sasaran mingguan dinilai terpisah.`;}
   }
   const previousUsa=summarize(hourly,anchor-10*HOUR,anchor-2*HOUR,now);
   const referenceWindows={ASIA:{name:'EROPA',from:-16,to:-10,hours:'14:00–20:00 WIB'},EROPA:{name:'USA',from:-10,to:-2,hours:'20:00–04:00 WIB'},USA:{name:'ASIA',from:0,to:8,hours:'06:00–14:00 WIB'}};
@@ -87,7 +111,7 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
     label:`${verification==='PROVISIONAL'?'INDIKASI ':''}${marketType} · ${bias}`,
     activeSession:active?.name || 'TRANSISI',currentStep:activeStep?.step ?? null,
     activeStepTitle:activeStep?.title || 'Menunggu data sesi',activeStepDesc:description,
-    totalSteps:12,steps,sessions,evidence,description,source,hshReference,
+    totalSteps:12,steps,sessions,evidence,description,source,hshReference,normalStory,
     previousUsa:{...previousUsa,name:'USA sebelumnya',hours:'20:00–04:00 WIB',hshOpen:previousUsa.coverage && previousUsa.status==='completed'?previousUsa.open:null},
     tradingDay:new Date(anchor+7*HOUR).toISOString().slice(0,10),
     wibTime:`${String(local.getUTCHours()).padStart(2,'0')}:${String(local.getUTCMinutes()).padStart(2,'0')} WIB`,

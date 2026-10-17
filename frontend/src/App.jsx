@@ -1,3 +1,5 @@
+import StrongSignalPopup from './components/StrongSignalPopup';
+import {strongSignalKey} from './strongSignalAlerts.mjs';
 import {useAnalysisNotifications} from './hooks/useAnalysisNotifications';
 import {instrumentTolerance} from './instrumentTolerance.mjs';
 import SourceHSHBar from './components/SourceHSHBar';
@@ -82,6 +84,7 @@ export default function App() {
   // Default to Cockpit Eksekusi Live (Pilar 1) or Saran Entry (Pilar 2)
   const [viewMode, setViewMode] = useState('dashboard');
   const [notification, setNotification] = useState(null);
+  const [signalPopup,setSignalPopup]=useState(null);
   const [noticeHistory,setNoticeHistory]=useState([]),[noticesOpen,setNoticesOpen]=useState(false),[menuOpen,setMenuOpen]=useState(false);
   const toastTimer=useRef(null);
   useEffect(()=>{const close=e=>{if(e.key==='Escape'){setNoticesOpen(false);setMenuOpen(false);}};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close);},[]);
@@ -126,7 +129,7 @@ export default function App() {
     clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setNotification(null),7000);
   }, []);
 
-  useAnalysisNotifications({data,liveTick,now:clock,tolerance:h4Tolerance,target:dailyTarget,settings:alertSettings,onNotify:showNotification});
+  const liveSignals=useAnalysisNotifications({data,liveTick,now:clock,tolerance:h4Tolerance,target:dailyTarget,settings:alertSettings,onNotify:showNotification,onStrongSignal:setSignalPopup});
 
   const handleRefresh = useCallback(async () => {
     const result = await refetch();
@@ -202,6 +205,7 @@ export default function App() {
         onOpenSources={()=>navigate('sources')}
       />
 
+      {signalPopup?.scope===`${broker}|${symbol}`&&<StrongSignalPopup signal={liveSignals.find(s=>strongSignalKey(s,data,h4Tolerance)===signalPopup.eventKey)||{...signalPopup,strong:false,checks:signalPopup.checks.map(c=>({...c,pass:false}))}} symbol={symbol} source={broker} decimals={data?.decimals??3} onClose={()=>setSignalPopup(null)}/>}
       {/* ── Notification Toast ── */}
       {notification && (
         <div
@@ -327,7 +331,7 @@ export default function App() {
             ════════════════════════════════════════════════════════════════════════ */}
         {(viewMode === 'analysis'&&analysisTab==='global') && (
           <div className="space-y-4">
-            <GlobalStoryline data={data} liveTick={liveTick} />
+            <GlobalStoryline data={data} liveTick={liveTick} now={clock} tolerance={h4Tolerance} />
           </div>
         )}
 

@@ -1,4 +1,5 @@
-export function habitWarnings(columns,cycle,price,{target='AUTO',now=Date.now()}={}) {
+import {timeframeTask,taskNarrative} from './timeframeTask.mjs';
+export function habitWarnings(columns,cycle,price,{target='AUTO',now=Date.now(),stale=false}={}) {
  const day=columns?.find(c=>c.timeframe==='1d'),h4=columns?.find(c=>c.timeframe==='4h'),market=columns?.find(c=>c.timeframe==='market');
  const valid=c=>c&&(!Number.isFinite(c.periodEnd)||c.periodStart<=now&&now<c.periodEnd);
  const notes=[];
@@ -8,14 +9,10 @@ export function habitWarnings(columns,cycle,price,{target='AUTO',now=Date.now()}
   const keys=cycle?.activeSession==='ASIA'?[1]:cycle?.activeSession==='EROPA'?[2]:cycle?.activeSession==='USA'?[1,2,3,4]:[];
   if(keys.length)notes.push({id:'habit',text:`Kebiasaan bersyarat ${cycle.activeSession}: ${r?keys.map(i=>`R${i} Daily ${day['res'+i]}`).join(', '):''}${r&&s?' / ':''}${s?keys.map(i=>`S${i} Daily ${day['sup'+i]}`).join(', '):''}. Anomali bukan kepastian sasaran; pantau dua arah.`});
  }
- if(!valid(day)||!valid(h4))return {notes,daily:null};
- const trend=Number(day.openN)>Number(day.openB)?'UP':Number(day.openN)<Number(day.openB)?'DOWN':'NEUTRAL';
- const key=target==='AUTO'?(trend==='UP'?'res1':trend==='DOWN'?'sup1':null):target;
- if(!key)return {notes,daily:null};
- const value=Number(day[key]),low=Number(day.lowN),high=Number(day.highN),open=Number(day.openN);
- if(![value,low,high,open,price].every(Number.isFinite))return {notes,daily:null};
- const touched=low<=value&&value<=high;
- const route=touched?'Sasaran Daily sudah masuk rentang periode. Pantau reaksi menuju Open Daily dan skenario lanjut tembus.':'Sasaran Daily belum tersentuh; pantau pertemuan level H4 dan kelanjutan tugas Daily.';
- if(touched)notes.push({id:`daily:${day.periodStart}:${key}`,text:`${route} HSH Daily ${day.openN}. Sentuhan sasaran bukan bukti TP transaksi; pembalikan belum terkonfirmasi.`});
- return {notes,daily:{key,value,touched,open,route,trend,periodStart:day.periodStart}};
+ const model=timeframeTask(day,{now,stale,additionalTarget:target});
+ if(!model.active||!model.target||model.target.value==null||!model.observable||!Number.isFinite(price))return {notes,daily:null,task:model};
+ const {key,value,touched}=model.target;
+ const route=taskNarrative(model,'Daily');
+ for(const [role,area] of [['busur',model.bow],['target',model.target],['tambahan',model.additional]])if(area?.touched)notes.push({id:`daily:${model.periodStart}:${role}:${area.key}`,text:`Level ${role} Daily ${area.key.toUpperCase()} ${area.value} tersentuh. ${route} Sentuhan level bukan bukti TP transaksi, akhir Busur, atau kepastian pembalikan.`});
+ return {notes,task:model,daily:{key,value,touched,open:model.open,route,trend:model.jika,periodStart:model.periodStart,bow:model.bow,additional:model.additional}};
 }

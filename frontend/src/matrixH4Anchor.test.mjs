@@ -25,3 +25,16 @@ test('macro ticket remains identical even when selected column has no matching p
  for(const key of ['action','entryPrice','tp1','tp2','tp3','stopLoss'])assert.equal(a[key],b[key]);
  assert.equal(b.matchedHere,false);assert.deepEqual(planBadges(b,'res1'),[]);
 });
+
+test('cell markers include every matching micro and macro timeframe without fabricating matches',async()=>{
+ const {confluenceCell}=await import('./h4ConfluencePlan.mjs');
+ const micro=['1m','5m','15m','30m','1h'],macro=['market','1d','1w','1M','3M','6M','1Y'];
+ const group={key:'sup1',value:90,role:'BUY LIMIT',count:7,matches:macro.map(timeframe=>({timeframe,level:'res1'})),microMatches:micro.map(timeframe=>({timeframe,level:'pivot'}))};
+ const plan={action:'BUY LIMIT',areas:[group]};
+ for(const timeframe of [...micro,...macro,'4h']){
+  const key=timeframe==='4h'?'sup1':micro.includes(timeframe)?'pivot':'res1';
+  const markers=confluenceCell(plan,{timeframe,[key]:90},key);
+  assert.equal(markers.length,1,timeframe);assert.equal(markers[0].observerOnly,micro.includes(timeframe));
+  assert.equal(confluenceCell(plan,{timeframe,sup4:20},'sup4').length,0);
+ }
+});

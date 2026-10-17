@@ -1,5 +1,7 @@
 # COP TAH Analytics Dashboard
 
+**Sebelum memperbaiki aplikasi, baca [Peta aplikasi & panduan perbaikan](PANDUAN_APLIKASI.md).** Dokumen ini memetakan implementasi dan aturan terbaru; beberapa bagian README berikut merupakan dokumentasi awal.
+
 > **XAUUSD / PAXG Trading Analytics** — Binance | Node.js + React + Vite + Tailwind CSS
 
 A production-ready full-stack trading analytics dashboard implementing a proprietary methodology based on **3 Core Theories**, **5 Main Trading Laws**, and **Multi-Timeframe Fractal Storytelling**.
@@ -160,3 +162,7 @@ Example: \$10,000 modal → **0.40 lot**
 ---
 
 *⚡ Trade with discipline. Follow the Laws.*
+
+### Panduan pemeliharaan terkini
+
+Baca [PANDUAN_APLIKASI.md](PANDUAN_APLIKASI.md) sebelum perubahan. Panduan memuat menu, pemilik logika, aturan COP TAH, alur TF besar–kecil, rambu dan panel rincian, langkah menjalankan aplikasi, serta batas verifikasi. Perubahan alur cerita dan UI terbaru belum diuji/build ulang atas permintaan pengguna; push tidak berarti deployment terverifikasi.

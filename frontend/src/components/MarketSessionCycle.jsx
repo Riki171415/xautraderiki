@@ -22,7 +22,7 @@ export default function MarketSessionCycle({cycle,decimals=3}) {
     <div className="p-4 rounded-xl border border-slate-700 text-xs text-slate-300 leading-relaxed">
       <strong>Dasar klasifikasi</strong>
       {cycle?.evidence?.length ? cycle.evidence.map((line,i)=><p key={i} className="mt-1">{line}</p>):<p className="mt-1">Belum ada perbandingan sesi yang cukup untuk menentukan pola.</p>}
-      <p className="mt-2 text-slate-400">NORMAL: rentang Eropa melewati kedua sisi Asia, lalu USA melanjutkan arah tanpa melampaui ekstrem lawannya. STRONG: Eropa dan USA melanjutkan satu arah sambil mempertahankan ekstrem sisi sebaliknya. Jika kondisi berbeda, tampil MIXED. Selama sesi belum selesai, klasifikasi masih sementara.</p>
+      <p className="mt-2 text-slate-400">NORMAL bearish: Asia Low → High; Eropa Low lebih rendah lalu High lebih tinggi; USA High lebih rendah dari Eropa lalu Low lebih rendah. Bullish memakai kebalikannya. Urutan harus terbukti; satu candle H1 berarti belum terverifikasi. STRONG: Eropa dan USA melanjutkan satu arah sambil mempertahankan ekstrem sisi sebaliknya. Jika kondisi berbeda, tampil MIXED. Selama sesi belum selesai, klasifikasi masih sementara.</p>
       <p className="mt-2 text-slate-400">High/Low berasal dari data aktual; urutan High dahulu atau Low dahulu dalam satu candle H1 tidak dapat dipastikan. Nomor langkah adalah pengelompokan pengamatan, bukan urutan kejadian yang dipaksakan jam.</p>
     </div>
   </div>;

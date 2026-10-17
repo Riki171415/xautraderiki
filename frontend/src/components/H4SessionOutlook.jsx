@@ -1,0 +1,8 @@
+import {h4SessionOutlook} from '../h4SessionOutlook.mjs';
+export default function H4SessionOutlook({columns=[],now=Date.now(),data}) {
+ const stale=data?.marketDataStatus==='STALE_QUOTE'||!Number.isFinite(data?.timestamp)||now-data.timestamp>45000;
+ const model=h4SessionOutlook(columns,{now,stale});
+ const fmt=n=>n!=null?Number(n).toFixed(data?.decimals??3):'—';
+ const arrow=d=>d==='UP'?'↑ UP':d==='DOWN'?'↓ DOWN':'MENUNGGU';
+ return <section className={`h4-session-outlook outlook-${model.direction.toLowerCase()}`} aria-label="Indikasi sesi H4 dan fase Weekly"><header><strong>H4 → {model.session} → WEEKLY</strong><b>{stale?'HARGA LAMA':`Indikasi sesi ${arrow(model.direction)}`}</b><span>Weekly {arrow(model.weeklyJika)} · {model.weeklyPhase==='BOW_DIRECTION'?'MEMBENTUK BUSUR':model.weeklyPhase==='TARGET_DIRECTION'?'SEARAH TARGET':'FASE BELUM DITENTUKAN'}</span></header><details><summary>Dasar arah & perkembangan</summary><p>JIKA H4: Open N {fmt(model.open)} dibanding Open B {fmt(model.before)}. MOVE H4 {arrow(model.move)} berdasarkan Close {fmt(model.close)} terhadap Open N. {model.development==='ALIGNED'?'Gerak aktual mendukung arah JIKA H4.':model.development==='OPPOSED'?'Gerak aktual berlawanan JIKA H4; indikasi arah belum didukung perkembangannya.':'Perkembangan belum berarah atau data belum aktif.'}</p><p>Weekly: Open N {fmt(model.weeklyOpen)} / Open B {fmt(model.weeklyBefore)}. Searah JIKA Weekly = arah Target; berlawanan = arah Busur. Ini indikasi dari H4 aktif, bukan kepastian arah sesi mendatang, akhir Busur, atau sinyal entry. Evaluasi ulang saat H4 dan sesi berganti.</p></details></section>;
+}

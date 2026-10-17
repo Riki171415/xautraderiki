@@ -14,10 +14,10 @@ export function h4ConfluencePlan(columns,price,{tolerance=0,decimals=3,now=Date.
  const targets=comparison.groups.filter(g=>g.key!=='openN'&&(buy?g.value>entry.value+epsilon:g.value<entry.value-epsilon)).sort((a,b)=>buy?a.value-b.value:b.value-a.value).filter((g,i,all)=>!i||Math.abs(g.value-all[i-1].value)>epsilon).slice(0,3);
  if(!targets.length)return wait('Entry H4 bertemu level besar, tetapi sasaran ekuivalen pada arah rencana belum tersedia.');
  if(!(Number.isFinite(base.stopLoss)&&(buy?base.stopLoss<entry.value:base.stopLoss>entry.value)))return wait('Urutan SL dan entry H4 belum valid.');
- const areas=[{...entry,role:base.action},...targets.map((g,i)=>({...g,role:`TP${i+1}`}))];
+ const areas=[{...entry,role:base.action},...targets.map((g,i)=>({...g,role:`TP${i+1}`}))].map(g=>({...g,microMatches:micro.groups.find(m=>m.key===g.key)?.matches||[]}));
  return {action:base.action,status:'PLAN_AVAILABLE',attentionAreas,reason:'Entry dan sasaran berasal dari level H4 yang bertemu Market/Daily/Week/Month/Kuartal/Semester/Year. TP berurutan menurut harga dari entry, bukan menurut nomor R/S.',entryPrice:entry.value,stopLoss:base.stopLoss,stopKey:buy?'sup2':'res2',areas,comparison};
 }
 export function confluenceCell(plan,column,key){
  const areas=plan.action==='WAIT'?(plan.attentionAreas||[]):plan.areas;
- return areas.filter(g=>column.timeframe==='4h'?g.key===key:g.matches.some(m=>m.timeframe===column.timeframe&&m.level===key)).map(g=>({role:g.role,anchor:g.value,anchorKey:g.key,count:g.count,delta:Math.abs(Number(column[key])-g.value)}));
+ return areas.filter(g=>column.timeframe==='4h'?g.key===key:[...(g.matches||[]),...(g.microMatches||[])].some(m=>m.timeframe===column.timeframe&&m.level===key)).map(g=>({role:g.role,observerOnly:['1m','5m','15m','30m','1h'].includes(column.timeframe),anchor:g.value,anchorKey:g.key,count:g.count,delta:Math.abs(Number(column[key])-g.value)}));
 }
