@@ -305,3 +305,80 @@ Rincian alur cerita memakai StoryNodeDetails bersama: dasar arah dalam kotak nil
 ## 12. Ringkasan pengiriman 18 Oktober 2026
 
 Rangkaian pembaruan ini mencakup tugas COP TAH dan pola sesi, konfirmasi TF kecil, RVS, konflik arah, panel matriks kanan serta Peta Global/rincian terstruktur. Dokumentasi telah diselaraskan dengan penamaan dan navigasi terakhir. Permintaan pengguna mengizinkan commit dan push ke origin/main; deployment dan hasil uji akhir tidak diklaim. Untuk identitas commit gunakan git log -1, untuk sinkronisasi gunakan git status -sb.
+
+### Koreksi peran level terhadap harga berjalan
+
+DailyLevelStrength memisahkan contextSupport/contextResistance (kriteria Pivot Month + Low/High B Daily) dari role terhadap price eksplisit sumber aktif. Di bawah harga = SUPPORT, di atas = RESISTANCE, selisih maksimal setengah digit tampilan = AT; data lama/tidak aktif/harga hilang = UNVERIFIED. Label SUP KUAT/RES KUAT hanya jika konteks dan peran saat ini sesuai; konteks support kuat yang berada di atas harga ditulis CALON RES, bukan SUP KUAT. Nama Pivot/R/S dan angka asli tidak berubah. Panel RVS memakai harga acuan yang sama dan tabel peran/konteks agar perbedaannya jelas. Tidak mengubah syarat strongSignals atau order H4. Belum diuji/build sesuai permintaan pengguna; perubahan setelah commit e7a9db9 belum dipush.
+
+### Estimasi jangkauan Daily dari range H4
+
+`dailyRangeEstimate.mjs` memakai contoh pengguna: range N H4 = High N − Low N, proyeksi per sisi = range H4 × 6, batas atas/bawah = Open Daily ± proyeksi. Contoh 100 × 6 = 600; Before Daily 1000 menjadi pembanding 60%, bukan batas pemotong. Model memerlukan Daily/H4 aktif dalam hari broker yang sama dan harga segar. H4 N belum final; enam candle hanya asumsi range serupa, bukan penjumlahan gerak aktual atau sisa kapasitas hari. Total lebar dua batas = dua kali proyeksi per sisi. Tidak menyebutnya probabilitas/backtest atau mengganti TP transaksi.
+
+DailyRangeEstimate tampil di Tugas Daily, panel Trading Plan matriks, dan Peta Global. Daftar harga H4/Daily yang berada dalam batas ditampilkan sebagai kandidat pantauan per sisi Open, bukan target otomatis. Data tidak lengkap/lama tidak memunculkan proyeksi valid. Belum diuji/build dan belum dipush sesuai batas instruksi pengguna.
+
+### Audit konsistensi lintas menu
+
+Baca [AUDIT_KONSISTENSI.md](AUDIT_KONSISTENSI.md) untuk temuan, koreksi dan batas verifikasi. analysisState.mjs menyediakan quoteIsStale dan scopedTick. useLiveMatrix menjadi sumber currentPrice serta JIKA/MOVE/OP–PV/Perahu projected bersama. h4ConfluencePlan menerima opsi stale; pemakai utama meneruskannya. Sesi Market tidak lagi membuat tiket Daily sendiri atau SL tetap ±10/lot modal; lima tabnya memakai model bersama (pola sesi, tiket H4, cerita, tugas Daily, HSH). Kunci H4/Alur memakai cerita baru, bukan kompas lama; Rumah HSH memakai Open N kolom aktif. Terminal ringkasan/rincian memakai cerita dan estimasi Daily sama. Tidak diuji/build/browser sesuai instruksi pengguna; belum dipush.
+
+### Tambahan Exness EURUSDc dan GBPUSDc
+
+Pilihan header dan backend mendukung EURUSD/GBPUSD, dengan broker symbol EURUSDc/GBPUSDc (fallback exact suffix m atau tanpa suffix jika akun menyediakannya). Bridge Python menyiarkan kedua pasangan terpisah dari XAU/BTC; simbol tidak tersedia tetap kosong dan tidak diganti instrumen lain. Kegagalan API forex tidak fallback ke Twelve emas. Toleransi forex memakai angka 0 sampai 0.001 dalam satuan harga; presisi mengikuti digits MT5. Restart backend dan supervisor bridge diperlukan untuk memuat daftar simbol baru. Tidak menjalankan aplikasi/tes/build sesuai instruksi pengguna.
+
+Batas penting: rumus COP TAH bersama masih memakai koreksi harga tetap .08 untuk H4 dan .01 untuk timeframe lain; penskalaan koreksi khusus forex belum diberikan/dikonfirmasi. Jangan menyatakan level forex sudah tervalidasi hanya karena data simbol tersedia; anomali urutan tetap dipertahankan dan order tidak valid harus WAIT.
+
+## Hasil pengujian terbaru — 18 Oktober 2026
+
+Pengguna kemudian secara eksplisit meminta pengujian, sehingga batas tidak menjalankan tes/build sebelumnya tidak lagi berlaku untuk verifikasi ini.
+
+- Seluruh suite: 204 tes lulus, 0 gagal (`node --test backend/*.test.js frontend/src/*.test.mjs`).
+- Build frontend Vite berhasil.
+- Sintaks backend server valid; bridge Python lolos parsing AST.
+- Pemeriksaan whitespace diff bersih (peringatan normalisasi LF/CRLF bukan kegagalan).
+- Koreksi selama pengujian: hapus deklarasi quoteDigits ganda pada penerimaan tick; fixture terminal kini menyertakan timestamp segar; fallback tanpa konteks H4 diuji WAIT; tes strongSignals memakai Vite SSR agar modul virtual mesin bersama dimuat dengan benar.
+- Penambahan tes: proyeksi 100×6=600, data estimasi tidak valid/lama, freshness dan scope tick forex, render cerita/rincian dari data lengkap, pemetaan simbol Exness exact suffix. Fungsi pemetaan Exness dipisahkan ke backend/exness_symbols.js dan dipakai server serta tes yang sama.
+- Pemeriksaan koneksi MT5 langsung tidak menghasilkan respons dan dihentikan. Ketersediaan EURUSDc/GBPUSDc di akun broker, stream aktual, dan angka rumus forex belum terverifikasi.
+- Tidak menjalankan transaksi, push, atau menyatakan deployment berhasil. Pengujian browser/interaksi responsif belum dilakukan pada tahap ini.
+
+### Tugas H4, H1, M30, M15 dan penanda progres
+
+TASK_FRAMES sekarang mencakup H4, H1, M30, M15 serta seluruh tugas Market–Year; pemilih panel Matriks memakai daftar bersama. Tugas mikro tetap observasi dan tidak membuat entry/SL/TP mandiri. timeframeTask.progress memisahkan zona harga saat ini dari bukti sentuhan: IN_BOW, BEYOND_BOW, IN_TARGET, BEYOND_TARGET, AT_HSH atau UNVERIFIED. JIKA UP: Open sampai S1 adalah zona Busur; JIKA DOWN: Open sampai R1 adalah zona Busur. Close N menentukan lokasi aktual; data lama/hilang, periode tidak aktif dan anomali tidak diberi klaim zona valid.
+
+TaskProgress menampilkan status JIKA, lokasi harga, acuan Busur serta Target. REACHED ditulis “Acuan terpenuhi · tersentuh”, bukan akhir Busur atau TP transaksi. Kedua acuan bisa berstatus tersentuh pada periode yang sama tanpa menyimpulkan urutan. Peta Global dan rinciannya memakai progress yang sama. Data periode baru tidak mewarisi sentuhan periode sebelumnya.
+
+Verifikasi terbaru: 212 tes lulus, 0 gagal; build frontend berhasil. Pemeriksaan browser dan feed BTC live belum dilakukan, sehingga contoh BTC pengguna tidak diklaim sebagai kondisi yang sudah diperiksa. Belum dipush.
+
+
+### Audit menu dan render ganda — keadaan terbaru
+
+Enam menu utama tetap berasal dari navigation.mjs. Sumber pengulangan adalah isi tab/panel, bukan tambahan menu utama. Kepemilikan isi lengkap sekarang:
+
+| Informasi | Tempat utama | Akses kontekstual |
+|---|---|---|
+| Alur TF besar–kecil lengkap | Analisis → Peta Global | Kunci H4/Sesi menyediakan tombol menuju Peta Global; Terminal menyediakan rincian compact |
+| Kecocokan/penanda H4 | Analisis → Kunci H4 → Pertemuan level | Ringkasan global tidak membuka kartu lengkap di setiap halaman; Matriks tetap mempunyai panel rincian konteks |
+| HSH semua timeframe | Kunci H4 → Rumah HSH | Header hanya HSH sesi aktif/pembanding; Sesi menyediakan tautan ke Kunci H4 |
+| Pola sesi dan kebiasaan | Sesi Market & Daily → Pola sesi / Kebiasaan Market | Satu tab aktif dirender; panel kebiasaan tidak lagi mengulang tiket dan bukti tugas Daily |
+| Tugas Daily | Sesi Market & Daily → Tugas Daily | Matriks → Tugas TF membuka komponen tugas yang sama untuk timeframe pilihan |
+| Tiket Entry/TP/SL | Terminal & Entry | Trading Plan Matriks adalah akses konteks; di tugas hanya muncul jika rincian rencana H4 dibuka |
+
+Sesi kini hanya tiga tab: Pola sesi, Kebiasaan Market, Tugas Daily; salinan tab Trading Plan/Global/HSH diganti tombol navigasi. Kunci H4 hanya Pertemuan level dan Rumah HSH; tab alur duplikat dihapus (nilai lama context kembali ke targets). TaskTradeAdvice menjadi tiket murni tanpa CoptahStory dan DirectionContext tertanam. TaskProgress serta rincian tugas tetap utuh. Data/rumus tidak dihapus atau diubah oleh konsolidasi ini.
+
+Verifikasi setelah konsolidasi: 212 tes lulus, 0 gagal, build frontend berhasil. Regresi memeriksa enam menu unik, navigasi alias lama, tiket tanpa cerita Global tertanam, tab Sesi tanpa tiket/alur duplikat, dan kebiasaan tanpa bukti Daily duplikat. Belum diuji visual browser dan belum dipush.
+
+### BTC: jadwal Weekly tujuh hari
+
+Khusus BTCUSD/BTCUSDc/BTCUSDm dan BTC/USDC, btcWeeklySchedule.mjs membagi candle W1 broker tujuh hari menjadi 84 jam pertama (3,5 hari waktu Busur) dan 84 jam berikutnya (3,5 hari waktu Target). Titik tengah dihitung dari periodStart W1, bukan Rabu/Kamis pada jam WIB yang ditebak. Tampilan menggunakan WIB tetapi batas sumber tetap epoch broker. Simbol lain tidak mendapat aturan ini. Candle hilang/tidak aktif atau rentang W1 bukan tujuh hari menghasilkan jadwal belum terverifikasi.
+
+Jadwal tampak pada Tugas Week, Plan Mingguan dan Peta Global; narasi cerita juga menyebut fase waktunya. taskHierarchy.weeklySchedule terpisah dari model.phase: harga dapat tetap di Busur meskipun waktu sudah masuk Target. Jadwal tidak otomatis menandai akhir Busur, sentuhan sasaran atau STRONG, dan tidak mengubah syarat entry. Pembagian sesi intrahari serta kalender Month tidak diubah oleh aturan ini.
+
+Pengguna menyetujui pembagian BTC 3,5+3,5 hari. Tes baru mencakup simbol/suffix, batas tepat 84 jam broker, weekend, data hilang/expired, tidak mengubah forex, dan waktu Target dengan harga masih Busur. Total terbaru 216 tes lulus, 0 gagal; build frontend sukses. Belum diuji browser dan belum dipush.
+
+### Audit ulang lintas menu + BTC
+
+Laporan AUDIT_KONSISTENSI.md diperbarui. Regresi render seluruh halaman/tab mencakup XAU/BTC/EURUSD/GBPUSD dan feed kosong. Diperbaiki Chart yang dapat membaca previous.open saat OHLC belum tersedia; syarat koherensi sekarang memerlukan candle N/B nyata bertimestamp valid. Guide memakai model aktual bersama serta aturan terbaru, bukan kompas snapshot/jadwal forex generik. Jadwal BTC tersedia di ringkasan H4 dan Guide, di samping Global/Tugas Week/Plan Mingguan. Fase waktu tetap terpisah dari fase harga. Label data lama OHLC/Terminal disamakan. Total tes tetap 216 (cakupan tes render diperluas), semuanya lulus; build berhasil. Belum diuji browser atau feed live, belum dipush.
+
+### Pengaturan Twelve Data di Vercel
+Menu pendukung Sumber Data menampilkan panduan Settings → Environment Variables dengan TWELVEDATA_API_KEY, cakupan Production/Preview dan redeploy. Tombol pada layar koneksi gagal mengarah ke menu yang sama. Periksa Twelve Data memanggil /api/twelve hanya atas klik pengguna dan memakai kuota. Kunci tidak dikirim dari form browser, tidak disimpan di localStorage atau repo. Lokal memakai backend/.env; konfigurasi Vercel terpisah. Belum diverifikasi visual pada perubahan ini.
+
+### Twelve Data: empat instrumen
+Twelve Data mendukung XAUUSD, BTCUSD, EURUSD, GBPUSD dengan simbol penyedia XAU/USD, BTC/USD, EUR/USD, GBP/USD. Header mempertahankan pilihan saat pindah Exness/Twelve; data selalu dibatasi sumber dan instrumen. /api/twelve menerima symbol; cache/pending memakai symbol+timeframe dan memvalidasi simbol respons. Chart, histori dan analisis memakai simbol yang sama. Quarter/Semester/Year dihitung dari OHLC bulanan nyata dengan aggregateMonths bersama; periode awal tidak lengkap dibuang. Desimal forex 5, BTC 2, emas 3. Timeframe gagal/kuota ditampilkan dalam status data belum lengkap; tidak diisi dari instrumen lain. Seluruh syarat strong/entry tetap memakai model bersama dan menunggu jika komponen wajib belum ada. Verifikasi langsung H1 BTC/EUR/GBP masing-masing menerima 300 candle; 219 tes lulus dan build berhasil. Belum diperiksa browser atau dipush. Kunci lokal tidak otomatis masuk Vercel.

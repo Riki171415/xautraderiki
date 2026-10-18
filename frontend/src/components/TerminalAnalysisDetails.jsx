@@ -1,3 +1,7 @@
+import BtcWeeklySchedule from './BtcWeeklySchedule';
+import DirectionContext from './DirectionContext';
+import DailyRangeEstimate from './DailyRangeEstimate';
+import CoptahStory from './CoptahStory';
 import H4MicroIndications from './H4MicroIndications';
 const num=v=>v!=null&&Number.isFinite(Number(v));
 export default function TerminalAnalysisDetails({model,data,columns,price,decimals,tolerance=0,now=Date.now(),weekly=false}) {
@@ -6,8 +10,10 @@ export default function TerminalAnalysisDetails({model,data,columns,price,decima
  const period=c=>c?.periodStart?new Date(c.periodStart).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',dateStyle:'medium',timeStyle:'short'}):'Belum tersedia';
  const section=(title,content,open=false)=><details className="tf-analysis-block" open={open}><summary>{title}</summary><div>{content}</div></details>;
  return <div className="tf-analysis-content">
+  {weekly&&<BtcWeeklySchedule columns={columns} data={data} now={now}/>}
   {weekly&&<div className="tf-week-intro"><h3>Plan Mingguan · W1</h3><p>Data mingguan, rumah HSH dan skenario dua arah. Entry aktif tetap memakai kecocokan H4 yang sama dengan Ringkasan.</p></div>}
   <div className="tf-detail-plan"><strong>{plan.observerOnly?'PENANDA H4':plan.action}</strong><span>{plan.reason}</span>{active&&<dl className="tf-order-values">{[['Entry',plan.entryPrice],...targets.map((t,i)=>['TP'+(i+1),t.value]),['SL',plan.stopLoss]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{fmt(v)}</dd></div>)}</dl>}</div>
+  <CoptahStory compact columns={columns} price={price} data={data} now={now} tolerance={tolerance} decimals={decimals}/>{column&&<DirectionContext columns={columns} timeframe={column.timeframe} now={now} stale={model.stale} tolerance={tolerance} decimals={decimals}/>}<DailyRangeEstimate columns={columns} data={data} now={now} decimals={decimals}/>
   {!row||!column?<p>Riwayat timeframe ini belum lengkap. Tidak memakai angka atau timeframe pengganti.</p>:<>
    {section('1 · JIKA, Perahu & arah Busur',<><p>Open N <b>{fmt(column.openN)}</b> {Number(column.openN)>Number(column.openB)?'>':Number(column.openN)<Number(column.openB)?'<':'='} Open B <b>{fmt(column.openB)}</b> → JIKA <b>{row.direct}</b>. Pola Perahu: <b>{row.pattern}</b>.</p><p>High N/B {fmt(column.highN)} / {fmt(column.highB)} · Low N/B {fmt(column.lowN)} / {fmt(column.lowB)}. Gerak <b>{row.move}</b> → alur <b>{row.track}</b>. Ini belum membuktikan akhir Busur atau entry.</p><p>N dimulai {period(column)} WIB. N/B memakai instrumen dan timeframe yang sama; untuk Market, sesi sejenis dibandingkan.</p></>,true)}
    {section('2 · Alur global & kecocokan H4',<><div className="tf-macro-chips">{['10Y','1Y','6M','3M','1M','1w','1d','market','4h'].map(tf=>{const c=columns.find(c=>c.timeframe===tf);return <span key={tf}>{tf} · {c?Number(c.openN)>Number(c.openB)?'UP':Number(c.openN)<Number(c.openB)?'DOWN':'NETRAL':'belum tersedia'}</span>;})}</div><p>H4 menjadi acuan level yang sama atau berdekatan dengan timeframe besar. Toleransi dan rencana sama dengan Ringkasan; TF kecil hanya penanda gerak.</p><p>{plan.reason}</p></>)}

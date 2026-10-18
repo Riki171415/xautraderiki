@@ -1,5 +1,5 @@
 import {h4LevelMatches,h4MicroMatches,levelName} from './h4LevelMatches.mjs';
-export const TASK_FRAMES=[['market','Market'],['1d','Daily'],['1w','Week'],['1M','Month'],['3M','Quarter'],['6M','Semester'],['1Y','Year']];
+export const TASK_FRAMES=[['4h','H4'],['1h','H1'],['30m','M30'],['15m','M15'],['market','Market'],['1d','Daily'],['1w','Week'],['1M','Month'],['3M','Quarter'],['6M','Semester'],['1Y','Year']];
 const numeric=v=>v!=null&&v!==''&&Number.isFinite(Number(v))?Number(v):null;
 export function timeframeTask(column,{now=Date.now(),stale=false,additionalTarget='AUTO'}={}) {
  const c=column,open=numeric(c?.openN),before=numeric(c?.openB),close=numeric(c?.closeN),low=numeric(c?.lowN),high=numeric(c?.highN);
@@ -25,7 +25,16 @@ export function timeframeTask(column,{now=Date.now(),stale=false,additionalTarge
  const distance=area=>area?.value!=null&&close!=null?Math.abs(area.value-close):null;
  for(const area of [bow,target,additional])if(area){area.distance=distance(area);area.rangeRatio=area.distance!=null&&reference!=null?area.distance/reference:null;area.rangeContext=area.rangeRatio==null?'UNAVAILABLE':area.rangeRatio<=1?'WITHIN_PREVIOUS_RANGE':'BEYOND_PREVIOUS_RANGE';}
  const status=!active?'INACTIVE':stale?'STALE':!directional?'WAIT_DIRECTION':bow?.value==null||target?.value==null?'INCOMPLETE':warnings.length?'ANOMALY':'OBSERVING';
- return {range,timeframe:c?.timeframe,jika,move,phase,open,before,close,low,high,active,observable,status,bow,target,additional,warnings,bowConfirmed:false,transactionVerified:false,periodStart:c?.periodStart,periodEnd:c?.periodEnd};
+ const model={range,timeframe:c?.timeframe,jika,move,phase,open,before,close,low,high,active,observable,status,bow,target,additional,warnings,bowConfirmed:false,transactionVerified:false,periodStart:c?.periodStart,periodEnd:c?.periodEnd};
+ return {...model,progress:taskProgress(model)};
+}
+export function taskProgress(model) {
+ const valid=model.active&&model.observable&&['UP','DOWN'].includes(model.jika)&&model.close!=null&&model.open!=null&&model.bow?.value!=null&&model.target?.value!=null&&!model.warnings.length;
+ const areaStatus=area=>!valid||area?.touched==null?'UNVERIFIED':area.touched?'REACHED':'PENDING';
+ let zone='UNVERIFIED';
+ if(valid){const up=model.jika==='UP',price=model.close,open=model.open,bow=model.bow.value,target=model.target.value;
+ zone=price===open?'AT_HSH':(up?price<open:price>open)?(up?price>=bow:price<=bow)?'IN_BOW':'BEYOND_BOW':(up?price<=target:price>=target)?'IN_TARGET':'BEYOND_TARGET';}
+ return {zone,bow:areaStatus(model.bow),target:areaStatus(model.target),completionVerified:false};
 }
 export function taskNarrative(model,label,decimals=3) {
  const fmt=n=>n==null?'belum tersedia':n.toFixed(decimals);

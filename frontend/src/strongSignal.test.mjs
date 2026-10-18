@@ -1,4 +1,10 @@
-import {test}from'node:test';import assert from'node:assert/strict';import{strongSignals}from'./strongSignal.mjs';import{taskHierarchy}from'./taskHierarchy.mjs';
+import {after} from 'node:test';
+import {createServer} from 'vite';
+import {fileURLToPath} from 'node:url';
+const server=await createServer({configFile:fileURLToPath(new URL('../vite.config.js',import.meta.url)),root:fileURLToPath(new URL('..',import.meta.url)),cacheDir:fileURLToPath(new URL('../node_modules/.vite-test-strongSignal',import.meta.url)),optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false},appType:'custom'});
+after(()=>server.close());
+const {strongSignals}=await server.ssrLoadModule('/src/strongSignal.mjs');
+import {test}from'node:test';import assert from'node:assert/strict';import{taskHierarchy}from'./taskHierarchy.mjs';
 const base={periodStart:0,periodEnd:1000,openN:92,openB:90,closeN:95,lowN:80,highN:110,lowB:50,highB:150,sup1:90,sup2:80,pivot:100,res1:110,res2:120};
 const columns=[{...base,timeframe:'4h',plan:{action:'BUY LIMIT',stopLoss:80}},{...base,timeframe:'market'},{...base,timeframe:'1d'},{...base,timeframe:'1m',openN:90,openB:80,res1:100}];
 const opts={now:100,cycle:{marketType:'STRONG',verification:'OBSERVED',bias:'BULLISH'}};

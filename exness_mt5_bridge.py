@@ -109,10 +109,15 @@ def main():
     print(f'[OK] Broker symbol: {target_symbol}, digits: {digits}')
 
     target_symbols=[target_symbol]
-    for extra in ['BTCUSDc','BTCUSDm','BTCUSD']:
-        if mt5.symbol_info(extra) is not None and mt5.symbol_select(extra,True):
+    for base in ['BTCUSD', 'EURUSD', 'GBPUSD']:
+        # Only exact broker suffix variants; never substitute another pair.
+        extra = next((name for name in [base+'c', base+'m', base]
+                      if mt5.symbol_info(name) is not None and mt5.symbol_select(name, True)), None)
+        if extra:
             target_symbols.append(extra)
-            break
+            print(f'[OK] Tambahan broker symbol: {extra}')
+        else:
+            print(f'[WARN] {base}c/{base}m/{base} tidak tersedia pada akun ini.')
     loaded_timeframes = set()
     while True:
         try:

@@ -1,3 +1,7 @@
+// Local server secrets stay in the ignored backend/.env; hosted environments
+// continue to use their configured environment variables.
+const localEnvPath = require('path').join(__dirname, '.env');
+if (require('fs').existsSync(localEnvPath)) process.loadEnvFile(localEnvPath);
 const {binanceRows,binanceQuote}=require('./binance_data');
 /**
  * COP TAH Analytics Dashboard — Backend Server
@@ -75,7 +79,7 @@ let mt5State = {
 };
 
 const mt5States={XAUUSD:mt5State};
-function exnessSymbolKey(symbol){if(/^BTCUSDc?$/i.test(symbol))return 'BTCUSD';if(/^XAUUSD[c,m]?$/i.test(symbol)||symbol==='XAU/USDT:USDT')return 'XAUUSD';return null;}
+const {exnessSymbolKey}=require('./exness_symbols');
 function exnessState(symbol){const key=exnessSymbolKey(symbol);if(!key)throw new Error('Simbol Exness tidak didukung.');return mt5States[key] || {connected:false,lastTickTime:0,timeframes:{},symbol:key};}
 function storeExnessState(state){const key=exnessSymbolKey(state.symbol);mt5States[key]=state;if(key==='XAUUSD')mt5State=state;}
 
@@ -88,6 +92,7 @@ function resolveBinanceMarket(symbol) {
     return { marketSymbol: 'XAU/USDT:USDT', displaySymbol: 'XAUUSD' };
   }
   if(s==='BTCUSDC'||s==='BTC/USDC')return {marketSymbol:'BTC/USDC',displaySymbol:'BTC/USDC'};
+  if(/^(EURUSD|GBPUSD)(?:C|M)?$/.test(s)){const key=exnessSymbolKey(s);return {marketSymbol:key,displaySymbol:key};}
   if(s==='BTCUSD'||s==='BTC/USD')return {marketSymbol:'BTCUSD',displaySymbol:'BTCUSD'};
   if (s.includes('XAUT')) {
     return { marketSymbol: 'XAUT/USDT', displaySymbol: 'XAUT/USDT' };
@@ -559,7 +564,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
   if (!broker) throw new Error('Broker tidak didukung. Pilih EXNESS atau BINANCE.');
     const decimals = broker.id==='EXNESS' ? (exnessState(symbol).digits ?? 3) : (broker.decimals ?? 2);
     const { marketSymbol, displaySymbol } = resolveBinanceMarket(symbol);
-    if (broker.id === 'EXNESS' && !['XAUUSD','BTCUSD'].includes(displaySymbol)) throw new Error('Exness: pilih XAUUSD atau BTCUSD.');
+    if (broker.id === 'EXNESS' && !['XAUUSD','BTCUSD','EURUSD','GBPUSD'].includes(displaySymbol)) throw new Error('Exness: pilih XAUUSD, BTCUSD, EURUSD atau GBPUSD.');
     const feedState=broker.id==='EXNESS'?exnessState(marketSymbol):null;
     if(feedState)Object.assign(broker,{decimals,spread:feedState.spread,spreadLabel:feedState.spreadLabel,server:feedState.server});
     const ohlcv = await fetchBrokerOHLCV(broker.id, marketSymbol, timeframe);
@@ -1001,6 +1006,8 @@ app.get('/api/symbols', (req, res) => {
     symbols: [
       { id: 'XAUUSD', name: 'XAU/USD (Exness)', market: 'XAUUSD' },
       {id:'BTCUSD',name:'BTC/USD (Exness)',market:'BTCUSD'},
+      {id:'EURUSD',name:'EUR/USD (Exness · EURUSDc)',market:'EURUSD'},
+      {id:'GBPUSD',name:'GBP/USD (Exness · GBPUSDc)',market:'GBPUSD'},
       { id: 'PAXG/USDT', name: 'PAXG/USDT (Paxos Gold)', market: 'PAXG/USDT' },
       {id:'BTC/USDC',name:'BTC/USDC (Bitcoin Spot)',market:'BTC/USDC'},
       { id: 'XAUT/USDT', name: 'XAUT/USDT (Tether Gold)', market: 'XAUT/USDT' },
@@ -1041,7 +1048,8 @@ app.post('/api/mt5/tick', async (req, res) => {
       tickTimestamp,
     } = req.body;
 
-    const livePrice = Number(price ?? ((Number(bid) + Number(ask)) / 2).toFixed(3));
+    const quoteDigits=Number.isInteger(Number(digits))&&Number(digits)>=0&&Number(digits)<=10?Number(digits):3;
+    const livePrice = Number(price ?? ((Number(bid) + Number(ask)) / 2).toFixed(quoteDigits));
     if (!Number.isFinite(livePrice) || livePrice <= 0 || (bid != null && (!Number.isFinite(Number(bid)) || Number(bid) <= 0)) || (ask != null && (!Number.isFinite(Number(ask)) || Number(ask) <= 0))) {
       return res.status(400).json({ success: false, error: 'Invalid MT5 quote' });
     }
@@ -1064,7 +1072,6 @@ app.post('/api/mt5/tick', async (req, res) => {
     const numBid = Number(bid || (livePrice - 0.06).toFixed(3));
     const numAsk = Number(ask || (livePrice + 0.06).toFixed(3));
     const numSpread = Number(spread || (numAsk - numBid).toFixed(3));
-    const quoteDigits=Number.isInteger(digits)&&digits>=0&&digits<=8?digits:3;
     const spreadPts = Math.round(numSpread*10**quoteDigits);
 
     const priceKey='EXNESS:'+exnessSymbolKey(symbol);

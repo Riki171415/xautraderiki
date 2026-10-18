@@ -1,3 +1,4 @@
+import {quoteIsStale} from '../analysisState.mjs';
 import {useState} from 'react';
 import {focusRows,MATRIX_GROUPS} from '../matrixFocus.mjs';
 import {matrixPlan,planBadges} from '../matrixPlan.mjs';
@@ -7,7 +8,7 @@ export default function MatrixFocus({data,matrix,focusedTf,onFull,tolerance=0}){
  const decimals=data.decimals??3,fmt=v=>Number.isFinite(Number(v))&&v!==null&&v!==undefined?Number(v).toFixed(decimals):'—';
  const items=focusRows(matrix.tableRows,matrix.rsColumns,group);
  const active=items.find(i=>i.row.timeframe===selected);
- const context={columns:matrix.rsColumns,price:Number(matrix.currentPrice),options:{decimals,tolerance}};
+ const context={columns:matrix.rsColumns,price:Number(matrix.currentPrice),options:{decimals,tolerance,now:Date.now(),stale:quoteIsStale(data)}};
  const hasPlan=p=>['BUY LIMIT','SELL LIMIT'].includes(p.action);
  const value=(p,key)=>hasPlan(p)?fmt(p[key]):'—';
  const status=row=>data.marketDataStatus==='STALE_QUOTE'?'Data harga terakhir':Date.now()-data.timestamp>45000?'Snapshot lama':row.timeframe==='market'?data.marketEntry?.reason||'Skenario sesi':row.track||'Menunggu data';

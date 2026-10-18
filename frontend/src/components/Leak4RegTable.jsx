@@ -1,3 +1,4 @@
+import {quoteIsStale} from '../analysisState.mjs';
 import {useLiveMatrix} from '../hooks/useLiveMatrix';
 import TimeframeTerminal from './TimeframeTerminal';
 import {matrixPlan,planBadges} from '../matrixPlan.mjs';
@@ -28,8 +29,8 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
 
   const rsColumns=displayTimeframes?allRsColumns.filter(c=>displayTimeframes.includes(c.timeframe)):allRsColumns;
   const matchingTick=liveTick&&liveTick.symbol===data.symbol&&liveTick.broker===data.broker?.id&&Number.isFinite(liveTick.bid)?liveTick:null;
-  const activePrice = matchingTick ? matchingTick.bid.toFixed(decimals) : currentPrice;
-  const badges=(col,key)=>planBadges(matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance}}),key).map(label=><span key={label} className={`matrix-plan-badge ${label==='SL'?'matrix-plan-sl':label.startsWith('TP')?'matrix-plan-tp':label.startsWith('BUY')?'matrix-plan-buy':'matrix-plan-sell'}`}>{label}</span>);
+  const activePrice = currentPrice;
+  const badges=(col,key)=>planBadges(matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance,stale:quoteIsStale(data,now)}}),key).map(label=><span key={label} className={`matrix-plan-badge ${label==='SL'?'matrix-plan-sl':label.startsWith('TP')?'matrix-plan-tp':label.startsWith('BUY')?'matrix-plan-buy':'matrix-plan-sell'}`}>{label}</span>);
   const hshReference=data.marketCycle?.hshReference;
   const hshActive=data.marketCycle?.sessions?.find(s=>s.name===activeSessionAt(now));
   const hshFmt=v=>Number.isFinite(v)?v.toFixed(decimals):'Menunggu riwayat sesi';
@@ -159,7 +160,7 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
                           </span>
                         )}
                       </div>
-                      <div className="mt-2 text-[10px] font-semibold text-slate-200" title={matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance}}).reason||'Rencana bersyarat; belum merupakan order.'}>{matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance}}).action}</div>
+                      <div className="mt-2 text-[10px] font-semibold text-slate-200" title={matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance,stale:quoteIsStale(data,now)}}).reason||'Rencana bersyarat; belum merupakan order.'}>{matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance,stale:quoteIsStale(data,now)}}).action}</div>
                       <div className="text-[8px] font-mono font-normal mt-0.5">
                         {touchedCount > 0 ? (
                           <span className="text-emerald-400 font-bold">{touchedCount}/9 Tersentuh</span>

@@ -1,4 +1,5 @@
 import StrongSignalPopup from './components/StrongSignalPopup';
+import TwelveSetup from './components/TwelveSetup';
 import {strongSignalKey} from './strongSignalAlerts.mjs';
 import {useAnalysisNotifications} from './hooks/useAnalysisNotifications';
 import {instrumentTolerance} from './instrumentTolerance.mjs';
@@ -22,7 +23,6 @@ import Header from './components/Header';
 import OHLPanel from './components/OHLPanel';
 import CandlestickChart from './components/CandlestickChart';
 import H4Workspace from './components/H4Workspace';
-import MarketHabitPanel from './components/MarketHabitPanel';
 import MarketCycleAnalysis from './components/MarketCycleAnalysis';
 import Leak4RegTable from './components/Leak4RegTable';
 import MatrixSlideshow from './components/MatrixSlideshow';
@@ -158,12 +158,12 @@ export default function App() {
 
   const handleBrokerChange = useCallback((newBroker) => {
     setBroker(newBroker);
-    if (newBroker === 'BINANCE' && ['XAUUSD','BTCUSD'].includes(symbol)) {
+    if (newBroker === 'BINANCE' && ['XAUUSD','BTCUSD','EURUSD','GBPUSD'].includes(symbol)) {
       setSymbol(symbol==='BTCUSD'?'BTC/USDC':'PAXG/USDT');
       showNotification('info',symbol==='BTCUSD'?'Binance memakai BTC/USDC Spot; Exness memakai BTC/USD.':'Binance memakai PAXG/USDT, instrumen berbeda dari XAUUSD.');
     }
-    if ((newBroker !== 'BINANCE' && (symbol.includes('PAXG') || symbol.includes('XAUT') || symbol==='BTC/USDC')) || (newBroker==='TWELVE'&&symbol==='BTCUSD')) {
-      const nextSymbol=newBroker==='EXNESS'&&symbol==='BTC/USDC'?'BTCUSD':'XAUUSD';
+    if ((newBroker !== 'BINANCE' && (symbol.includes('PAXG') || symbol.includes('XAUT') || symbol==='BTC/USDC'))) {
+      const nextSymbol=symbol==='BTC/USDC'?'BTCUSD':'XAUUSD';
       setSymbol(nextSymbol);
       showNotification('info',`Sumber ${newBroker} memakai ${nextSymbol}.`);
     }
@@ -240,11 +240,13 @@ export default function App() {
         <p className="mt-2 text-sm text-slate-400">Jika memakai Vercel, server analisis harus tersedia melalui HTTPS dan terhubung ke MT5 komputer atau VPS. MT5 di tablet tidak mengirim data langsung ke aplikasi ini. Versi online memakai Twelve Data: pasang TWELVEDATA_API_KEY pada server/Vercel. Angka analisis ditampilkan setelah sumber berhasil terhubung.</p>
         <div className="flex items-center gap-3 mt-4 flex-wrap">
           <button type="button" onClick={handleRefresh} className="chart-toggle">Coba hubungkan kembali</button>
+          <button type="button" onClick={()=>navigate('sources')} className="chart-toggle">Pengaturan API Twelve / Vercel</button>
           <button type="button" onClick={() => handleBrokerChange('BINANCE')} className="chart-toggle bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30">Gunakan Data Pasar Binance (PAXG/USDT)</button>
         </div>
       </section>}
 
-      {data?.externalFeed&&<div className="px-5 py-3 bg-sky-950 text-sky-200 text-sm">Twelve Data · XAU/USD · sumber terpisah dari Exness. Batas candle mengikuti penyedia; selisih ≤ $1 belum diverifikasi. Bid/Ask broker tidak tersedia.</div>}
+      {data?.sourceWarnings?.length>0&&<details className="mx-4 my-2 p-3 border border-amber-700 rounded-xl text-amber-200 text-sm"><summary>Data belum lengkap · {data.sourceWarnings.length} timeframe</summary><ul>{data.sourceWarnings.map(w=><li key={w}>{w}</li>)}</ul><p>Analisis memakai data yang tersedia. Sinyal yang membutuhkan timeframe kosong menunggu konfirmasi.</p></details>}
+      {data?.externalFeed&&<div className="px-5 py-3 bg-sky-950 text-sky-200 text-sm">Twelve Data · {symbol} · sumber terpisah dari Exness. Batas candle mengikuti penyedia; selisih ≤ $1 belum diverifikasi. Bid/Ask broker tidak tersedia.</div>}
       {data?.fallback && <div role="status" className="px-5 py-3 bg-amber-950/50 text-amber-200 text-sm border-b border-amber-800">Fallback Binance Spot · {data.symbol} · bukan XAUUSD Exness. Data langsung diperbarui setiap 30 detik; WebSocket server tidak diperlukan.</div>}
       <aside id="workspace-navigation" className="workflow-nav step-sidebar" aria-label="Navigasi workspace">
         <div className="sidebar-brand"><div className="sidebar-monogram">CT<span>•</span></div><div><strong>COP TAH</strong><small>GOLD ANALYTICS</small></div></div>
@@ -270,17 +272,18 @@ export default function App() {
       {/* ── 4. MAIN WORKSPACE CONTAINER ── */}
       <main className="workspace-main flex-1 p-4 lg:p-6 space-y-6">
         {viewMode!=='levels'&&<SourceHSHBar data={data} broker={broker} onBrokerChange={handleBrokerChange} now={clock}/>}
-        {viewMode!=='levels'&&<H4DirectionStrip data={data} liveTick={liveTick} tolerance={h4Tolerance} now={clock} expanded={markerExpanded} onExpanded={setMarkerExpanded}/>}
+        {viewMode!=='levels'&&<H4DirectionStrip data={data} liveTick={liveTick} tolerance={h4Tolerance} now={clock} expanded={false} onExpanded={()=>{setH4Tab('targets');navigate('h4');}}/>}
         {viewMode==='levels'&&<MatrixSlideshow markerExpanded={markerExpanded} onMarkerExpanded={setMarkerExpanded} onOpenAnalysis={()=>navigate('cycle')} broker={broker} onBrokerChange={handleBrokerChange} dailyTarget={dailyTarget} onDailyTarget={setDailyTarget} data={data} liveTick={liveTick} focusedTf={timeframe} onTolerance={setH4Tolerance} tolerance={h4Tolerance} onBack={()=>navigate('entries')}/>}
 
         {viewMode==='ohlc'&&<OHLCWorkspace data={data} liveTick={liveTick} now={clock} focusedTf={timeframe} onSelect={tf=>{setTerminalFocus(tf);navigate('entries');}}/>}
-        {viewMode === 'guide' && <AnalysisGuide data={data} />}
+        {viewMode === 'guide' && <AnalysisGuide data={data} liveTick={liveTick} now={clock} />}
         {viewMode==='analysis'&&analysisTab==='h4'&&<div className="flex justify-end"><button className="chart-toggle" onClick={()=>{setTerminalFocus('4h');openTable();}}>Lihat H4 di Tabel</button></div>}
 
-        {viewMode==='sources'&&<section className="cop-panel space-y-4"><h2 className="text-lg font-semibold">Sumber Data</h2><label className="block text-sm">Penyedia<select className="block p-3 mt-2 rounded-xl bg-slate-900 border border-slate-600" value={broker} onChange={e=>handleBrokerChange(e.target.value)}><option value="EXNESS">Exness · MT5 lokal</option><option value="TWELVE">Twelve Data · XAU/USD</option><option value="BINANCE">Binance Spot</option></select></label><p className="text-sm text-slate-400">{data?.dataSource||restError||'Menunggu koneksi.'}</p><p className="text-xs text-slate-400">Lokal memilih Exness; online memilih Twelve Data. Twelve memerlukan TWELVEDATA_API_KEY pada server. Data antarpenyedia tidak dicampur.</p><button className="chart-toggle" onClick={handleRefresh}>Periksa koneksi</button></section>}
+        {viewMode==='sources'&&<section className="cop-panel space-y-4"><h2 className="text-lg font-semibold">Sumber Data</h2><label className="block text-sm">Penyedia<select className="block p-3 mt-2 rounded-xl bg-slate-900 border border-slate-600" value={broker} onChange={e=>handleBrokerChange(e.target.value)}><option value="EXNESS">Exness · MT5 lokal</option><option value="TWELVE">Twelve Data · XAU / BTC / Forex</option><option value="BINANCE">Binance Spot</option></select></label><p className="text-sm text-slate-400">{data?.dataSource||restError||'Menunggu koneksi.'}</p><p className="text-xs text-slate-400">Lokal memilih Exness; online memilih Twelve Data. Twelve memerlukan TWELVEDATA_API_KEY pada server. Data antarpenyedia tidak dicampur.</p><button className="chart-toggle" onClick={handleRefresh}>Periksa koneksi</button></section>}
         {viewMode==='analysis'&&<nav className="analysis-tabs" aria-label="Bagian Analisis">{[['global','Peta Global'],['h4','Kunci H4'],['cycle','Sesi Market & Daily']].map(([id,label])=><button className={`chart-toggle ${analysisTab===id?'chart-toggle-active':''}`} key={id} aria-pressed={analysisTab===id} onClick={()=>setAnalysisTab(id)}>{label}</button>)}</nav>}
         {data && clock-data.timestamp>45000 && <p role="status" className="p-3 border border-amber-700 rounded-xl text-sm text-amber-200">Analisis belum diperbarui lebih dari 45 detik. Angka terakhir bukan kondisi terbaru; periksa bridge dan koneksi.</p>}
-        {viewMode==='analysis'&&analysisTab==='h4'&&<H4Workspace activeTab={h4Tab} onTab={setH4Tab} alertSettings={alertSettings} onAlertSettings={setAlertSettings} data={data} liveTick={liveTick} now={clock} timeframe={timeframe} onSelect={setTimeframe} onMarket={()=>navigate('cycle')} tolerance={h4Tolerance} onTolerance={setH4Tolerance}/>}
+        {viewMode==='analysis'&&analysisTab==='h4'&&<H4Workspace activeTab={h4Tab} onTab={setH4Tab} alertSettings={alertSettings} onAlertSettings={setAlertSettings} data={data} liveTick={liveTick} now={clock} timeframe={timeframe} onSelect={setTimeframe} onGlobal={()=>navigate('global')} onMarket={()=>navigate('cycle')} tolerance={h4Tolerance} onTolerance={setH4Tolerance}/>}
+        {viewMode==='sources'&&<TwelveSetup/>}
         {viewMode==='sources'&&<details className="data-notes"><summary>Informasi sumber data & perhitungan</summary><p className="text-[11px] text-slate-400 leading-relaxed mt-2">Basis harga: {broker === 'TWELVE' ? 'OHLC penyedia · ' : 'Bid · '} {broker === 'TWELVE' ? 'Twelve Data' : broker === 'BINANCE' ? 'Binance Spot' : 'Exness MT5'}. Perbedaan waktu snapshot dapat menyebabkan selisih sesaat antar-panel. Angka estimasi uang/lot pada plan masih memakai rumus metode, belum divalidasi terhadap ukuran kontrak dan mata uang akun; jangan dianggap sebagai profit/rugi akun. Level tersentuh bukan bukti transaksi atau profit.</p></details>}
         {(viewMode === 'candles') && (
           <CandlestickChart tolerance={h4Tolerance} data={data} liveTick={liveTick} symbol={symbol} timeframe={timeframe} broker={broker} />
@@ -317,7 +320,7 @@ export default function App() {
             ════════════════════════════════════════════════════════════════════════ */}
         {(viewMode === 'analysis'&&analysisTab==='cycle') && (
           <div className="space-y-4">
-            <MarketHabitPanel alertSettings={alertSettings} onAlertSettings={setAlertSettings} target={dailyTarget} onTarget={setDailyTarget} data={data} liveTick={liveTick} now={clock}/><MarketCycleAnalysis data={data} liveTick={liveTick} />
+            <MarketCycleAnalysis data={data} liveTick={liveTick} now={clock} tolerance={h4Tolerance} dailyTarget={dailyTarget} onDailyTarget={setDailyTarget} alertSettings={alertSettings} onAlertSettings={setAlertSettings} onGlobal={()=>navigate('global')} onEntry={()=>navigate('entries')} onHsh={()=>{setH4Tab('hsh');navigate('h4');}} />
           </div>
         )}
 

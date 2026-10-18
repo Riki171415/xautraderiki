@@ -166,3 +166,5 @@ Example: \$10,000 modal → **0.40 lot**
 ### Panduan pemeliharaan terkini
 
 Baca [PANDUAN_APLIKASI.md](PANDUAN_APLIKASI.md) sebelum perubahan. Panduan memuat menu, pemilik logika, aturan COP TAH, alur TF besar–kecil, rambu dan panel rincian, langkah menjalankan aplikasi, serta batas verifikasi. Perubahan alur cerita dan UI terbaru belum diuji/build ulang atas permintaan pengguna; push tidak berarti deployment terverifikasi.
+
+Laporan audit lintas menu: [AUDIT_KONSISTENSI.md](AUDIT_KONSISTENSI.md). Memuat sumber logika bersama, perbedaan yang dikoreksi dan batas verifikasi saat ini.

@@ -1,11 +1,12 @@
+import {quoteIsStale} from '../analysisState.mjs';
 import {habitWarnings} from '../habitWarnings.mjs';
 import {dailyTaskForColumn} from '../dailyH4Task.mjs';
 import {levelName} from '../h4LevelMatches.mjs';
 export default function TableMarketWarnings({data,columns=[],price,now=Date.now(),target='AUTO',onTarget,onOpenAnalysis}) {
  const decimals=data?.decimals??3,fmt=v=>Number.isFinite(v)?v.toFixed(decimals):'—';
- const result=habitWarnings(columns,data?.marketCycle,Number(price),{target,now,stale:data?.marketDataStatus==='STALE_QUOTE'});
+ const result=habitWarnings(columns,data?.marketCycle,Number(price),{target,now,stale:quoteIsStale(data,now)});
  const task=dailyTaskForColumn(data?.dailyH4Context,columns.find(c=>c.timeframe==='1d'),result.daily?.value,now);
- const stale=data?.marketDataStatus==='STALE_QUOTE'||!data?.timestamp||now-data.timestamp>45000;
+ const stale=quoteIsStale(data,now);
  const daily=result.daily,history=data?.marketHabits;
  const historyReady=history?.available&&history.current&&history.previous;
  const habit=result.notes.filter(n=>n.id==='habit');

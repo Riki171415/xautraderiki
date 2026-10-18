@@ -54,7 +54,7 @@ export default function CandlestickChart({data, liveTick, symbol, timeframe, bro
   const previous=candles[candles.length-2];
   const matching=data?.broker?.id===broker && data?.timeframe===timeframe && data?.symbol===symbol;
   // Overlay levels must refer to the same N/B pair as the chart snapshot.
-  const coherent=matching && data?.ohlcv_N?.timestamp===last?.timestamp && data?.ohlcv_B?.timestamp===previous?.timestamp;
+  const coherent=!!(matching && last && previous && Number.isFinite(last.timestamp) && Number.isFinite(previous.timestamp) && data?.ohlcv_N?.timestamp===last.timestamp && data?.ohlcv_B?.timestamp===previous.timestamp);
   const decimals=data?.decimals ?? 3;
   const fmt=(n)=>Number.isFinite(n)?n.toFixed(decimals):'—';
   const open=last?.open;
@@ -90,7 +90,7 @@ export default function CandlestickChart({data, liveTick, symbol, timeframe, bro
   const labels=combined.map(l=>({...l,pos:y(l.value)})).sort((a,b)=>a.pos-b.pos);
   for(let i=1;i<labels.length;i++) labels[i].pos=Math.max(labels[i].pos,labels[i-1].pos+19);
   for(let i=labels.length-1;i>=0;i--) labels[i].pos=Math.min(labels[i].pos,H-bottom-5-(labels.length-1-i)*19);
-  const rows=matching ? (data?.leak4RegMatrix?.tableRows || []) : [];
+  const rows=matching ? (anchored.matrix?.tableRows || []) : [];
   const relation=coherent ? data?.multiTfDecision : null;
 
   return <section className="cop-panel candle-workspace" aria-label="Grafik candlestick dan konsep COP TAH">

@@ -2,8 +2,8 @@ import {h4ConfluencePlan} from './h4ConfluencePlan.mjs';
 import {h4MicroMatches,h4LevelMatches} from './h4LevelMatches.mjs';
 export function twoWayH4(columns=[],price,{now=Date.now(),tolerance=0,decimals=3,stale=false}={}) {
  const h=columns.find(c=>c.timeframe==='4h');
- const micro=h4MicroMatches(columns,Number(price),{now,tolerance,decimals});
- const comparison=h4LevelMatches(columns,Number(price),{now,tolerance,decimals});
+ const micro=h4MicroMatches(columns,Number(price),{now,tolerance,decimals,stale});
+ const comparison=h4LevelMatches(columns,Number(price),{now,tolerance,decimals,stale});
  const number=v=>v!=null&&v!==''&&Number.isFinite(Number(v))?Number(v):null;
  return ['BUY','SELL'].map(side=>{
   const buy=side==='BUY',key=buy?'sup1':'res1',stopKey=buy?'sup2':'res2';
@@ -29,7 +29,7 @@ export function twoWayH4(columns=[],price,{now=Date.now(),tolerance=0,decimals=3
   if(!(buy?stop<entry&&entry<pivot:stop>entry&&entry>pivot))return wait('Urutan level H4 anomali; entry–Pivot–SL belum valid.');
   if(!(buy?entry<price:entry>price))return wait('Harga sudah melewati sisi limit; tunggu susunan harga yang valid, jangan mengejar.');
   const projected=columns.map(c=>c===h?{...c,plan:{action:`${side} LIMIT`,stopLoss:stop}}:c);
-  const plan=h4ConfluencePlan(projected,Number(price),{now,tolerance,decimals});
+  const plan=h4ConfluencePlan(projected,Number(price),{now,tolerance,decimals,stale});
   if(!plan.comparison.groups.some(g=>g.key===key))return wait('Area entry H4 belum cocok dengan timeframe besar pada toleransi aktif.');
   if(plan.action==='WAIT')return wait('Belum ada target searah yang cocok dengan timeframe besar.');
   const group=micro.groups.find(g=>g.key===key);

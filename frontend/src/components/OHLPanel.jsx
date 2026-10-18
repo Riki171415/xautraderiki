@@ -1,3 +1,4 @@
+import {scopedTick,quoteIsStale} from '../analysisState.mjs';
 /**
  * OHLPanel — OHL Comparison Metrics (Current N vs Previous B)
  * Includes Intraday Candle Range Visualizer & Hukum JIKA Trend Status
@@ -77,7 +78,7 @@ export default function OHLPanel({ data, liveTick }) {
   const decimals = data.decimals ?? (broker?.id !== 'BINANCE' ? 3 : 2);
   const { current: N, previous: B, diff } = ohlComparison;
 
-  const isMatchingTick = Boolean(liveTick?.price && (!liveTick.broker || !broker || liveTick.broker === broker.id));
+  const isMatchingTick = !!scopedTick(data,liveTick)&&!quoteIsStale(data);
   const activeClose = isMatchingTick ? liveTick.bid : N?.close;
   const activeDiffClose = isMatchingTick && B?.close ? liveTick.bid - B.close : diff?.close;
 

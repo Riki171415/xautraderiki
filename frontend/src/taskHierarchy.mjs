@@ -1,6 +1,7 @@
+import {btcWeeklySchedule} from './btcWeeklySchedule.mjs';
 import {timeframeTask} from './timeframeTask.mjs';
 export const TASK_REFERENCES={'1d':['4h','market'],'1w':['1d'],'1M':['1w'],'3M':['1M'],'6M':['3M'],'1Y':['3M']};
-export function taskHierarchy(columns,timeframe,{now=Date.now(),stale=false}={}) {
+export function taskHierarchy(columns,timeframe,{now=Date.now(),stale=false,symbol}={}) {
  const parent=columns.find(c=>c.timeframe===timeframe),model=timeframeTask(parent,{now,stale});
  let monthWeek=null;
  if(timeframe==='1M'){
@@ -15,5 +16,5 @@ export function taskHierarchy(columns,timeframe,{now=Date.now(),stale=false}={})
   const phase=!model.active||stale||!child.active||!['UP','DOWN'].includes(model.jika)||!['UP','DOWN'].includes(child.move)?'UNDETERMINED':child.move===model.jika?'TARGET_DIRECTION':'BOW_DIRECTION';
   return {timeframe:tf,jika:child.jika,move:child.move,phase,active:child.active,range:child.range};
  });
- return {timeframe,model,references,monthWeek,available:references.length>0&&references.every(c=>c.active&&c.phase!=='UNDETERMINED')};
+ return {timeframe,model,references,monthWeek,weeklySchedule:timeframe==='1w'?btcWeeklySchedule(parent,{symbol,now}):null,available:references.length>0&&references.every(c=>c.active&&c.phase!=='UNDETERMINED')};
 }

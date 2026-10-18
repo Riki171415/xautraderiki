@@ -5,10 +5,10 @@ import {h4ConfluencePlan} from './h4ConfluencePlan.mjs';
 import {timeframeTask} from './timeframeTask.mjs';
 export function strongSignals(columns=[],price,{now=Date.now(),stale=false,tolerance=0,decimals=3,cycle}={}) {
  const active=c=>c&&(!Number.isFinite(c.periodEnd)||c.periodStart<=now&&now<c.periodEnd);
- const plan=h4ConfluencePlan(columns,Number(price),{now,tolerance,decimals});
+ const plan=h4ConfluencePlan(columns,Number(price),{now,tolerance,decimals,stale});
  const h4=columns.find(c=>c.timeframe==='4h');
  const macro=plan.comparison.groups;
- const microMatches=h4MicroMatches(columns,Number(price),{now,tolerance,decimals});
+ const microMatches=h4MicroMatches(columns,Number(price),{now,tolerance,decimals,stale});
  return ['BUY','SELL'].flatMap(side=>['1m','5m','15m','30m','1h'].map(tf=>{
  const direction=side==='BUY'?'UP':'DOWN';const micro=timeframeTask(columns.find(c=>c.timeframe===tf),{now,stale});
  const destination=macro.filter(g=>g.key!=='openN'&&(side==='BUY'?g.value>price:g.value<price)).sort((a,b)=>a.distance-b.distance)[0];

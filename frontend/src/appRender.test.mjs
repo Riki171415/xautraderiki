@@ -9,12 +9,24 @@ test('every app page renders when feed is unavailable, including navigation icon
  const oldLocation=globalThis.location;
  globalThis.location={protocol:'http:',host:'127.0.0.1:5173',hostname:'127.0.0.1'};
  const mock={name:'render-regression',enforce:'pre',transform(code,id){
-  if(id.includes('/hooks/useAnalysis.js'))return "export function useAnalysis(){return {data:null,loading:false,error:'Feed unavailable',refetch:async()=>null};} export function resetTouches(){} export function updateModal(){}";
+  if(id.includes('/hooks/useAnalysis.js'))return "export function useAnalysis(){return {data:globalThis.renderRegressionData||null,loading:false,error:'Feed unavailable',refetch:async()=>null};} export function resetTouches(){} export function updateModal(){}";
   if(id.includes('/hooks/useWebSocket.js'))return "export function useWebSocket(){return {data:null,liveTick:null,status:'disconnected',sendMessage:()=>{}}}";
-  if(id.endsWith('/src/App.jsx'))return code.replace("useState('dashboard')","useState(globalThis.renderRegressionPage || 'dashboard')");
+  if(id.endsWith('/src/App.jsx'))return code.replace("useState('dashboard')","useState(globalThis.renderRegressionPage || 'dashboard')").replace("useState('global')","useState(globalThis.renderRegressionAnalysis || 'global')").replace("useState('summary')","useState(globalThis.renderRegressionSection || 'summary')").replace("useState('XAUUSD')","useState(globalThis.renderRegressionSymbol || 'XAUUSD')");
  }};
  const server=await createServer({configFile:fileURLToPath(new URL('../vite.config.js',import.meta.url)),root:fileURLToPath(new URL('..',import.meta.url)),plugins:[mock],cacheDir:fileURLToPath(new URL('../node_modules/.vite-test-appRender',import.meta.url)),optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false},appType:'custom'});
  try{const {default:App}=await server.ssrLoadModule('/src/App.jsx');for(const page of PAGES){globalThis.renderRegressionPage=page.id;const html=renderToString(React.createElement(App));assert.ok(html.replaceAll('&amp;','&').includes(page.title),page.id);}
+ const sampleNow=Date.now(),D=86400000;
+ const sampleBase={periodStart:sampleNow-6*D,periodEnd:sampleNow+D,openN:100,openB:90,closeN:95,highN:115,lowN:85,highB:120,lowB:80,pivot:100,sup1:90,sup2:80,sup3:70,sup4:60,res1:110,res2:120,res3:130,res4:140,plan:{action:'BUY LIMIT',stopLoss:80},touchedLevels:{sup1:true,pivot:true}};
+ const sampleFrames=['1m','5m','15m','30m','1h','4h','market','1d','1w','1M','3M','6M','1Y'];
+ const sampleColumns=sampleFrames.map(timeframe=>({...sampleBase,timeframe,label:timeframe}));
+ for(const symbol of ['XAUUSD','BTCUSD','EURUSD','GBPUSD']){
+  globalThis.renderRegressionSymbol=symbol;
+  globalThis.renderRegressionData={timestamp:sampleNow,symbol,timeframe:'1h',broker:{id:'EXNESS',name:'Exness'},decimals:symbol.endsWith('USD')&&['EURUSD','GBPUSD'].includes(symbol)?5:2,leak4RegMatrix:{currentPrice:95,rsColumns:sampleColumns,tableRows:sampleColumns.map(c=>({...c,direct:'UP',pattern:'NRL UP',move:'DOWN',track:'BUSUR DOWN'}))}};
+  for(const page of PAGES){globalThis.renderRegressionPage=page.id;assert.ok(renderToString(React.createElement(App)).includes('COP TAH'),symbol+' '+page.id);}
+  globalThis.renderRegressionPage='analysis';for(const tab of ['global','h4','cycle']){globalThis.renderRegressionAnalysis=tab;assert.ok(renderToString(React.createElement(App)).length>0,symbol+' '+tab);}
+  globalThis.renderRegressionPage='entries';for(const section of ['summary','analysis','weekly']){globalThis.renderRegressionSection=section;assert.ok(renderToString(React.createElement(App)).length>0,symbol+' '+section);}
+ }
+ delete globalThis.renderRegressionData;delete globalThis.renderRegressionSymbol;delete globalThis.renderRegressionAnalysis;delete globalThis.renderRegressionSection;
  const {default:Slide}=await server.ssrLoadModule('/src/components/MatrixSlideshow.jsx');
  const {default:Tasks}=await server.ssrLoadModule('/src/components/TimeframeTasks.jsx');
  const now=Date.now(),base={periodStart:now-1000,periodEnd:now+86400000,openN:100,openB:90,closeN:95,lowN:85,highN:115,sup1:90,sup2:80,sup3:70,sup4:60,pivot:100,res1:110,res2:120,res3:130,res4:140,plan:{action:'BUY LIMIT',stopLoss:80}};
@@ -56,5 +68,5 @@ test('every app page renders when feed is unavailable, including navigation icon
  assert.ok(!slide.includes('h4-strip-items'),'matrix has no duplicated indication cards below table');
  assert.ok(body.includes('S4'),'last support row remains rendered');
  }
- finally{await server.close();globalThis.location=oldLocation;delete globalThis.renderRegressionPage;}
+ finally{await server.close();globalThis.location=oldLocation;delete globalThis.renderRegressionPage;delete globalThis.renderRegressionData;delete globalThis.renderRegressionSymbol;delete globalThis.renderRegressionAnalysis;delete globalThis.renderRegressionSection;}
 });

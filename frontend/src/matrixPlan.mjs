@@ -13,12 +13,7 @@ export function matrixPlan(column,marketEntry,context={}){
   const targets=anchored.areas.filter(a=>a.role.startsWith('TP'));
   return {...anchored,matchedHere,cellRoles,tp1:targets[0]?.value,tp2:targets[1]?.value,tp3:targets[2]?.value};
  }
- if(column.timeframe==='market'){
-  if(!marketEntry?.plan||marketEntry.current?.timestamp!==column.periodStart)return {action:'WAIT',reason:'Menunggu skenario Market pada periode yang sama.'};
-  if(marketEntry.status!=='SCENARIO')return {...marketEntry.plan,action:'WAIT',reason:marketEntry.reason};
-  return marketEntry.plan;
- }
- return column.plan||{action:'WAIT',reason:'Rencana timeframe belum tersedia; muat ulang data.'};
+ return {action:'WAIT',reason:'Konteks H4 bersama belum tersedia; menunggu data lengkap.'};
 }
 export function planBadges(plan,key){
  if(!['BUY LIMIT','SELL LIMIT'].includes(plan?.action))return plan?.cellRoles?.[key]||[];

@@ -23,7 +23,7 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
     let directMode=false;
     const timeout = setTimeout(() => controller.abort('timeout'), 12000);
     try {
-      if(broker==='TWELVE'){clearTimeout(timeout);const result=await browserBinanceAnalysis('XAUUSD',timeframe,controller.signal,'TWELVE');if(!controller.signal.aborted){setReceivedScope(scope);setData(result);setLastUpdated(new Date());setError(null);return result;}}
+      if(broker==='TWELVE'){clearTimeout(timeout);const result=await browserBinanceAnalysis(symbol,timeframe,controller.signal,'TWELVE');if(!controller.signal.aborted){setReceivedScope(scope);setData(result);setLastUpdated(new Date());setError(null);return result;}}
       const params = new URLSearchParams({ symbol, timeframe, broker });
       const res = await fetch(`${API_BASE}/analysis?${params}`, { signal: controller.signal });
       if (res.status === 404) throw new Error('Server analisis belum tersedia pada alamat aplikasi ini (API 404).');
@@ -39,7 +39,7 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
       }
     } catch (err) {
       clearTimeout(timeout);
-      if(broker==='TWELVE'||(broker==='EXNESS'&&symbol==='BTCUSD')){if(!controller.signal.aborted)setError(err.message);return;}
+      if(broker==='TWELVE'||(broker==='EXNESS'&&['BTCUSD','EURUSD','GBPUSD'].includes(symbol))){if(!controller.signal.aborted)setError(err.message);return;}
       if (!controller.signal.aborted || controller.signal.reason === 'timeout') {
         const fallbackController=new AbortController();
         requestRef.current=fallbackController;directMode=true;

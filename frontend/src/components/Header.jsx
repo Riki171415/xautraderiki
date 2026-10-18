@@ -130,7 +130,7 @@ export default function Header({
   };
 
   const BROKERS_LIST = [
-    {id:'TWELVE',label:'Twelve Data (XAU/USD)',server:'Twelve Data',tag:'XAU/USD'},
+    {id:'TWELVE',label:'Twelve Data (XAU / BTC / Forex)',server:'Twelve Data',tag:'4 instrumen'},
     { id: 'EXNESS', label: 'Exness (MT5Real36)', server: 'Exness-MT5Real36', tag: '🔵 Real 36' },
     { id: 'BINANCE', label: 'Binance (Live)', server: 'Binance Live', tag: '🟡 Spot/Futures' },
   ];
@@ -155,12 +155,14 @@ export default function Header({
   const ALL_SYMBOLS = [
     { id: 'XAUUSD', label: 'XAU/USD · Gold Spot' },
     { id: 'PAXG/USDT', label: 'PAXG/USDT · Paxos Gold' },
-    {id:'BTCUSD',label:'BTC/USD · Exness'},
+    {id:'BTCUSD',label:broker==='TWELVE'?'BTC/USD · Twelve Data':'BTC/USD · Exness'},
+    {id:'EURUSD',label:broker==='TWELVE'?'EUR/USD · Twelve Data':'EUR/USD · Exness (EURUSDc)'},
+    {id:'GBPUSD',label:broker==='TWELVE'?'GBP/USD · Twelve Data':'GBP/USD · Exness (GBPUSDc)'},
     {id:'BTC/USDC',label:'BTC/USDC · Bitcoin'},
     { id: 'XAUT/USDT', label: 'XAUT/USDT · Tether Gold' },
   ];
 
-  const SYMBOLS = ALL_SYMBOLS.filter(s => broker === 'BINANCE' ? !['XAUUSD','BTCUSD'].includes(s.id) : broker==='EXNESS'?['XAUUSD','BTCUSD'].includes(s.id):s.id==='XAUUSD');
+  const SYMBOLS = ALL_SYMBOLS.filter(s => broker === 'BINANCE' ? !['XAUUSD','BTCUSD','EURUSD','GBPUSD'].includes(s.id) : ['XAUUSD','BTCUSD','EURUSD','GBPUSD'].includes(s.id));
 
   const isConnected = wsStatus === 'connected';
   const now = new Date().toLocaleTimeString('id-ID', { hour12: false, timeZone: 'Asia/Jakarta' });
