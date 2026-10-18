@@ -1,3 +1,4 @@
+import {hshEligibility} from 'virtual:coptah/rule_engine';
 import {useLiveMatrix} from '../hooks/useLiveMatrix';
 import {quoteIsStale} from '../analysisState.mjs';
 import { useState } from 'react';
@@ -7,9 +8,9 @@ export default function HSHOverview({data,liveTick,onSelect,now=Date.now()}) {
  const decimals=data?.decimals ?? 3;
  const fmt=n=>Number.isFinite(n)?n.toFixed(decimals):'—';
  const matrix=useLiveMatrix(data,liveTick,now),stale=quoteIsStale(data,now);
- const rows=(matrix?.rsColumns||[]).filter(c=>c.timeframe!=='market').map(c=>({id:c.timeframe,label:LABELS[c.timeframe]||c.timeframe,open:c.openN!=null?Number(c.openN):null,price:Number(matrix?.currentPrice),available:!stale&&Number.isFinite(c.periodStart)&&c.periodStart<=now&&now<c.periodEnd,scope:'Open N periode ini'}));
+ const rows=(matrix?.rsColumns||[]).filter(c=>c.timeframe!=='market').map(c=>({id:c.timeframe,perahu:matrix?.tableRows?.find(r=>r.timeframe===c.timeframe)?.pattern,label:LABELS[c.timeframe]||c.timeframe,open:c.openN!=null?Number(c.openN):null,price:Number(matrix?.currentPrice),available:!stale&&Number.isFinite(c.periodStart)&&c.periodStart<=now&&now<c.periodEnd,scope:'Open N periode ini'}));
  const session=data?.marketCycle?.sessions?.find(s=>s.name===data?.marketCycle?.activeSession);
- const market={id:'market',label:`Market · ${session?.name || 'sesi aktif'}`,open:session?.coverage&&session.start<=now&&now<session.end?session.open:null,price:Number(matrix?.currentPrice),available:!stale&&!!session?.coverage&&session.start<=now&&now<session.end,scope:session?.hours || 'Menunggu sesi'};
+ const market={id:'market',perahu:matrix?.tableRows?.find(r=>r.timeframe==='market')?.pattern,label:`Market · ${session?.name || 'sesi aktif'}`,open:session?.coverage&&session.start<=now&&now<session.end?session.open:null,price:Number(matrix?.currentPrice),available:!stale&&!!session?.coverage&&session.start<=now&&now<session.end,scope:session?.hours || 'Menunggu sesi'};
  const reference=data?.marketCycle?.hshReference;
  const referenceRow={id:'market-reference',label:`HSH ${reference?.name || 'pembanding'} sebelumnya`,open:reference?.hshOpen,
    price:Number(matrix?.currentPrice),
@@ -18,10 +19,11 @@ export default function HSHOverview({data,liveTick,onSelect,now=Date.now()}) {
  const featured=[rows.find(r=>r.id==='4h') || {id:'4h',label:LABELS['4h']},market,rows.find(r=>r.id==='1d') || {id:'1d',label:LABELS['1d']}];
  if(reference) featured.push(referenceRow);
  const content=row=>{
+   const eligibility=hshEligibility(row.perahu);
    const valid=row.available && Number.isFinite(row.open) && Number.isFinite(row.price);
    const delta=valid?row.price-row.open:null;
    const atHome=valid && Math.abs(delta)<.5*10**(-decimals);
-   return <><div className="flex items-center justify-between gap-2"><strong className="text-xs">{row.label}</strong><span className="text-[10px] text-slate-400">{valid?atHome?'DI OPEN N':delta>0?'DI ATAS OPEN N':'DI BAWAH OPEN N':'BELUM TERSEDIA'}</span></div><p className="text-lg font-mono text-amber-200 mt-2">{fmt(row.open)}</p><p className="text-[11px] text-slate-400 mt-1">Rumah HSH · {row.scope || 'Open N'}</p><p className="text-[11px] text-slate-300 mt-2">Harga {fmt(row.price)} · jarak {valid?fmt(Math.abs(delta)):'—'}</p><p className="text-[11px] text-slate-400 mt-1">{valid?atHome?'Harga berada di rumah.':`Arah menuju rumah: ${delta>0?'turun':'naik'}. Belum merupakan sinyal pembalikan.`:'Menunggu data asli; tidak memakai level pengganti.'}</p></>;
+   return <><div className="flex items-center justify-between gap-2"><strong className="text-xs">{row.label}</strong><span className="text-[10px] text-slate-400">{valid?atHome?'DI OPEN N':delta>0?'DI ATAS OPEN N':'DI BAWAH OPEN N':'BELUM TERSEDIA'}</span></div><p className="text-lg font-mono text-amber-200 mt-2">{fmt(row.open)}</p><p className="text-[11px] text-slate-400 mt-1">Acuan Open · {row.scope || 'Open N'}</p><p className="text-[11px] text-slate-300 mt-2">Harga {fmt(row.price)} · jarak {valid?fmt(Math.abs(delta)):'—'}</p><p className="text-[11px] text-slate-400 mt-1">{row.id!=='market-reference'&&!eligibility.eligible?eligibility.reason:valid?atHome?'Harga berada di rumah.':`Arah menuju rumah: ${delta>0?'turun':'naik'}. Belum merupakan sinyal pembalikan.`:'Menunggu data asli; tidak memakai level pengganti.'}</p></>;
  };
  return <section className="hsh-overview cop-panel space-y-3" aria-label="HSH setiap timeframe"><div className="flex items-center justify-between gap-3 flex-wrap"><div><h2 className="text-sm font-bold">Peta HSH · Rumah = Open N</h2><p className="text-[11px] text-slate-400 mt-1">Time Prime = H4 · Daily = D1 · Market = Open sesi aktif. Rotasi pembanding: Asia → Eropa sebelumnya · Eropa → USA sebelumnya · USA → Asia terakhir.</p></div><button type="button" className="chart-toggle" aria-expanded={expanded} onClick={()=>setExpanded(v=>!v)}>{expanded?'Ringkas':'Semua timeframe'}</button></div>
  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">{featured.map(r=><div key={r.id} className="p-3 rounded-xl border border-slate-700 bg-slate-900/50">{content(r)}</div>)}</div>

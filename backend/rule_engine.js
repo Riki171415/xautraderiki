@@ -291,7 +291,13 @@ function formatDuration(ms) {
  * Monitors candle time-to-close and price vs. Open
  * Triggers HSH warning when price has breached extremes and candle is closing
  */
-function calcHukumHSH(ohlcv_N, timeframeMs, openTimestamp, customRemainingMs = null) {
+function hshEligibility(perahu) {
+  const pattern=typeof perahu==='string'?perahu:perahu?.pattern;
+  const strong=['BRK UP','BRK DWN'].includes(pattern);
+  const known=['BRK UP','BRK DWN','ANL UP','ANL DWN','NRL UP','NRL DWN','SDW UP','SDW DWN','NEUTRAL'].includes(pattern);
+  return {strong,eligible:known&&!strong,status:strong?'SUPPRESSED_STRONG':known?'ELIGIBLE':'UNVERIFIED',reason:strong?'HSH tidak berlaku saat pergerakan strong (Perahu '+pattern+'). Open N tetap sebagai acuan harga.':known?'Potensi HSH masih memerlukan syarat waktu dan perkembangan harga.':'Perahu belum tersedia; potensi HSH belum terverifikasi.'};
+}
+function calcHukumHSH(ohlcv_N, timeframeMs, openTimestamp, customRemainingMs = null, perahu = null) {
   const { open, high, low, close } = ohlcv_N;
   const now = Date.now();
   let remaining, elapsed, totalDuration, percentElapsed;
@@ -329,7 +335,8 @@ function calcHukumHSH(ohlcv_N, timeframeMs, openTimestamp, customRemainingMs = n
   let hshSeverity = 'NONE';
   let hshMessage = '';
 
-  if (remaining > 0 && isNearClose && priceExtended && extensionRatio > 0.3) {
+  const eligibility=hshEligibility(perahu);
+  if (eligibility.eligible && remaining > 0 && isNearClose && priceExtended && extensionRatio > 0.3) {
     hshActive = true;
 
     if (percentElapsed >= 95 || (timeframeMs <= 3600000 && remainingMinutes < 5)) {
@@ -345,9 +352,10 @@ function calcHukumHSH(ohlcv_N, timeframeMs, openTimestamp, customRemainingMs = n
   }
 
   return {
+    eligibility,
     hshActive,
     hshSeverity,
-    hshMessage,
+    hshMessage:eligibility.eligible?hshMessage:eligibility.reason,
     percentElapsed: Math.round(percentElapsed),
     remainingMinutes,
     remainingSeconds,
@@ -830,7 +838,7 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
     const touchedSummary = touchedLabels.length > 0 ? touchedLabels.join(', ') : 'Belum Ada';
 
     tableRows.push({
-      anomalies:rs.anomalies,formula:rs.formula,
+      anomalies:rs.anomalies,formula:rs.formula,hshEligibility:hshEligibility(calcHukumPerahu(N,B)),
       periodStart:N.timestamp,periodEnd:N.periodEnd,
       timeframe: def.key,
       label: def.label,
@@ -868,7 +876,7 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
 
     rsColumns.push({
       plan:calcHukumBusur(calcHukumJIKA(N,B),rs,N,null,decimals),
-      anomalies:rs.anomalies,formula:rs.formula,
+      anomalies:rs.anomalies,formula:rs.formula,hshEligibility:hshEligibility(calcHukumPerahu(N,B)),
       periodStart:N.timestamp,periodEnd:N.periodEnd,
       timeframe: def.key,
       label: rsLabel,
@@ -936,6 +944,7 @@ module.exports = {
   calcRSMatrix,
   updateTouchDetection,
   calcHukumHSH,
+  hshEligibility,
   calcLotSize,
   generateStoryline,
   getTradingSession,

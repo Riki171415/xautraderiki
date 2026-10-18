@@ -1,0 +1,2 @@
+# Preserve the upstream runtime license byte-for-byte.
+windows-desktop/NODE-LICENSE.txt -text -whitespace

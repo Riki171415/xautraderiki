@@ -9,17 +9,18 @@ export function projectMatrix(matrix,tick,decimals=3,now=Date.now(),previous=nul
   matrix={...matrix,rsColumns:matrix.rsColumns.filter(current),tableRows:matrix.tableRows.filter(current)};
  }
  if(!matrix) return matrix;
- const validTick=Number.isFinite(tick?.bid);
+ const validTick=Number.isFinite(tick?.bid)&&Number.isFinite(tick?.timestamp)&&tick.timestamp<=now;
  if(!validTick&&!previous)return matrix;
  const columns=matrix.rsColumns.map(col=>{
   const prior=previous?.rsColumns?.find(c=>c.timeframe===col.timeframe&&c.periodStart===col.periodStart&&c.periodEnd===col.periodEnd);
-  const applies=validTick&&tick.timestamp>=col.periodStart&&tick.timestamp<col.periodEnd;
+  const lastTickTimestamp=Math.max(col.lastTickTimestamp||0,prior?.lastTickTimestamp||0);
+  const applies=validTick&&tick.timestamp>=lastTickTimestamp&&tick.timestamp>=col.periodStart&&tick.timestamp<col.periodEnd;
   if(!applies&&!prior)return col;
   const low=Math.min(Number(col.lowN),Number(prior?.lowN??col.lowN),applies?tick.bid:Infinity),high=Math.max(Number(col.highN),Number(prior?.highN??col.highN),applies?tick.bid:-Infinity);
-  const close=applies?tick.bid:Number(col.closeN);
+  const close=applies?tick.bid:Number(prior?.closeN??col.closeN);
   const touchedLevels=Object.fromEntries(keys.map(k=>[k,low<=Number(col[k])&&Number(col[k])<=high]));
   const touchedCount=Object.values(touchedLevels).filter(Boolean).length;
-  return {...col,highN:high.toFixed(decimals),lowN:low.toFixed(decimals),closeN:close.toFixed(decimals),touchedLevels,touchedCount,unreachedCount:9-touchedCount};
+  return {...col,lastTickTimestamp:applies?tick.timestamp:lastTickTimestamp,highN:high.toFixed(decimals),lowN:low.toFixed(decimals),closeN:close.toFixed(decimals),touchedLevels,touchedCount,unreachedCount:9-touchedCount};
  });
  return {...matrix,rsColumns:columns,tableRows:matrix.tableRows.map(row=>{
   const col=columns.find(c=>c.timeframe===row.timeframe);

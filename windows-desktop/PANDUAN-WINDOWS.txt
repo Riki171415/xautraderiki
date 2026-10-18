@@ -1,0 +1,47 @@
+COP TAH 1.2.0 — Windows 64-bit — Exness MT5 dan Binance Spot
+
+PEMASANGAN
+1. Salin COP-TAH-Windows-x64-Setup.exe ke komputer Windows 10/11 64-bit.
+2. Jalankan installer, pilih OK dan tunggu selesai. Tidak memerlukan administrator.
+3. Buka pintasan COP TAH di Desktop atau Start Menu.
+4. Aplikasi terbuka pada browser bawaan di http://127.0.0.1:3001/.
+   Node.js dan Python sudah disertakan; tidak perlu dipasang sendiri.
+
+DATA EXNESS
+Pasang terminal desktop MetaTrader 5 resmi dan login pada komputer yang sama.
+Biarkan MT5 terbuka serta terhubung ke broker. Dashboard lokal dimulai dengan
+Exness / XAUUSD. Pilih BTCUSD, EURUSD atau GBPUSD dari header bila diperlukan.
+Installer tidak membawa terminal MT5, login, password atau data akun komputer asal.
+Jika belum terhubung, pastikan MT5 sudah login lalu muat ulang aplikasi.
+
+DATA BINANCE
+Pilih Binance Spot pada header. Instrumennya PAXG/USDT, XAUT/USDT atau BTC/USDC.
+Binance memerlukan internet dan akses jaringan penyedia. PAXG bukan XAUUSD Exness.
+Tidak memerlukan API key pribadi. Status snapshot/kesegaran tetap perlu diperiksa.
+
+MENUTUP DAN MASALAH
+Menutup tab browser tidak mematikan layanan. Gunakan ikon COP TAH di area
+notifikasi Windows: klik kanan > Keluar dan hentikan layanan.
+Jika port 3001 dipakai aplikasi lain, tutup COP TAH/server lama lalu buka kembali.
+Log tersedia di %LOCALAPPDATA%\COPTAH\logs\server.log.
+Paket desktop hanya mendengarkan localhost; tidak membuka akses LAN komputer.
+Browser modern dan internet diperlukan untuk data pasar.
+
+PEMBARUAN DAN HAPUS INSTALASI
+Tutup COP TAH melalui ikon notifikasi sebelum menjalankan installer versi baru.
+Hapus melalui Settings Windows > Apps > Installed apps > COP TAH > Uninstall.
+Terminal MT5 dan akun broker tidak dihapus. Log diagnosis tetap disimpan.
+
+CATATAN
+Installer belum ditandatangani sertifikat penerbit Windows.
+Paket memakai runtime dan dependensi sumber terbuka; lisensi dependensi
+disertakan bersama direktori runtime/node_modules terkait.
+Paket diperiksa pada komputer pengembangan; komputer Windows lain tetap
+perlu diuji untuk koneksi MT5 dan akses jaringan masing-masing.
+Analisis dan rencana bersyarat bukan order broker atau jaminan hasil transaksi.
+
+VERSI 1.2.0
+Memuat header dan notifikasi baru, ringkasan tugas Daily/Market, penanda H4 lengkap,
+kesamaan level Daily-Year, koreksi kekuatan relatif Daily dan pembersihan narasi.
+Tutup aplikasi versi lama melalui ikon notifikasi, lalu jalankan installer ini.
+Installer akan menolak pembaruan ketika COP TAH masih berjalan.

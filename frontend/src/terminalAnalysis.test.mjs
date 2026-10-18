@@ -33,3 +33,11 @@ test('expired timeframe, anomaly and stale quotes remain explicit',()=>{
 });
 
 test('missing timestamp holds orders consistently with shared freshness',()=>{const data={...args.data};delete data.timestamp;const m=terminalAnalysis({...args,data});assert.equal(m.active,false);assert.equal(m.plan.action,'WAIT');});
+
+test('terminal HSH cannot bypass shared strong eligibility near closing time',()=>{
+ const col={...h,hshEligibility:{eligible:false,status:'SUPPRESSED_STRONG',reason:'Strong: HSH ditahan.'}};
+ const matrix={rsColumns:[col,d],tableRows:[{...col,pattern:'BRK UP'},d]};
+ const model=terminalAnalysis({...args,data:{timestamp:990},rows:matrix.tableRows,columns:matrix.rsColumns,price:130,now:990});
+ assert.equal(model.hsh.warning,false);
+ assert.equal(model.hsh.eligibility.status,'SUPPRESSED_STRONG');
+});

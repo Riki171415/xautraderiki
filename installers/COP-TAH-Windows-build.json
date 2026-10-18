@@ -1,0 +1,13 @@
+{
+  "version": "1.2.0",
+  "builtAt": "2026-10-19T00:33:19.268173",
+  "files": 3794,
+  "sizeBytes": 73177600,
+  "sha256": "3183abf130687386c94fe862f71f9d4e500ab6025f6ec01d8acc7de08abd7cbf",
+  "node": "v24.19.0",
+  "python": "3.11.9",
+  "sources": [
+    "EXNESS",
+    "BINANCE"
+  ]
+}

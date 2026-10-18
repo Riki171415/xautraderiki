@@ -34,3 +34,13 @@ test('each timeframe receives touches according to its own period and levels',()
  assert.equal(result.rsColumns[0].touchedLevels.res1,true);
  assert.equal(result.rsColumns[1].touchedLevels.res1,false);
 });
+
+test('future and out-of-order ticks cannot overwrite observed close or add false touches',()=>{
+ const future=projectMatrix(matrix,{bid:120,timestamp:1900},3,1800);
+ assert.equal(future.rsColumns[0],col);
+ const first=projectMatrix(matrix,{bid:103,timestamp:1700},3,1800);
+ const late=projectMatrix(matrix,{bid:90,timestamp:1600},3,1800,first);
+ assert.equal(late.rsColumns[0].closeN,'103.000');
+ assert.equal(late.rsColumns[0].lowN,'99.000');
+ assert.equal(late.rsColumns[0].lastTickTimestamp,1700);
+});

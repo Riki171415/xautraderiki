@@ -1,4 +1,4 @@
-import {quoteIsStale} from '../analysisState.mjs';
+import {quoteIsStale,dataQuality} from '../analysisState.mjs';
 import {useLiveMatrix} from '../hooks/useLiveMatrix';
 import TimeframeTerminal from './TimeframeTerminal';
 import {matrixPlan,planBadges} from '../matrixPlan.mjs';
@@ -73,7 +73,7 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
             Terminal Analisis
           </span>
           <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-600/40 font-bold text-[10px]">
-            {data.marketDataStatus==='STALE_QUOTE'?'Harga terakhir':'Data tersinkron'}
+            {dataQuality(data).label}
           </span>
         </div>
         <div className="flex items-center gap-3 text-slate-400 text-[11px]">

@@ -2,7 +2,7 @@ const BASE='https://data-api.binance.vision/api/v3';
 const allowed=new Set(['1m','5m','15m','30m','1h','4h','1d','1w','1M']);
 const cache=new Map();
 export function binanceSymbol(symbol) {
- if(!['PAXG/USDT','XAUT/USDT','BTC/USDC'].includes(symbol)) throw new Error('Fallback Binance hanya untuk PAXG/USDT, XAUT/USDT atau BTC/USDC.');
+ if(!['PAXG/USDT','XAUT/USDT','BTC/USDC'].includes(symbol)) throw new Error('Binance Spot tersedia untuk PAXG/USDT, XAUT/USDT atau BTC/USDC.');
  return symbol.replace('/','');
 }
 export function parseKlines(raw) {
@@ -24,7 +24,7 @@ export async function publicJson(path,params={},signal) {
  } finally {clearTimeout(timer);signal?.removeEventListener('abort',abort);}
 }
 export async function binanceCandles(symbol,timeframe,signal) {
- if(!allowed.has(timeframe))throw new Error('Periode ini belum tersedia pada fallback Binance.');
+ if(!allowed.has(timeframe))throw new Error('Periode ini belum tersedia pada Binance Spot.');
  const key=`${symbol}|${timeframe}`,previous=cache.get(key);
  if(previous&&Date.now()-previous.time<5000)return previous.rows;
  const rows=parseKlines(await publicJson('klines',{symbol:binanceSymbol(symbol),interval:timeframe,limit:timeframe==='1M'?120:300},signal));

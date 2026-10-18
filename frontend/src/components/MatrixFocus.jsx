@@ -1,4 +1,4 @@
-import {quoteIsStale} from '../analysisState.mjs';
+import {quoteIsStale,dataQuality} from '../analysisState.mjs';
 import {useState} from 'react';
 import {focusRows,MATRIX_GROUPS} from '../matrixFocus.mjs';
 import {matrixPlan,planBadges} from '../matrixPlan.mjs';
@@ -11,7 +11,7 @@ export default function MatrixFocus({data,matrix,focusedTf,onFull,tolerance=0}){
  const context={columns:matrix.rsColumns,price:Number(matrix.currentPrice),options:{decimals,tolerance,now:Date.now(),stale:quoteIsStale(data)}};
  const hasPlan=p=>['BUY LIMIT','SELL LIMIT'].includes(p.action);
  const value=(p,key)=>hasPlan(p)?fmt(p[key]):'—';
- const status=row=>data.marketDataStatus==='STALE_QUOTE'?'Data harga terakhir':Date.now()-data.timestamp>45000?'Snapshot lama':row.timeframe==='market'?data.marketEntry?.reason||'Skenario sesi':row.track||'Menunggu data';
+ const status=row=>quoteIsStale(data)?dataQuality(data).label:row.timeframe==='market'?data.marketEntry?.reason||'Skenario sesi':row.track||'Menunggu data';
  const notes=[...new Set(items.map(({row,column})=>{const p=matrixPlan(column,data.marketEntry,context);return (p.action==='WAIT'||p.observerOnly)?p.reason||'Menunggu konfirmasi':status(row);} ))];
  const pick=tf=>setSelected(v=>v===tf?null:tf);
  const missing=MATRIX_GROUPS[group].filter(tf=>!items.some(i=>i.row.timeframe===tf));

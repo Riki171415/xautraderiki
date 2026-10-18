@@ -40,3 +40,8 @@ installers/*.apk.idsig
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Reproducible Windows installer build products
+windows-desktop/build/
+installers/*.exe
+installers/*.zip

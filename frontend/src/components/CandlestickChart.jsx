@@ -1,7 +1,6 @@
 import {useH4Plan} from '../hooks/useH4Plan';
 import { useEffect, useMemo, useState } from 'react';
 import { API_BASE } from '../config';
-import {twelveCandles} from '../twelvePublic';
 import {binanceCandles} from '../binancePublic.mjs';
 import { applyBid, chartCandles, findFractals } from '../chartLogic.mjs';
 
@@ -26,8 +25,7 @@ export default function CandlestickChart({data, liveTick, symbol, timeframe, bro
       try {
         const params=new URLSearchParams({broker,symbol,timeframe,limit:'100'});
         let json;
-        if(broker==='TWELVE') json={success:true,data:await twelveCandles(symbol,timeframe,controller.signal)};
-        else if(data?.fallback && broker==='BINANCE') json={success:true,data:await binanceCandles(symbol,timeframe,controller.signal)};
+        if(data?.fallback && broker==='BINANCE') json={success:true,data:await binanceCandles(symbol,timeframe,controller.signal)};
         else {
         const response=await fetch(`${API_BASE}/ohlcv?${params}`,{signal:controller.signal});
         json=await response.json();

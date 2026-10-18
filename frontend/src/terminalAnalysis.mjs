@@ -15,7 +15,8 @@ export function terminalAnalysis({data,rows,columns,selected,price,tolerance=0,n
  const range=high!=null&&low!=null?high-low:null;
  const age=column&&column.periodEnd>column.periodStart?Math.max(0,Math.min(100,100*(now-column.periodStart)/(column.periodEnd-column.periodStart))):null;
  const extension=range>0&&open!=null?Math.abs(Number(price)-open)/range:0;
- const hsh={open,age,remaining:column?Math.max(0,column.periodEnd-now):null,warning:!stale&&age>=80&&extension>.3};
+ const eligibility=column?.hshEligibility||{eligible:false,status:'UNVERIFIED',reason:'Perahu belum tersedia; HSH belum terverifikasi.'};
+ const hsh={open,age,eligibility,remaining:column?Math.max(0,column.periodEnd-now):null,warning:eligibility.eligible&&!stale&&age>=80&&extension>.3};
  const warnings=[plan.reason||'Rencana bersyarat: tunggu harga dan konfirmasi.',...(quoteIsStale(data,now)?['Harga terakhir belum diperbarui; jangan menganggap snapshot ini sebagai harga live.']:[]),...(expired?['Penanda berasal dari periode yang sudah berakhir.']:[]),...(column?.anomalies?.length?['Urutan level anomali: nilai asli dipertahankan; periksa urutan entry–SL–TP.']:[]),'Sentuhan R/S bukan bukti transaksi. Entry teramati dan urutan TP belum terverifikasi untuk rencana H4 ini.','Jangan mengejar harga; periksa sisi limit, spread, dan validitas SL sebelum mengambil keputusan.'];
  return {row,column,plan,active,stale,targets,riskDistance,hsh,warnings,lot:null,lotReason:'Lot dan risiko uang belum tersedia: modal akun, spesifikasi tick/kontrak, mata uang serta aturan volume instrumen belum terverifikasi. Tidak memakai lot bawaan.'};
 }

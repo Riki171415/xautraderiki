@@ -21,7 +21,7 @@ test('missing matrix timeframes omitted, never cloned from H1',()=>{
  assert.deepEqual(matrix.tableRows.map(r=>r.timeframe),['1h']);
 });
 test('HSH target is Open N',()=>{
- const result=calcHukumHSH({open:100,high:140,low:90,close:130},3600000,0,60000);
+ const result=calcHukumHSH({open:100,high:140,low:90,close:130},3600000,0,60000,'NRL UP');
  assert.equal(result.targetType,'OPEN_N'); assert.equal(result.targetPrice,100); assert.equal(result.hshActive,true);
 });
 

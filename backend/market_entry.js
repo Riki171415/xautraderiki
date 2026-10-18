@@ -6,7 +6,7 @@ function buildMarketEntryBase(pair,compass,cycle,quote,now=Date.now(),decimals=3
  if(!(now>=n.timestamp && now<n.periodEnd)) return {...result,reason:'Snapshot sesi sudah berakhir; menunggu sesi baru.'};
  const jika=calcHukumJIKA(n,b),rs=calcRSMatrix(b,n,'market'),perahu=calcHukumPerahu(n,b);
  const plan=calcHukumBusur(jika,rs,n,null,decimals);
- const hsh=calcHukumHSH(n,n.periodEnd-n.timestamp,n.timestamp,n.periodEnd-now);
+ const hsh=calcHukumHSH(n,n.periodEnd-n.timestamp,n.timestamp,n.periodEnd-now,perahu);
  Object.assign(result,{current:n,previous:b,jika,perahu,rs,plan,hsh,h4:compass?.h4 || null,sourceComparison:'N = sesi aktif hari ini; B = sesi sejenis sebelumnya yang lengkap. Level RS dihitung dari B.'});
  if(!quote || now-quote.timestamp>10000 || ![quote.bid,quote.ask].every(v=>Number.isFinite(v)&&v>0) || quote.ask<quote.bid) return {...result,reason:'Harga Bid/Ask terbaru belum tersedia; jangan memakai harga snapshot untuk entry.'};
  result.quote=quote;
@@ -42,7 +42,7 @@ function buildMarketEntry(pair,compass,cycle,quote,now=Date.now(),decimals=3) {
  const checklist=[
   entry.quote?'Bid/Ask tersedia pada waktu snapshot.':'Menunggu Bid/Ask segar.',
   `Konteks H4 ${entry.h4?.available?'tersedia':'belum tersedia'}; arah ${entry.h4?.jika || '—'}.`,
-  entry.hsh.hshActive?'HSH aktif: tunggu evaluasi, tidak membuat entry baru.':'Peringatan HSH belum aktif menurut syarat mesin.',
+  entry.hsh.hshActive?'HSH aktif: tunggu evaluasi, tidak membuat entry baru.':'Belum ada peringatan HSH yang aktif pada data saat ini.',
   'Periksa ulang sisi limit, spread, serta SL/TP saat harga berubah.',
   'Konfirmasi akhir Busur belum ditetapkan sebagai sinyal otomatis; tidak ada order dikirim.',
  ];

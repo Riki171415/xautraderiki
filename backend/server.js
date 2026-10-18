@@ -44,7 +44,7 @@ const {
 } = require('./historical_data');
 
 const app = express();
-const PORT = 3001;
+const PORT = Number(process.env.COPTAH_PORT) || 3001;
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors({ origin: '*' }));
@@ -451,7 +451,7 @@ function generateEntryRecommendations(multiTfMap, currentPrice, userModal = 1000
     const busur = calcHukumBusur(jika, rs, ohlcv_N, lotCalc, decimals);
     const timeInfo = getCandleTimeInfo(ohlcv_N, tf);
     ohlcv_N.periodEnd=timeInfo.closeTs;
-    const hsh = calcHukumHSH(ohlcv_N, timeInfo.duration, ohlcv_N.timestamp, timeInfo.remaining);
+    const hsh = calcHukumHSH(ohlcv_N, timeInfo.duration, ohlcv_N.timestamp, timeInfo.remaining, perahu);
 
     // Contextual Warnings & Rambu-Rambu based on COP TAH Rules
     const warnings = [];
@@ -605,7 +605,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     // HSH calculation with precise duration and remaining time
     const timeInfo = getCandleTimeInfo(ohlcv_N, timeframe);
     ohlcv_N.periodEnd=timeInfo.closeTs;
-    const hsh = calcHukumHSH(ohlcv_N, timeInfo.duration, ohlcv_N.timestamp, timeInfo.remaining);
+    const hsh = calcHukumHSH(ohlcv_N, timeInfo.duration, ohlcv_N.timestamp, timeInfo.remaining, perahu);
 
     // Trading session
     const session = getTradingSession();
@@ -857,7 +857,6 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
 
 // ─── REST API Endpoints ────────────────────────────────────────────────────────
 
-app.get('/api/twelve',require('../api/twelve'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -1459,6 +1458,7 @@ app.use(express.static(path.join(__dirname, '../frontend/dist')));
 let mt5BridgeChild = null;
 
 function superviseMt5Bridge() {
+  if (process.env.COPTAH_DISABLE_MT5 === '1') return;
   if (process.platform !== 'win32') return;
   const isAlive = mt5State.connected && (Date.now() - mt5State.lastTickTime < 10000);
   if (isAlive) return;
@@ -1466,10 +1466,11 @@ function superviseMt5Bridge() {
 
   const scriptPath = path.resolve(__dirname, '..', 'exness_mt5_bridge.py');
   try {
-    mt5BridgeChild = spawn('python', [scriptPath], {
+    mt5BridgeChild = spawn(process.env.COPTAH_PYTHON || 'python', ['-u', scriptPath], {
       cwd: path.resolve(__dirname, '..'),
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: false,
+      windowsHide: true,
     });
 
     mt5BridgeChild.stdout.on('data', (d) => {
@@ -1487,6 +1488,10 @@ function superviseMt5Bridge() {
     mt5BridgeChild.on('exit', () => {
       mt5BridgeChild = null;
     });
+    mt5BridgeChild.on('error', (err) => {
+      console.warn(`[MT5 Bridge Supervisor] Bridge belum dapat dijalankan: ${err.message}`);
+      mt5BridgeChild = null;
+    });
   } catch (err) {
     console.warn(`[MT5 Bridge Supervisor] Gagal menjalankan script bridge: ${err.message}`);
   }
@@ -1500,7 +1505,7 @@ process.on('exit', () => {
 });
 
 // ─── Start Server ──────────────────────────────────────────────────────────────
-server.listen(PORT, () => {
+server.listen(PORT, process.env.COPTAH_HOST || '0.0.0.0', () => {
   console.log(`
 ╔══════════════════════════════════════════════════════╗
 ║       COP TAH Analytics Dashboard — Backend           ║

@@ -705,7 +705,7 @@ function WeeklyTradingPlanDetails({ data, liveTick }) {
 export default function WeeklyTradingPlan(props) {
  const rows=props.data?.leak4RegMatrix?.tableRows || [];
  const rs=props.data?.leak4RegMatrix?.rsColumns || [];
- if(!['1w','1M','1Y'].every(tf=>rows.some(r=>r.timeframe===tf) && rs.some(r=>r.timeframe===tf))) return <div className="cop-panel text-sm text-slate-400">Plan mingguan menunggu data W1, MN1, dan tahunan asli yang lengkap. Tidak memakai angka contoh.</div>;
+ if(!['1w','1M','1Y'].every(tf=>rows.some(r=>r.timeframe===tf) && rs.some(r=>r.timeframe===tf))) return <div className="cop-panel text-sm text-slate-400">Plan mingguan menunggu data W1, MN1, dan tahunan asli yang lengkap. Harga dan sasaran akan tampil setelah riwayat tersedia.</div>;
  const week=rows.find(r=>r.timeframe==='1w');
  if(Number(week.openN)===Number(week.openB)) return <div className="cop-panel text-sm text-slate-400">JIKA W1 NETRAL · Open N sama dengan Open B. Tunggu arah; tidak membuat plan BUY/SELL.</div>;
  const planRS=rs.find(c=>c.timeframe==='1w');
