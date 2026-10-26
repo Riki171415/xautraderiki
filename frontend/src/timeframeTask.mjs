@@ -26,7 +26,7 @@ export function timeframeTask(column,{now=Date.now(),stale=false,additionalTarge
  for(const area of [bow,target,additional])if(area){area.distance=distance(area);area.rangeRatio=area.distance!=null&&reference!=null?area.distance/reference:null;area.rangeContext=area.rangeRatio==null?'UNAVAILABLE':area.rangeRatio<=1?'WITHIN_PREVIOUS_RANGE':'BEYOND_PREVIOUS_RANGE';}
  const status=!active?'INACTIVE':stale?'STALE':!directional?'WAIT_DIRECTION':bow?.value==null||target?.value==null?'INCOMPLETE':warnings.length?'ANOMALY':'OBSERVING';
  const model={range,timeframe:c?.timeframe,jika,move,phase,open,before,close,low,high,active,observable,status,bow,target,additional,warnings,bowConfirmed:false,transactionVerified:false,periodStart:c?.periodStart,periodEnd:c?.periodEnd};
- return {...model,progress:taskProgress(model)};
+ return {...model,sequenceStatus:'UNVERIFIED',progress:taskProgress(model)};
 }
 export function taskProgress(model) {
  const valid=model.active&&model.observable&&['UP','DOWN'].includes(model.jika)&&model.close!=null&&model.open!=null&&model.bow?.value!=null&&model.target?.value!=null&&!model.warnings.length;
@@ -34,14 +34,14 @@ export function taskProgress(model) {
  let zone='UNVERIFIED';
  if(valid){const up=model.jika==='UP',price=model.close,open=model.open,bow=model.bow.value,target=model.target.value;
  zone=price===open?'AT_HSH':(up?price<open:price>open)?(up?price>=bow:price<=bow)?'IN_BOW':'BEYOND_BOW':(up?price<=target:price>=target)?'IN_TARGET':'BEYOND_TARGET';}
- return {zone,bow:areaStatus(model.bow),target:areaStatus(model.target),completionVerified:false};
+ return {zone,bow:areaStatus(model.bow),target:areaStatus(model.target),sequenceStatus:'UNVERIFIED',completionVerified:false};
 }
 export function taskNarrative(model,label,decimals=3) {
  const fmt=n=>n==null?'belum tersedia':n.toFixed(decimals);
  if(model.jika==='UNAVAILABLE')return `Data Open N/B ${label} belum lengkap; Busur dan Target belum dapat ditentukan.`;
  if(model.jika==='NEUTRAL')return `Open N sama dengan Open B ${label}: JIKA netral. Busur dan Target belum ditentukan; HSH tetap Open N ${fmt(model.open)}.`;
  const direction=d=>d==='UP'?'naik':'turun';
- return `JIKA ${label} ${direction(model.jika)}. Busur mengarah ${direction(model.bow.direction)} dengan acuan ${levelName(model.bow.key)} ${fmt(model.bow.value)}. Target mengarah ${direction(model.target.direction)} dengan acuan ${levelName(model.target.key)} ${fmt(model.target.value)}. ${model.status==='INACTIVE'?'Periode belum aktif.':model.status==='STALE'?'Harga lama; gerak live belum dinilai.':`Gerak ${model.move==='UP'?'naik':model.move==='DOWN'?'turun':model.move==='FLAT'?'datar':'belum tersedia'} berdasarkan Close N ${fmt(model.close)} terhadap Open N ${fmt(model.open)}: ${model.phase==='BOW_DIRECTION'?'searah Busur':model.phase==='TARGET_DIRECTION'?'searah Target':'belum berarah'}.`}`;
+ return `JIKA ${label} ${direction(model.jika)}. Busur mengarah ${direction(model.bow.direction)} dengan acuan ${levelName(model.bow.key)} ${fmt(model.bow.value)}. Target mengarah ${direction(model.target.direction)} dengan acuan ${levelName(model.target.key)} ${fmt(model.target.value)}. Arah saat ini tidak membuktikan urutan Busur → Target; sentuhan kedua level dari OHLC juga belum membuktikan urutannya. ${model.status==='INACTIVE'?'Periode belum aktif.':model.status==='STALE'?'Harga lama; gerak live belum dinilai.':`Gerak ${model.move==='UP'?'naik':model.move==='DOWN'?'turun':model.move==='FLAT'?'datar':'belum tersedia'} berdasarkan Close N ${fmt(model.close)} terhadap Open N ${fmt(model.open)}: ${model.phase==='BOW_DIRECTION'?'searah Busur':model.phase==='TARGET_DIRECTION'?'searah Target':'belum berarah'}.`}`;
 }
 export function taskH4Bridges(columns,price,timeframe,options={}) {
  const comparison=h4LevelMatches(columns,Number(price),options),micro=h4MicroMatches(columns,Number(price),options);

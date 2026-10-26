@@ -17,7 +17,7 @@ const { buildH4Compass } = require('./h4_compass');
 const { buildMarketEntry } = require('./market_entry');
 const {marketHabits}=require('./market_habits');
 const {observePlan,alternativeEntries}=require('./plan_monitor');
-const { DIRECT_TIMEFRAMES, validCandles, getExnessCandles, aggregateMonths, aggregateDecades } = require('./mt5_data');
+const { DIRECT_TIMEFRAMES, validCandles, getExnessCandles, usesWeekdayDailyBefore, aggregateMonths, aggregateDecades } = require('./mt5_data');
 const WebSocket = require('ws');
 const ccxt = require('ccxt');
 
@@ -65,7 +65,7 @@ let userModal = 10000; // Default modal $10,000
 let mt5State = {
   connected: false,
   broker: 'EXNESS',
-  server: 'Exness-MT5Real36',
+  server: null,
   account: null,
   symbol: 'XAUUSD',
   bid: 0,
@@ -79,6 +79,17 @@ let mt5State = {
 };
 
 const mt5States={XAUUSD:mt5State};
+let mt5ActiveSource=null,mt5SourceSession=null;
+let mt5PositionsSnapshot=null;
+const {normalizePositions,positionsView,isLocalPositionRequest}=require('./mt5_positions');
+function activateMt5Source(server,account){
+ const sourceKey=JSON.stringify([server,account]);
+ if(mt5ActiveSource!==sourceKey){
+  mt5ActiveSource=sourceKey;mt5SourceSession=require('crypto').randomUUID();mt5PositionsSnapshot=null;
+  for(const key of Object.keys(mt5States))mt5States[key]={...mt5States[key],connected:false,lastTickTime:0,timeframes:{},candles:null};
+  lastAnalysis=null;multiTfCandlesCache.lastFetch=0;
+ }
+}
 const {exnessSymbolKey}=require('./exness_symbols');
 function exnessState(symbol){const key=exnessSymbolKey(symbol);if(!key)throw new Error('Simbol Exness tidak didukung.');return mt5States[key] || {connected:false,lastTickTime:0,timeframes:{},symbol:key};}
 function storeExnessState(state){const key=exnessSymbolKey(state.symbol);mt5States[key]=state;if(key==='XAUUSD')mt5State=state;}
@@ -119,12 +130,12 @@ const BROKERS = {
   EXNESS: {
     id: 'EXNESS',
     name: 'Exness',
-    server: 'Exness-MT5Real36',
+    server: null,
     tag: 'EXNESS',
     type: 'forex',
     spread: 0.12,
     spreadLabel: '1.2 pips ($0.120)',
-    description: 'Exness MT5 Real Server (MT5Real36)',
+    description: 'Exness MT5 · mengikuti server akun terminal',
     isDirectMT5: false,
     decimals: 3,
   },
@@ -358,8 +369,10 @@ let multiTfCandlesCache = {
 };
 
 async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
+  const sourceSession=brokerId==='EXNESS'?mt5SourceSession:null;
+  const cacheKey=`${brokerId}|${marketSymbol}|${sourceSession||''}`;
   const now = Date.now();
-  if (multiTfCandlesCache.key === `${brokerId}|${marketSymbol}` && now - multiTfCandlesCache.lastFetch < 5000 && Object.keys(multiTfCandlesCache.data).length >= 8) {
+  if (multiTfCandlesCache.key === cacheKey && now - multiTfCandlesCache.lastFetch < 5000 && Object.keys(multiTfCandlesCache.data).length >= 8) {
     return { ...multiTfCandlesCache.data };
   }
 
@@ -402,6 +415,7 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
             close: ohlcv[ohlcv.length - 2][4],
             volume: ohlcv[ohlcv.length - 2][5],
             timestamp: ohlcv[ohlcv.length - 2][0],
+            comparisonPolicy:brokerId==='EXNESS'&&usesWeekdayDailyBefore(marketSymbol,tf)?'PREVIOUS_WEEKDAY':'PREVIOUS_CANDLE',
           },
         };
       }
@@ -419,7 +433,8 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
   for(const [tf,pair] of Object.entries(res)) {
     if(tf!=='market') pair.ohlcv_N.periodEnd=getCandleTimeInfo(pair.ohlcv_N,tf).closeTs;
   }
-  multiTfCandlesCache = { key: `${brokerId}|${marketSymbol}`, data: res, annualCandles, lastFetch: now };
+  if(brokerId==='EXNESS'&&sourceSession!==mt5SourceSession)throw new Error('Sumber MT5 berubah; riwayat lama dibuang.');
+  multiTfCandlesCache = { key: cacheKey, data: res, annualCandles, lastFetch: now };
   return { ...res };
 }
 
@@ -566,7 +581,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     const { marketSymbol, displaySymbol } = resolveBinanceMarket(symbol);
     if (broker.id === 'EXNESS' && !['XAUUSD','BTCUSD','EURUSD','GBPUSD'].includes(displaySymbol)) throw new Error('Exness: pilih XAUUSD, BTCUSD, EURUSD atau GBPUSD.');
     const feedState=broker.id==='EXNESS'?exnessState(marketSymbol):null;
-    if(feedState)Object.assign(broker,{decimals,spread:feedState.spread,spreadLabel:feedState.spreadLabel,server:feedState.server});
+    if(feedState)Object.assign(broker,{decimals,spread:feedState.spread,spreadLabel:feedState.spreadLabel,server:feedState.server,sourceSession:feedState.sourceSession});
     const ohlcv = await fetchBrokerOHLCV(broker.id, marketSymbol, timeframe);
 
     if (!ohlcv || ohlcv.length < 2) {
@@ -585,7 +600,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
 
     // Current candle (N) = last element; Previous candle (B) = second-to-last
     const ohlcv_N = candles[candles.length - 1]; // current
-    const ohlcv_B = candles[candles.length - 2]; // previous
+    const ohlcv_B = {...candles[candles.length - 2],comparisonPolicy:broker.id==='EXNESS'&&usesWeekdayDailyBefore(marketSymbol,timeframe)?'PREVIOUS_WEEKDAY':'PREVIOUS_CANDLE'}; // previous eligible trading candle
 
     // ── Run the Rule Engine ──────────────────────────────────────────────────
     const jika = calcHukumJIKA(ohlcv_N, ohlcv_B);
@@ -611,7 +626,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     const session = getTradingSession();
 
     // Market Cycle Analysis (NORMAL vs STRONG, 12-step cycle)
-    let cycleContext = {source: broker.id === 'EXNESS' ? `MT5 Exness ${feedState.symbol}` : broker.name};
+    let cycleContext = {symbol,source: broker.id === 'EXNESS' ? `MT5 Exness ${feedState.symbol}` : broker.name};
     try {
       const [hourly, dailyRows] = await Promise.all([
         fetchBrokerOHLCV(broker.id, marketSymbol, '1h'),
@@ -806,6 +821,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     const result = {
       h4Compass,
       dailyH4Context,
+      supportHistory:{hourly:(cycleContext.hourly||[]).slice(-240)},
       quoteTimestamp:broker.id==='EXNESS'?feedState.quoteTimestamp:null,
       marketDataStatus:broker.id==='EXNESS'&&Date.now()-(feedState.quoteTimestamp || 0)>10000?'STALE_QUOTE':'CURRENT',
       marketEntry,
@@ -847,6 +863,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       })),
     };
 
+    if(broker.id==='EXNESS'&&broker.sourceSession!==mt5SourceSession)throw new Error('Akun/server MT5 berubah selama analisis. Menunggu data sumber baru.');
     lastAnalysis = result;
     return result;
   } catch (error) {
@@ -1031,7 +1048,7 @@ app.post('/api/mt5/tick', async (req, res) => {
   try {
     const {
       broker = 'EXNESS',
-      server = 'Exness-MT5Real36',
+      server,
       account,
       symbol = 'XAUUSD',
       bid,
@@ -1052,6 +1069,7 @@ app.post('/api/mt5/tick', async (req, res) => {
     if (!Number.isFinite(livePrice) || livePrice <= 0 || (bid != null && (!Number.isFinite(Number(bid)) || Number(bid) <= 0)) || (ask != null && (!Number.isFinite(Number(ask)) || Number(ask) <= 0))) {
       return res.status(400).json({ success: false, error: 'Invalid MT5 quote' });
     }
+    if(typeof server!=='string'||!server.trim()||server.length>100)return res.status(400).json({success:false,error:'Server MT5 aktual wajib dikirim oleh bridge.'});
     if(!exnessSymbolKey(symbol))return res.status(400).json({success:false,error:'Simbol MT5 belum didukung.'});
     let symbolState=exnessState(symbol);
     const receivedAt = Date.now();
@@ -1066,6 +1084,8 @@ app.post('/api/mt5/tick', async (req, res) => {
       if (!DIRECT_TIMEFRAMES.includes(timeframe) || !validCandles(candles)) return res.status(400).json({success:false,error:'Invalid Exness candles'});
       snapshots[timeframe] = {candles, updatedAt: receivedAt};
     }
+    activateMt5Source(server,account);
+    symbolState=exnessState(symbol);
     const sameSession = symbolState.account === account && symbolState.server === server && symbolState.symbol === symbol;
     const nextTimeframes = {...(sameSession ? symbolState.timeframes : {}), ...snapshots};
     const numBid = Number(bid || (livePrice - 0.06).toFixed(3));
@@ -1074,7 +1094,7 @@ app.post('/api/mt5/tick', async (req, res) => {
     const spreadPts = Math.round(numSpread*10**quoteDigits);
 
     const priceKey='EXNESS:'+exnessSymbolKey(symbol);
-    const prevPrice = lastBrokerPrices[priceKey] || livePrice;
+    const prevPrice = sameSession ? (lastBrokerPrices[priceKey] || livePrice) : livePrice;
     const direction = livePrice > prevPrice ? 'UP' : livePrice < prevPrice ? 'DOWN' : 'SAME';
     lastBrokerPrices[priceKey] = livePrice;
     liveCache[priceKey] = { basePrice: livePrice, lastFetch: Date.now() };
@@ -1083,6 +1103,7 @@ app.post('/api/mt5/tick', async (req, res) => {
       connected: true,
       timeframes: nextTimeframes,
       broker: 'EXNESS',
+      sourceSession:mt5SourceSession,
       server,
       account,
       symbol,
@@ -1113,7 +1134,7 @@ app.post('/api/mt5/tick', async (req, res) => {
         broker: 'EXNESS',
         brokerName: 'Exness',
         symbol: exnessSymbolKey(symbol),
-        source: 'MT5 bridge',
+        source: 'MT5 bridge',sourceSession:mt5SourceSession,
         server,
         price: livePrice,
         digits:Number.isInteger(digits)&&digits>=0&&digits<=8?digits:3,
@@ -1136,6 +1157,24 @@ app.post('/api/mt5/tick', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// Account positions remain local and read-only; no trading endpoint is exposed.
+function localMt5Positions(req,res,next){
+ if(!isLocalPositionRequest(req.socket.remoteAddress,req.headers.host,req.headers.origin))return res.status(403).json({success:false,error:'Posisi akun hanya tersedia pada koneksi lokal MT5.'});
+ next();
+}
+app.post('/api/mt5/positions',localMt5Positions,(req,res)=>{
+ try{
+  const snapshot=normalizePositions(req.body);
+  activateMt5Source(req.body.server,req.body.account);
+  mt5PositionsSnapshot={...snapshot,server:req.body.server,sourceSession:mt5SourceSession};
+  res.json({success:true});
+ }catch(err){res.status(400).json({success:false,error:err.message});}
+});
+app.get('/api/mt5/positions',localMt5Positions,(req,res)=>{
+ res.set('Cache-Control','no-store');
+ res.json(positionsView(mt5PositionsSnapshot,mt5SourceSession));
 });
 
 // Check MT5 Direct Connection Status
@@ -1189,14 +1228,14 @@ app.post('/api/mt5/sync', async (req, res) => {
 // ─── MT5 Account Credentials Login (Direct Input: Login, Password, Server) ─────
 let mt5AccountSession = {
   login: null,
-  server: 'Exness-MT5Real36',
+  server: null,
   connected: false,
   loginTime: 0,
 };
 
 app.post('/api/mt5/login', async (req, res) => {
   return res.status(501).json({success:false,error:'Login/kalibrasi dashboard tidak mengautentikasi MT5. Gunakan terminal MT5 dan bridge aktif; harga tidak boleh dikalibrasi manual.'});
-  const { login, password, server = 'Exness-MT5Real36', currentPrice } = req.body;
+  const { login, password, server, currentPrice } = req.body;
   if (!login) {
     return res.status(400).json({ success: false, error: 'Nomor akun MT5 wajib diisi' });
   }
@@ -1263,7 +1302,7 @@ app.post('/api/mt5/login', async (req, res) => {
 app.post('/api/mt5/disconnect', (req, res) => {
   mt5AccountSession = {
     login: null,
-    server: 'Exness-MT5Real36',
+    server: null,
     connected: false,
     loginTime: 0,
   };

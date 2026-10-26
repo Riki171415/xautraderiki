@@ -14,6 +14,7 @@ ROOT=Path(__file__).resolve().parents[1]
 BUILD=ROOT/'windows-desktop'/'build'/datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 STAGE=BUILD/'app'
 OUT=ROOT/'installers'/'COP-TAH-Windows-x64-Setup.exe'
+VERSION='1.2.8'
 CSC=Path(os.environ['WINDIR'])/'Microsoft.NET'/'Framework64'/'v4.0.30319'/'csc.exe'
 
 def run(args,**kwargs):
@@ -76,6 +77,10 @@ def main():
     copy(ROOT/'windows-desktop'/'Uninstall.ps1',STAGE/'Uninstall.ps1')
     copy(ROOT/'windows-desktop'/'PANDUAN-WINDOWS.txt',STAGE/'PANDUAN-WINDOWS.txt')
     copy(ROOT/'PANDUAN_APLIKASI.md',STAGE/'PANDUAN_APLIKASI.md')
+    copy(ROOT/'docs'/'PERBAIKAN_SUPPORT_UJI_10_TAHUN.md',STAGE/'docs'/'PERBAIKAN_SUPPORT_UJI_10_TAHUN.md')
+    release_files=[STAGE/'backend'/'server.js',STAGE/'backend'/'rule_engine.js',STAGE/'backend'/'mt5_positions.js',STAGE/'backend'/'market_habits.js',STAGE/'backend'/'mt5_data.js',STAGE/'exness_mt5_bridge.py',*sorted((STAGE/'frontend'/'dist').rglob('*'))]
+    content_hashes={f.relative_to(STAGE).as_posix():hashlib.sha256(f.read_bytes()).hexdigest() for f in release_files if f.is_file()}
+    (STAGE/'build-info.json').write_text(json.dumps({'version':VERSION,'builtAt':datetime.datetime.now().isoformat(),'contentSha256':content_hashes},indent=2),encoding='utf-8')
     run([CSC,'/nologo','/target:winexe','/platform:x64','/out:'+str(STAGE/'COPTAH.exe'),'/r:System.Windows.Forms.dll','/r:System.Drawing.dll',ROOT/'windows-desktop'/'Launcher.cs'])
     result=subprocess.run([str(STAGE/'COPTAH.exe'),'--check'])
     if result.returncode:raise RuntimeError('Launcher package check failed.')
@@ -92,7 +97,7 @@ def main():
     run([OUT,'--verify'])
     digest=hashlib.sha256(OUT.read_bytes()).hexdigest()
     (OUT.with_suffix('.sha256')).write_text(digest+'  '+OUT.name+'\n',encoding='utf-8')
-    manifest={'version':'1.2.0','builtAt':datetime.datetime.now().isoformat(),'files':len(files),'sizeBytes':OUT.stat().st_size,'sha256':digest,'node':subprocess.check_output([str(node),'--version'],text=True).strip(),'python':sys.version.split()[0],'sources':['EXNESS','BINANCE']}
+    manifest={'version':VERSION,'builtAt':datetime.datetime.now().isoformat(),'files':len(files),'sizeBytes':OUT.stat().st_size,'sha256':digest,'node':subprocess.check_output([str(node),'--version'],text=True).strip(),'python':sys.version.split()[0],'sources':['EXNESS','BINANCE'],'contentSha256':content_hashes}
     (ROOT/'installers'/'COP-TAH-Windows-build.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     print('Installer:',OUT)
     print('Size MB:',round(OUT.stat().st_size/1024**2,1))

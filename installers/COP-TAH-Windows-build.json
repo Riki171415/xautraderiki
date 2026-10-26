@@ -1,13 +1,24 @@
 {
-  "version": "1.2.0",
-  "builtAt": "2026-10-19T00:33:19.268173",
-  "files": 3794,
-  "sizeBytes": 73177600,
-  "sha256": "3183abf130687386c94fe862f71f9d4e500ab6025f6ec01d8acc7de08abd7cbf",
-  "node": "v24.19.0",
+  "version": "1.2.8",
+  "builtAt": "2026-10-26T19:12:50.872009",
+  "files": 3798,
+  "sizeBytes": 73618944,
+  "sha256": "f994319bb7be2acdd0a7763055571a2337644eb6ed46b8ffa82748915716c2ba",
+  "node": "v24.22.1",
   "python": "3.11.9",
   "sources": [
     "EXNESS",
     "BINANCE"
-  ]
+  ],
+  "contentSha256": {
+    "backend/server.js": "4215956582efe05a1d2f37715a1ac38a801d472e79a16429b562fb8b1b0eac05",
+    "backend/rule_engine.js": "dfc7fccd6982b0876294de8f29a2a87873aa81fed2f6fda9889fb6dc0eaa4f69",
+    "backend/mt5_positions.js": "fc7e72ee9fa0f7812d4240dafea382c07abf9372c4df41bdc78a4dff5b334fb2",
+    "backend/market_habits.js": "06cfd8c5c4a4009acf59dbfb7ff44ae90f34543fca5c697e0947c714bf1e88db",
+    "backend/mt5_data.js": "7cf65f8f32cf10507fd87ecbd462aeea66a386cdc79e337809d780d6e2ce052d",
+    "exness_mt5_bridge.py": "16a05cd93ccc75e2f0d5d6a3e914f26a8e7d08ce4b722def480b7e8cdc9dae06",
+    "frontend/dist/assets/index-BavvBzih.css": "1593928ca9a49eae767f098e134d2855976a97fddbbeeb2b7a0e940dd22879d3",
+    "frontend/dist/assets/index-CMxAeJ5f.js": "604a567c604490c2e3ba823eda514125e87ec9f398abd5c04d4da6bee6b01e88",
+    "frontend/dist/index.html": "01d5525f8d11551e1b2faeeaafebf733d6b839a24c92f78f1429bd1aca9fdae4"
+  }
 }

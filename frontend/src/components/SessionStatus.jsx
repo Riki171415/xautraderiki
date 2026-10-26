@@ -89,10 +89,11 @@ function HSHBanner({ hsh }) {
               isCritical ? 'text-rose-300' : isHigh ? 'text-amber-300' : 'text-yellow-300'
             }`}
           >
-            🏠 HSH AKTIF — {hsh.hshSeverity} (Kembali ke Rumah)
+            🏠 PANTAUAN HSH — {hsh.hshSeverity} · belum terkonfirmasi
           </div>
           <div className="text-xs font-mono text-slate-200 leading-relaxed">
             {hsh.hshMessage}
+            <p className="mt-2 text-slate-400">{hsh.thresholdNote || 'Peringatan berdasarkan aturan metode; probabilitas kembali ke Open N belum teruji.'}</p>
           </div>
           <div className="mt-2.5 flex items-center gap-3">
             <div className="flex-1 bg-slate-900 rounded-full h-2 overflow-hidden border border-cop-border">

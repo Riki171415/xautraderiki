@@ -1,0 +1,162 @@
+{
+  "source": "MT5 Exness XAUUSDc",
+  "requestedWindow": {
+    "from": "2016-10-20",
+    "to": "2026-10-20"
+  },
+  "coverage": {
+    "h1": {
+      "bars": 57127,
+      "first": "2016-10-20T00:00:00.000Z",
+      "last": "2026-10-20T15:00:00.000Z",
+      "invalid": 0
+    },
+    "h4": {
+      "bars": 15661,
+      "first": "2016-10-02T00:00:00.000Z",
+      "last": "2026-10-20T12:00:00.000Z",
+      "invalid": 0
+    },
+    "d1": {
+      "bars": 3066,
+      "first": "2016-10-20T00:00:00.000Z",
+      "last": "2026-10-20T00:00:00.000Z",
+      "invalid": 0
+    },
+    "w1": {
+      "bars": 525,
+      "first": "2016-10-02T00:00:00.000Z",
+      "last": "2026-10-18T00:00:00.000Z",
+      "invalid": 0
+    },
+    "mn1": {
+      "bars": 134,
+      "first": "2015-09-01T00:00:00.000Z",
+      "last": "2026-10-01T00:00:00.000Z",
+      "invalid": 0
+    },
+    "m1": {
+      "bars": 57388,
+      "first": "2026-08-23T22:01:00.000Z",
+      "last": "2026-10-20T15:33:00.000Z",
+      "invalid": 0
+    }
+  },
+  "method": "Native D1/H4/W1/MN1 and H1; levels use only previous period OHLC and current open. Swing lows require two subsequent closed H1 candles; later broken swings removed. Fixed band=1, no optimization. Strong-up evaluation = H1 close-open >=0.5 preceding 14-H1 average range AND close-low >= preceding average range. Low-to-area distance <=1 measures retrospective coverage, NOT advance alert recall or win rate. Areas include H1/H4/D1/W1/MN1 Pivot/S1-S4/LowB and confirmed H1 swings. Final day excluded from H1 outcomes. Current partial M1 excluded.",
+  "buckets": {
+    "development2016_2023": {
+      "hours": 40531,
+      "strongUpHours": 4245,
+      "oldDailyCovered": 262,
+      "newAreasCovered": 3775,
+      "oldOnlyCovered": 0,
+      "newOnlyCovered": 3513,
+      "oldTouches": 2654,
+      "oldCloseAbove": 1434,
+      "newTouches": 65124,
+      "newCloseAbove": 34327
+    },
+    "validation2024": {
+      "hours": 5929,
+      "strongUpHours": 655,
+      "oldDailyCovered": 34,
+      "newAreasCovered": 509,
+      "oldOnlyCovered": 0,
+      "newOnlyCovered": 475,
+      "oldTouches": 469,
+      "oldCloseAbove": 234,
+      "newTouches": 10915,
+      "newCloseAbove": 5943
+    },
+    "comparison2025_2026": {
+      "hours": 10636,
+      "strongUpHours": 1097,
+      "oldDailyCovered": 34,
+      "newAreasCovered": 573,
+      "oldOnlyCovered": 0,
+      "newOnlyCovered": 539,
+      "oldTouches": 985,
+      "oldCloseAbove": 525,
+      "newTouches": 23496,
+      "newCloseAbove": 12345
+    }
+  },
+  "minuteReplay": {
+    "method": "Chronological M1 OPEN samples only. maxGap=90sec instead of live 10sec because samples are one minute apart. Same area state machine, 3-minute response window. No assumed path within OHLC. This does not validate live tick confirmation precision.",
+    "first": "2026-08-23T22:02:00.000Z",
+    "last": "2026-10-20T15:32:00.000Z",
+    "variants": {
+      "early": {
+        "config": {
+          "confirmationMs": 0,
+          "reboundMultiplier": 1
+        },
+        "stageCounts": {
+          "NEAR": 1640,
+          "TOUCH": 1478,
+          "BREAK": 1439,
+          "AREA": 113,
+          "BOUNCE": 417,
+          "REACTION": 18
+        },
+        "developmentAugSep": {
+          "with30Minutes": 278,
+          "aboveAreaAt30m": 171,
+          "belowAreaAt30m": 107,
+          "brokenWithin30m": 187
+        },
+        "comparisonOctober": {
+          "with30Minutes": 136,
+          "aboveAreaAt30m": 66,
+          "belowAreaAt30m": 70,
+          "brokenWithin30m": 99
+        },
+        "all": {
+          "with30Minutes": 414,
+          "aboveAreaAt30m": 237,
+          "belowAreaAt30m": 177,
+          "brokenWithin30m": 286
+        }
+      },
+      "sustained": {
+        "config": {
+          "confirmationMs": 60000,
+          "reboundMultiplier": 2
+        },
+        "stageCounts": {
+          "NEAR": 1657,
+          "TOUCH": 1478,
+          "BREAK": 1432,
+          "AREA": 113,
+          "BOUNCE": 242,
+          "REACTION": 10
+        },
+        "developmentAugSep": {
+          "with30Minutes": 175,
+          "aboveAreaAt30m": 120,
+          "belowAreaAt30m": 55,
+          "brokenWithin30m": 106
+        },
+        "comparisonOctober": {
+          "with30Minutes": 67,
+          "aboveAreaAt30m": 36,
+          "belowAreaAt30m": 31,
+          "brokenWithin30m": 42
+        },
+        "all": {
+          "with30Minutes": 242,
+          "aboveAreaAt30m": 156,
+          "belowAreaAt30m": 86,
+          "brokenWithin30m": 148
+        }
+      }
+    }
+  },
+  "limitations": [
+    "No claim that all reversals are identifiable before they happen.",
+    "No tick history for ten years. Minute replay spans about two months only.",
+    "Coverage can improve simply by adding more levels; not statistical evidence of predictive edge.",
+    "Observations and levels overlap; no independent-trade assumption.",
+    "Exploratory chronological comparisons, not a pristine independent holdout. Design revisions followed initial examination of this dataset; thresholds are not proven predictive."
+  ]
+}

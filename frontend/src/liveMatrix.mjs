@@ -1,3 +1,4 @@
+import {sampleMomentum} from './priceMomentum.mjs';
 const keys=['res4','res3','res2','res1','pivot','sup1','sup2','sup3','sup4'];
 export function activeSessionAt(now=Date.now()) {
  const h=new Date(now+7*3600000).getUTCHours();
@@ -20,7 +21,7 @@ export function projectMatrix(matrix,tick,decimals=3,now=Date.now(),previous=nul
   const close=applies?tick.bid:Number(prior?.closeN??col.closeN);
   const touchedLevels=Object.fromEntries(keys.map(k=>[k,low<=Number(col[k])&&Number(col[k])<=high]));
   const touchedCount=Object.values(touchedLevels).filter(Boolean).length;
-  return {...col,lastTickTimestamp:applies?tick.timestamp:lastTickTimestamp,highN:high.toFixed(decimals),lowN:low.toFixed(decimals),closeN:close.toFixed(decimals),touchedLevels,touchedCount,unreachedCount:9-touchedCount};
+  return {...col,decimals,momentumSamples:applies?sampleMomentum(prior?.momentumSamples||[],tick.timestamp,tick.bid):(prior?.momentumSamples||[]),lastTickTimestamp:applies?tick.timestamp:lastTickTimestamp,highN:high.toFixed(decimals),lowN:low.toFixed(decimals),closeN:close.toFixed(decimals),touchedLevels,touchedCount,unreachedCount:9-touchedCount};
  });
  return {...matrix,rsColumns:columns,tableRows:matrix.tableRows.map(row=>{
   const col=columns.find(c=>c.timeframe===row.timeframe);

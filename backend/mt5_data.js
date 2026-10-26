@@ -1,5 +1,16 @@
 // Exness data stays separate from exchange data, keyed by timeframe.
 const DIRECT_TIMEFRAMES = ['1m','5m','15m','30m','1h','4h','1d','1w','1M'];
+const {exnessSymbolKey}=require('./exness_symbols');
+function usesWeekdayDailyBefore(symbol,timeframe){
+  return timeframe==='1d'&&['XAUUSD','EURUSD','GBPUSD'].includes(exnessSymbolKey(symbol));
+}
+function analysisDailyCandles(rows,symbol,timeframe){
+  if(!usesWeekdayDailyBefore(symbol,timeframe))return rows;
+  // Preserve the latest broker candle as N, including a live Sunday candle.
+  // Only completed comparison candles exclude weekend stubs. Never synthesize
+  // a Friday bar or merge a Sunday stub into Monday's actual OHLC.
+  return [...rows.slice(0,-1).filter(r=>![0,6].includes(new Date(r[0]).getUTCDay())),rows.at(-1)];
+}
 function validCandles(rows) {
   return Array.isArray(rows) && rows.length >= 2 && rows.every((r,i) =>
     Array.isArray(r) && r.length >= 6 && r.every(Number.isFinite) && r[0] > 0 &&
@@ -55,8 +66,9 @@ function getExnessCandles(state, timeframe, now = Date.now()) {
         throw new Error('Riwayat MN1 memiliki bulan hilang; agregasi ditahan.');
     }
   }
-  const rows = timeframe==='10Y'?aggregateDecades(snapshot.candles,true):aggregate ? aggregateMonths(snapshot.candles,aggregate) : snapshot.candles;
+  const raw = timeframe==='10Y'?aggregateDecades(snapshot.candles,true):aggregate ? aggregateMonths(snapshot.candles,aggregate) : snapshot.candles;
+  const rows = analysisDailyCandles(raw,state.symbol,timeframe);
   if (rows.length < 2) throw new Error(`Riwayat Exness ${timeframe} belum cukup untuk N dan B.`);
   return rows;
 }
-module.exports = {aggregateDecades,DIRECT_TIMEFRAMES,validCandles,aggregateMonths,getExnessCandles};
+module.exports = {aggregateDecades,DIRECT_TIMEFRAMES,validCandles,aggregateMonths,getExnessCandles,usesWeekdayDailyBefore};

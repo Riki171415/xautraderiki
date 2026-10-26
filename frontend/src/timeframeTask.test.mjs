@@ -1,6 +1,14 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {timeframeTask,taskNarrative,taskH4Bridges,TASK_FRAMES} from './timeframeTask.mjs';
 const base={periodStart:0,periodEnd:1000,openN:100,openB:90,closeN:95,lowN:85,highN:115,sup1:90,sup2:80,sup3:70,sup4:60,res1:110,res2:120,res3:130,res4:140,pivot:100};
+test('both levels touched never proves bow before target, including after crossing Open',()=>{
+ for(const closeN of [95,105]){
+  const m=timeframeTask({...base,closeN},{now:100});
+  assert.equal(m.bow.touched,true);assert.equal(m.target.touched,true);
+  assert.equal(m.sequenceStatus,'UNVERIFIED');assert.equal(m.progress.completionVerified,false);
+  assert.match(taskNarrative(m,'H4'),/tidak membuktikan urutan/);
+ }
+});
 for(const [timeframe,label] of TASK_FRAMES){
  test(`${label} uses its own JIKA, bow, target, HSH and observed phase`,()=>{
   const col={...base,timeframe};const up=timeframeTask(col,{now:100});assert.equal(up.bow.key,'sup1');assert.equal(up.bow.value,90);assert.equal(up.target.key,'res1');assert.equal(up.open,100);assert.equal(up.phase,'BOW_DIRECTION');assert.equal(up.bow.touched,true);assert.equal(up.target.touched,true);assert.equal(up.bowConfirmed,false);assert.equal(up.transactionVerified,false);assert.equal(up.bow.continuations.length,3);assert.match(taskNarrative(up,label),/searah Busur/);

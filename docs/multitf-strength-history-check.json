@@ -1,0 +1,54 @@
+{
+  "source": "MT5 Exness XAUUSDc",
+  "method": "Chronological rule evaluation on native H1/H4/D1/W1/MN1 and month-derived Quarter/Semester/Year, sampled at H1 opens. Input levels use previous OHLC and current open only. Counts are level-hours, not predictive success rates. No complete Decade before-period in this exported dataset: Year abstains. Micro TF and Market covered by rule unit tests, not this ten-year replay.",
+  "result": {
+    "1h": {
+      "assessed": 514125,
+      "strongSupport": 27926,
+      "strongResistance": 23171,
+      "unverified": 162
+    },
+    "4h": {
+      "assessed": 514125,
+      "strongSupport": 27582,
+      "strongResistance": 22735,
+      "unverified": 27
+    },
+    "1d": {
+      "assessed": 514125,
+      "strongSupport": 33195,
+      "strongResistance": 21965,
+      "unverified": 9
+    },
+    "1w": {
+      "assessed": 514125,
+      "strongSupport": 33472,
+      "strongResistance": 17010,
+      "unverified": 0
+    },
+    "1M": {
+      "assessed": 514125,
+      "strongSupport": 36965,
+      "strongResistance": 11496,
+      "unverified": 0
+    },
+    "3M": {
+      "assessed": 514125,
+      "strongSupport": 35726,
+      "strongResistance": 6363,
+      "unverified": 0
+    },
+    "6M": {
+      "assessed": 514125,
+      "strongSupport": 43710,
+      "strongResistance": 116,
+      "unverified": 531
+    },
+    "1Y": {
+      "assessed": 513594,
+      "strongSupport": 0,
+      "strongResistance": 0,
+      "unverified": 513594
+    }
+  }
+}

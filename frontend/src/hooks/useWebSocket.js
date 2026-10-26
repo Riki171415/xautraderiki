@@ -51,9 +51,10 @@ export function useWebSocket(enabled=true) {
   }, [enabled]);
   const sendMessage = useCallback((msg) => {
     if (msg.type === 'subscribe') {
+      const previous=subscription.current;
+      const changed=previous.symbol!==msg.symbol||previous.timeframe!==msg.timeframe||previous.broker!==msg.broker;
       subscription.current = msg;
-      setLiveTick(null);
-      setData(null);
+      if(changed){setLiveTick(null);setData(null);}
       setIsLoading(true);
     }
     if (wsRef.current?.readyState === WebSocket.OPEN) wsRef.current.send(JSON.stringify(msg));

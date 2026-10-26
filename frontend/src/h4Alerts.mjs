@@ -13,7 +13,7 @@ export function nextH4Alerts(previous,scope,groups,price,{distance=1,epsilon=.00
   if(seen.has(type))continue;
   // Never downgrade an alert after a touch/cross within the same level context.
   if(type==='NEAR'&&(seen.has('AT')||seen.has('CROSSED')))continue;
-  seen.add(type);state.seen[key]=[...seen];events.push({...g,type});
+  seen.add(type);state.seen[key]=[...seen];events.push({...g,type,direction:crossed?(price>last?'UP':'DOWN'):null});
  }
  return {state,events};
 }

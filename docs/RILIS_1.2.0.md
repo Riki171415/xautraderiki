@@ -22,3 +22,10 @@ Biner tidak dimasukkan ke Git; sumber build, panduan, manifest versi dan checksu
 
 ## Memperbarui instalasi
 Tutup COP TAH melalui ikon area notifikasi → Keluar dan hentikan layanan. Jalankan installer 1.2.0 dan buka kembali melalui pintasan. MT5 dan akun broker tetap berada pada komputer tujuan.
+
+
+## Perubahan sumber setelah paket 1.2.0
+
+Pembaruan 19 Oktober 2026 setelah paket di atas menambahkan riwayat tugas tiap TF di Historis, penjelasan status Busur–Target/HSH, penanganan snapshot saat pembaruan tertunda, serta waktu dan umur analisis/harga sumber yang selalu terlihat dalam WIB. Panduan penggunaan terbaru tersedia pada [PANDUAN_APLIKASI.md](../PANDUAN_APLIKASI.md).
+
+Perubahan sumber tersebut telah diuji secara terarah dan build frontend berhasil. Paket installer 1.2.0 yang disebut sebelumnya belum dibangun ulang untuk memuat pembaruan ini; klaim validasi paket pada bagian sebelumnya hanya berlaku pada paket yang saat itu dibangun. Deployment dan feed live untuk perubahan berikutnya belum diverifikasi.

@@ -1,3 +1,4 @@
+import {priceMomentum} from './priceMomentum.mjs';
 import {calcHukumPerahu} from 'virtual:coptah/rule_engine';
 import {levelName} from './h4LevelMatches.mjs';
 const n=v=>v!=null&&v!==''&&Number.isFinite(Number(v))?Number(v):null;
@@ -13,13 +14,15 @@ export function directionReading(column,{now=Date.now(),stale=false}={}) {
  const pattern=o!=null&&ob!=null&&rangeValid?calcHukumPerahu({open:o,high,low},{open:ob,high:hb,low:lb}).pattern:null;
  const components=[{key:'jika',label:'JIKA',a:o,b:ob,direction:compare(o,ob)},{key:'move',label:'MOVE',a:close,b:o,direction:compare(close,o)},{key:'opPv',label:'OP–PV',a:o,b:pivot,direction:compare(o,pivot)},{key:'perahu',label:'Perahu',pattern,direction:pattern==='NEUTRAL'?'EQV':pattern?.endsWith('UP')?'UP':pattern?.endsWith('DWN')?'DOWN':'UNAVAILABLE'}].map(x=>({...x,direction:available?x.direction:'UNAVAILABLE'}));
  const dirs=components.map(x=>x.direction),mixed=dirs.includes('UP')&&dirs.includes('DOWN');
- const weakened=available&&dirs[2]!=='UNAVAILABLE'?(dirs[2]==='DOWN'&&[dirs[0],dirs[1],dirs[3]].includes('UP')?'UP':dirs[2]==='UP'&&[dirs[0],dirs[1],dirs[3]].includes('DOWN')?'DOWN':null):null;
+ const pivotConflict=available&&dirs[2]!=='UNAVAILABLE'?(dirs[2]==='DOWN'&&[dirs[0],dirs[1],dirs[3]].includes('UP')?'UP':dirs[2]==='UP'&&[dirs[0],dirs[1],dirs[3]].includes('DOWN')?'DOWN':null):null;
+ const momentum=priceMomentum(available?c?.momentumSamples||[]:[],{now,precision:c?.decimals??3});
+ const weakened=momentum.status==='WEAKENING'?momentum.direction:null;
  const anomaly=available&&pattern?.startsWith('ANL')?pattern:null;
  const sequence=keys.map(k=>({key:k,value:n(c?.[k])}));
  const ascending=['sup4','sup3','sup2','sup1','pivot','res1','res2','res3','res4'].map(k=>n(c?.[k]));
  const rsAnomaly=available&&(!!c?.anomalies?.length||ascending.some((v,i)=>i&&v!=null&&ascending[i-1]!=null&&v<ascending[i-1]));
- const flags=available?[...(mixed?['CAMPUR']:[]),...(weakened?[weakened==='UP'?'NAIK MELEMAH':'TURUN MELEMAH']:[]),...(anomaly?[anomaly]:[]),...(rsAnomaly?['R/S ANOMALI']:[]),...(mixed?['PANTAU R1–S1']:[])]:[];
- return {timeframe:c?.timeframe,available,components,mixed,weakened,anomaly,rsAnomaly,flags,levels:sequence,range:{primary:{high:n(c?.res1),low:n(c?.sup1)},alternative:{high:n(c?.res2),low:n(c?.sup2)}},anomalyBoundary:anomaly?{key:anomaly.endsWith('UP')?'highB':'lowB',value:anomaly.endsWith('UP')?hb:lb}:null};
+ const flags=available?[...(mixed?['CAMPUR']:[]),...(pivotConflict?[pivotConflict==='UP'?'NAIK BERKONFLIK DENGAN OP–PV':'TURUN BERKONFLIK DENGAN OP–PV']:[]),...(weakened?[momentum.label]:[]),...(anomaly?[anomaly]:[]),...(rsAnomaly?['R/S ANOMALI']:[]),...(mixed?['PANTAU R1–S1']:[])]:[];
+ return {timeframe:c?.timeframe,available,components,mixed,pivotConflict,momentum,weakened,anomaly,rsAnomaly,flags,levels:sequence,range:{primary:{high:n(c?.res1),low:n(c?.sup1)},alternative:{high:n(c?.res2),low:n(c?.sup2)}},anomalyBoundary:anomaly?{key:anomaly.endsWith('UP')?'highB':'lowB',value:anomaly.endsWith('UP')?hb:lb}:null};
 }
 export function directionContext(columns=[],timeframe,options={}) {
  const now=options.now??Date.now(),column=columns.find(c=>c.timeframe===timeframe),reading=directionReading(column,options),epsilon=10**(-(options.decimals??3))/2+1e-9,tolerance=Math.max(0,Number(options.tolerance)||0)+epsilon;

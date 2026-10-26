@@ -15,6 +15,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const {historicalHsh, clarifyHistoricalDataset} = require('./historical_observation');
 const { calcHukumJIKA, calcHukumPerahu } = require('./rule_engine');
 
 const CACHE_DIR = path.join(__dirname, 'data');
@@ -214,9 +215,9 @@ async function loadOrBuildHistoricalDataset() {
       const content = fs.readFileSync(CACHE_FILE, 'utf-8');
       const parsed = JSON.parse(content);
       if (parsed && Array.isArray(parsed.candles) && parsed.candles.length > 200) {
-        cachedDataset = parsed;
+        cachedDataset = clarifyHistoricalDataset(parsed);
         console.log(`[Historical Data] Loaded ${parsed.candles.length} candles from local cache`);
-        return parsed;
+        return cachedDataset;
       }
     } catch (e) {
       console.warn('[Historical Data] Cache read error, rebuilding...');
@@ -254,8 +255,6 @@ async function loadOrBuildHistoricalDataset() {
     const range = parseFloat((cur.high - cur.low).toFixed(2));
     const prevRange = parseFloat((prev.high - prev.low).toFixed(2));
     const rangeDelta = parseFloat((range - prevRange).toFixed(2));
-    const hshDiff = parseFloat(Math.abs(cur.close - cur.open).toFixed(2));
-    const isHshReversion = cur.close >= Math.min(cur.open, prev.open) && cur.close <= Math.max(cur.open, prev.open);
 
     const yr = parseInt(cur.date.slice(0, 4), 10);
     const mo = cur.date.slice(5, 7);
@@ -285,10 +284,7 @@ async function loadOrBuildHistoricalDataset() {
         pattern: perahu.pattern,
         status: perahu.status,
       },
-      hsh: {
-        diffFromOpen: hshDiff,
-        isRevertedToOpen: isHshReversion,
-      },
+      hsh: historicalHsh(cur, prev),
     });
   }
 
@@ -355,6 +351,7 @@ async function loadOrBuildHistoricalDataset() {
     macroBenchmarkSeries: macroBenchmarkSeries.slice(-300), // last 25 years benchmark
   };
 
+  clarifyHistoricalDataset(dataset);
   // Cache to disk
   try {
     if (!fs.existsSync(CACHE_DIR)) {

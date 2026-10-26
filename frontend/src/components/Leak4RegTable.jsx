@@ -1,3 +1,5 @@
+import MarketMovementBadge from './MarketMovementBadge';
+import TimeframeCountdown from './TimeframeCountdown';
 import {quoteIsStale,dataQuality} from '../analysisState.mjs';
 import {useLiveMatrix} from '../hooks/useLiveMatrix';
 import TimeframeTerminal from './TimeframeTerminal';
@@ -160,7 +162,7 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
                           </span>
                         )}
                       </div>
-                      <div className="mt-2 text-[10px] font-semibold text-slate-200" title={matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance,stale:quoteIsStale(data,now)}}).reason||'Rencana bersyarat; belum merupakan order.'}>{matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance,stale:quoteIsStale(data,now)}}).action}</div>
+                      <TimeframeCountdown column={col} now={now}/><MarketMovementBadge column={col} now={now} stale={quoteIsStale(data,now)}/><div className="mt-2 text-[10px] font-semibold text-slate-200" title={matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance,stale:quoteIsStale(data,now)}}).reason||'Rencana bersyarat; belum merupakan order.'}>{matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance,stale:quoteIsStale(data,now)}}).action}</div>
                       <div className="text-[8px] font-mono font-normal mt-0.5">
                         {touchedCount > 0 ? (
                           <span className="text-emerald-400 font-bold">{touchedCount}/9 Tersentuh</span>
@@ -380,7 +382,7 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
             <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono text-slate-400 pt-1 border-t border-cop-border/60">
               <span>SPREAD : <strong className="text-cop-cyan">{spreadPoints} PTS</strong></span>
               <span>HSH {activeSessionAt(now)} · OPEN SESI : <strong className="text-amber-300">{hshFmt(hshActive?.coverage?hshActive.open:null)}</strong></span>
-              <span className="block mt-1 text-xs text-slate-400">HSH {hshReference?.name||'pembanding'} sebelumnya : <strong className="text-cyan-200">{hshFmt(hshReference?.coverage&&hshReference?.status==='completed'?hshReference.hshOpen:null)}</strong></span>
+              <span className="block mt-1 text-xs text-slate-400">HSH {hshReference?.name||'pembanding'} sebelumnya : <strong className="text-cyan-200">{hshFmt(hshReference?.hshOpen)}</strong></span>
             </div>
 
             <div className="text-[10px] text-slate-400 font-mono uppercase tracking-wider pt-1">

@@ -1,0 +1,142 @@
+{
+  "source": "MT5 Exness",
+  "symbol": "XAUUSDc",
+  "first": "2024-10-04T15:00:00.000Z",
+  "last": "2026-10-16T12:00:00.000Z",
+  "dayCount": 377,
+  "mirrorChecks": 85060,
+  "mirrorMismatches": 0,
+  "method": "UTC-reconstructed Daily and Month from H1; prior completed period OHLC and current period open only for levels. Candidate fixed at each H1 open, touch if H1 range includes level, outcome at H1 close. At least 20 H1 bars on current/prior day, first partial month and last partial day excluded. Not broker-native D1/MN1, not tick backtest or trading win rate. Level-hours overlap and are not independent.",
+  "currentAndMirrored": {
+    "support": {
+      "eligibleLevelHours": 6600,
+      "touchedLevelHours": 731,
+      "closeHeld": 405,
+      "closeFailed": 326,
+      "closeAt": 0,
+      "uniqueHours": 719,
+      "closeHeldPercent": 55.4
+    },
+    "resistance": {
+      "eligibleLevelHours": 2389,
+      "touchedLevelHours": 325,
+      "closeHeld": 158,
+      "closeFailed": 167,
+      "closeAt": 0,
+      "uniqueHours": 320,
+      "closeHeldPercent": 48.62
+    }
+  },
+  "withoutMonthFilterExploratoryOnly": {
+    "support": {
+      "eligibleLevelHours": 9281,
+      "touchedLevelHours": 1014,
+      "closeHeld": 538,
+      "closeFailed": 476,
+      "closeAt": 0,
+      "uniqueHours": 999,
+      "closeHeldPercent": 53.06
+    },
+    "resistance": {
+      "eligibleLevelHours": 6780,
+      "touchedLevelHours": 899,
+      "closeHeld": 447,
+      "closeFailed": 452,
+      "closeAt": 0,
+      "uniqueHours": 890,
+      "closeHeldPercent": 49.72
+    }
+  },
+  "recentDays": [
+    {
+      "dayUTC": "2026-10-01",
+      "pivotMonth": 4277.218,
+      "lowB": 4147.292,
+      "highB": 4219.408,
+      "open": 4156.124,
+      "low": 4139.072,
+      "high": 4192.931,
+      "close": 4181.772
+    },
+    {
+      "dayUTC": "2026-10-02",
+      "pivotMonth": 4277.218,
+      "lowB": 4139.072,
+      "highB": 4192.931,
+      "open": 4181.851,
+      "low": 4125.104,
+      "high": 4228.085,
+      "close": 4140.309
+    },
+    {
+      "dayUTC": "2026-10-06",
+      "pivotMonth": 4277.218,
+      "lowB": 4123.084,
+      "highB": 4170.396,
+      "open": 4134.385,
+      "low": 4103.708,
+      "high": 4184.489,
+      "close": 4165.993
+    },
+    {
+      "dayUTC": "2026-10-07",
+      "pivotMonth": 4277.218,
+      "lowB": 4103.708,
+      "highB": 4184.489,
+      "open": 4165.687,
+      "low": 4066.305,
+      "high": 4169.687,
+      "close": 4108.19
+    },
+    {
+      "dayUTC": "2026-10-08",
+      "pivotMonth": 4277.218,
+      "lowB": 4066.305,
+      "highB": 4169.687,
+      "open": 4108.073,
+      "low": 4105.179,
+      "high": 4145.937,
+      "close": 4144.753
+    },
+    {
+      "dayUTC": "2026-10-09",
+      "pivotMonth": 4277.218,
+      "lowB": 4105.179,
+      "highB": 4145.937,
+      "open": 4144.802,
+      "low": 4141.576,
+      "high": 4207.442,
+      "close": 4194.988
+    },
+    {
+      "dayUTC": "2026-10-13",
+      "pivotMonth": 4277.218,
+      "lowB": 4154.565,
+      "highB": 4217.329,
+      "open": 4170.736,
+      "low": 4146.72,
+      "high": 4200.466,
+      "close": 4154.941
+    },
+    {
+      "dayUTC": "2026-10-14",
+      "pivotMonth": 4277.218,
+      "lowB": 4146.72,
+      "highB": 4200.466,
+      "open": 4154.884,
+      "low": 4073.263,
+      "high": 4170.492,
+      "close": 4111.85
+    },
+    {
+      "dayUTC": "2026-10-15",
+      "pivotMonth": 4277.218,
+      "lowB": 4073.263,
+      "highB": 4170.492,
+      "open": 4111.879,
+      "low": 4110.944,
+      "high": 4177.44,
+      "close": 4156.128
+    }
+  ]
+}

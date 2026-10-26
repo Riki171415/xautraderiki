@@ -1,3 +1,8 @@
+import Mt5PositionsPanel from './components/Mt5PositionsPanel';
+import {acceptsExnessSource,sourceIdentity} from './sourceIdentity.mjs';
+import {SupportWatchContext} from './hooks/SupportWatchContext';
+import NotificationDrawer from './components/NotificationDrawer';
+import TaskHistory from './components/TaskHistory';
 import NotificationCard from './components/NotificationCard';
 import {normalizeNotice} from './notificationCopy.mjs';
 import {scopedTick} from './analysisState.mjs';
@@ -8,7 +13,7 @@ import {useAnalysisNotifications} from './hooks/useAnalysisNotifications';
 import {instrumentTolerance} from './instrumentTolerance.mjs';
 import SourceHSHBar from './components/SourceHSHBar';
 import OHLCWorkspace from './components/OHLCWorkspace';
-import {newestScopedAnalysis} from './dataScope.mjs';
+import {newestScopedAnalysis,retainedScopedAnalysis} from './dataScope.mjs';
 import H4DirectionStrip from './components/H4DirectionStrip';
 /**
  * COP TAH Analytics Dashboard — Main App
@@ -81,6 +86,8 @@ export default function App() {
   const [markerExpanded,setMarkerExpanded]=useState(false);
   const [alertSettings,setAlertSettings]=useState({h4Enabled:true,dailyEnabled:true,distance:1});
   const [broker, setBroker] = useState(DEFAULT_BROKER);
+  const [exnessServer,setExnessServer]=useState(()=>{try{return localStorage.getItem('coptah.exnessServer')||'';}catch{return '';}});
+  useEffect(()=>{try{localStorage.setItem('coptah.exnessServer',exnessServer);}catch{}},[exnessServer]);
   const toleranceScope=`${broker}|${symbol}`;
   const h4Tolerance=h4ToleranceByInstrument[toleranceScope]??instrumentTolerance(symbol).defaultValue;
   const setH4Tolerance=value=>setH4ToleranceByInstrument(prior=>({...prior,[toleranceScope]:value}));
@@ -117,7 +124,14 @@ export default function App() {
       refetch();
     }
   },[activeSession,refetch]);
-  const data = newestScopedAnalysis(wsData,restData,symbol,timeframe,broker);
+  const lastAnalysis=useRef(null);
+  const incoming = newestScopedAnalysis(wsData,restData,symbol,timeframe,broker);
+  const candidate = retainedScopedAnalysis(incoming,lastAnalysis.current,symbol,timeframe,broker);
+  const latestSource=useRef(null);
+  if(rawTick?.broker==='EXNESS'&&rawTick.sourceSession)latestSource.current={server:rawTick.server,sourceSession:rawTick.sourceSession};
+  const data = candidate&&acceptsExnessSource(candidate,exnessServer,broker==='EXNESS'?latestSource.current:null)?candidate:null;
+  const activeExnessServer=rawTick?.broker==='EXNESS'?rawTick.server:candidate?.broker?.id==='EXNESS'?candidate.broker.server:null;
+  lastAnalysis.current=data;
 
 
   // Subscribe to live feed (Stale-While-Revalidate: do NOT blank out screen)
@@ -133,7 +147,7 @@ export default function App() {
     clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setNotification(null),12000);
   }, []);
 
-  const liveSignals=useAnalysisNotifications({data,liveTick,now:clock,tolerance:h4Tolerance,target:dailyTarget,settings:alertSettings,onNotify:showNotification,onStrongSignal:setSignalPopup});
+  const {signals:liveSignals,supportWatch}=useAnalysisNotifications({data,liveTick,now:clock,tolerance:h4Tolerance,target:dailyTarget,settings:alertSettings,onNotify:showNotification,onStrongSignal:setSignalPopup});
 
   const handleRefresh = useCallback(async () => {
     const result = await refetch();
@@ -189,7 +203,7 @@ export default function App() {
 
 
   return (
-    <div className={`premium-app min-h-screen bg-cop-bg flex flex-col overflow-hidden text-slate-100 ${sidebarHidden ? 'sidebar-hidden' : ''} ${viewMode==='levels'?'matrix-slide-mode':''} ${viewMode==='entries'?'entries-mode':''}`}>
+    <SupportWatchContext.Provider value={supportWatch}><div className={`premium-app min-h-screen bg-cop-bg flex flex-col overflow-hidden text-slate-100 ${sidebarHidden ? 'sidebar-hidden' : ''} ${viewMode==='levels'?'matrix-slide-mode':''} ${viewMode==='entries'?'entries-mode':''}`}>
       <button type="button" className="sidebar-toggle" onClick={() => setSidebarHidden(v => !v)} aria-expanded={!sidebarHidden} aria-controls="workspace-navigation" aria-label={sidebarHidden ? 'Tampilkan menu navigasi' : 'Sembunyikan menu navigasi'} title={sidebarHidden ? 'Tampilkan menu' : 'Sembunyikan menu'}>
         {sidebarHidden ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         <span>{sidebarHidden ? 'Menu' : 'Tutup menu'}</span>
@@ -204,20 +218,23 @@ export default function App() {
         broker={broker}
         liveTick={scopedTick(data,liveTick)}
         wsStatus={wsStatus}
+        updateDelayed={!!(restError||(broker==='EXNESS'&&wsError))}
         lastUpdated={lastUpdated}
         onRefresh={handleRefresh}
         onSymbolChange={handleSymbolChange}
         onTimeframeChange={setTimeframe}
         onBrokerChange={handleBrokerChange}
-        onOpenSources={()=>navigate('sources')}
+        exnessServer={exnessServer} onExnessServer={setExnessServer} activeExnessServer={activeExnessServer} onOpenSources={()=>navigate('sources')}
       />
 
-      {signalPopup?.scope===`${broker}|${symbol}`&&<StrongSignalPopup signal={liveSignals.find(s=>strongSignalKey(s,data,h4Tolerance)===signalPopup.eventKey)||{...signalPopup,strong:false,checks:signalPopup.checks.map(c=>({...c,pass:false}))}} symbol={symbol} source={broker} decimals={data?.decimals??3} onClose={()=>setSignalPopup(null)}/>}
+      {signalPopup?.scope===sourceIdentity(data)&&<StrongSignalPopup signal={liveSignals.find(s=>strongSignalKey(s,data,h4Tolerance)===signalPopup.eventKey)||{...signalPopup,strong:false,checks:signalPopup.checks.map(c=>({...c,pass:false}))}} symbol={symbol} source={broker} decimals={data?.decimals??3} onClose={()=>setSignalPopup(null)}/>}
+      {broker==='EXNESS'&&<Mt5PositionsPanel selectedServer={exnessServer} sourceSession={latestSource.current?.sourceSession} now={clock}/>}
       {/* ── Notification Toast ── */}
-      {notification&&<aside onMouseEnter={()=>clearTimeout(toastTimer.current)} onFocusCapture={()=>clearTimeout(toastTimer.current)} className="notification-toast" aria-label="Notifikasi terbaru"><NotificationCard compact notice={notification} onClose={()=>setNotification(null)} onOpen={()=>{navigate(notification.page);setNotification(null);}}/></aside>}
+      {notification&&!noticesOpen&&<aside onMouseEnter={()=>clearTimeout(toastTimer.current)} onFocusCapture={()=>clearTimeout(toastTimer.current)} className="notification-toast" aria-label="Notifikasi terbaru"><NotificationCard compact notice={notification} onClose={()=>setNotification(null)} onOpen={()=>{navigate(notification.page);setNotification(null);}}/></aside>}
       <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{notification?notification.title+'. '+notification.body:''}</span>
 
       {!data&&loading&&<div className="px-5 py-2 text-sm text-cyan-200" role="status">Mengambil data {symbol} dari {broker}. Pilihan sumber tetap bisa digunakan.</div>}
+
       {/* ── Error Banner ── */}
       {(wsError || restError) && !data && (
         <div className="bg-rose-950/50 border-b border-rose-800/40 px-6 py-2 flex items-center gap-2 text-xs font-mono text-rose-300">
@@ -241,8 +258,8 @@ export default function App() {
         <div className="sidebar-brand"><div className="sidebar-monogram">CT<span>•</span></div><div><strong>COP TAH</strong><small>MARKET ANALYTICS</small></div></div>
         {['utama','pendukung'].map(group=><div className="step-menu-group" key={group}><p className="sidebar-caption">{group==='utama'?'MENU UTAMA':'PENDUKUNG'}</p>{WORKFLOW_PILLARS.filter(p=>p.group===group).map(p=><button type="button" key={p.id} onClick={()=>navigate(p.id)} aria-current={viewMode===p.id?'page':undefined} className={`nav-item ${viewMode===p.id?'nav-item-active':''}`}><p.icon size={17}/><span className="nav-label">{p.title}</span></button>)}</div>)}
       </aside>
-      <div className="app-utility"><button className="chart-toggle" onClick={()=>setNoticesOpen(v=>!v)} aria-expanded={noticesOpen}><Bell size={16}/> Notifikasi {noticeHistory.length||''}</button></div>
-      {noticesOpen&&<aside className="notice-drawer" aria-label="Pusat notifikasi"><header className="flex justify-between items-center"><h2 className="font-semibold">Pusat notifikasi</h2><button className="chart-toggle" onClick={()=>setNoticesOpen(false)}>Tutup</button></header><p className="text-xs text-slate-400 mt-2">50 kejadian terbaru selama sesi aplikasi.</p>{!noticeHistory.length&&<p className="text-sm p-4 text-slate-400">Belum ada notifikasi.</p>}{noticeHistory.map(n=><NotificationCard key={n.id} notice={n} onOpen={()=>{navigate(n.page);setNoticesOpen(false);}}/>)}</aside>}
+      <div className="app-utility"><button className="chart-toggle" onClick={()=>setNoticesOpen(v=>!v)} aria-expanded={noticesOpen} aria-controls="notification-center"><Bell size={16}/> Notifikasi {noticeHistory.length||''}</button></div>
+      {noticesOpen&&<NotificationDrawer notices={noticeHistory} onClose={()=>setNoticesOpen(false)} onOpen={n=>{navigate(n.page);setNoticesOpen(false);}}/>}
       {menuOpen&&<div className="mobile-menu-sheet" role="dialog" aria-label="Semua menu"><header className="flex justify-between items-center"><strong>Menu analisis</strong><button className="chart-toggle" onClick={()=>setMenuOpen(false)}>Tutup</button></header>{WORKFLOW_PILLARS.map(p=><button key={p.id} onClick={()=>navigate(p.id)} className={`nav-item ${viewMode===p.id?'nav-item-active':''}`}><p.icon size={18}/>{p.title}</button>)}</div>}
       <nav className="mobile-bottom-nav" aria-label="Navigasi utama mobile">{WORKFLOW_PILLARS.filter(p=>['dashboard','analysis','entries'].includes(p.id)).map(({id,title:label,icon:Icon})=><button key={id} aria-current={viewMode===id?'page':undefined} onClick={()=>navigate(id)}><Icon size={19}/><span>{label}</span></button>)}<button aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}><MenuIcon size={19}/><span>Menu</span></button></nav>
 
@@ -324,6 +341,7 @@ export default function App() {
         {/* ════════════════════════════════════════════════════════════════════════
             PILAR 7: DATA HISTORIS XAUUSD (2000 – 2026) & 5 HUKUM COP TAH
             ════════════════════════════════════════════════════════════════════════ */}
+        <TaskHistory data={data} liveTick={liveTick} now={clock} visible={viewMode==='history'} broker={broker} symbol={symbol}/>
         {(viewMode === 'history') && (
           <div className="space-y-4">
             <HistoricalDataViewer decimals={data?.decimals??3} key={`${broker}|${symbol}`} broker={broker} symbol={symbol} />
@@ -351,6 +369,6 @@ export default function App() {
           Feed: <strong className="text-slate-200">{data?.broker?.name || broker}</strong>
         </div>
       </footer>
-    </div>
+    </div></SupportWatchContext.Provider>
   );
 }

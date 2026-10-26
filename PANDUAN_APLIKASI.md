@@ -447,3 +447,41 @@ Notifikasi diperbarui: format judul, instrumen/sumber/waktu, kejadian, rincian, 
 Rilis desktop 1.2.0 — 19 Oktober 2026: installer dibangun ulang dari kode UI/UX, penanda H4/macro, tugas Daily-Market dan notifikasi terbaru. 242 tes aplikasi lulus. Installer/update dan uninstall menolak operasi bila launcher COP TAH masih berjalan. Paket memuat Node/Python, tanpa .env/akun/log; sertifikat penerbit belum tersedia. Sumber dan dokumentasi akan dipush sesuai permintaan.
 
 Rilis 1.2.0 final: installer terbaru berhasil dibangun dan --verify lulus; checksum serta integritas ZIP diperiksa. Frontend paket sama dengan hasil build terkini. Uji server paket health/halaman/asset HTTP 200; 242 tes lulus. EXE tersedia lokal di installers, sumber installer dan manifest/checksum disertakan dalam push. Verifikasi pemasangan komputer lain dan tampilan browser tetap belum dilakukan.
+
+
+## Riwayat tugas tiap TF
+
+Buka menu **Historis**, panel **Riwayat tugas tiap TF**. Pilih timeframe atau centang **Pernah pola ANL** untuk memeriksa catatan periode berjalan dan periode terdahulu yang sempat dipantau. Tabel menyimpan JIKA, acuan Busur/Target, level tersentuh, perubahan pola Perahu dan waktu deteksi dalam WIB. Gunakan **Unduh catatan JSON** untuk menyimpan hasil filter.
+
+Pencatatan berjalan di semua menu saat aplikasi terbuka dengan data segar dan periode valid. Maksimal 1.500 periode terbaru disimpan lokal di browser; sumber dan instrumen dipisahkan. Catatan tidak berpindah otomatis antarperangkat. Saat penyimpanan gagal, aplikasi memberi pemberitahuan dan catatan baru hanya bertahan selama sesi.
+
+Waktu deteksi bukan waktu historis sentuhan. OHLC saat pertama dimuat mungkin sudah mencakup sentuhan sebelumnya; aplikasi tidak menebak waktunya. Waktu aplikasi tertutup dan data sebelum pencatatan tidak direkonstruksi. Status urutan Busur–Target tetap belum terverifikasi, termasuk ketika kedua level sudah tersentuh. Periode berakhir tidak otomatis berarti tugas selesai, dan sentuhan bukan bukti TP transaksi.
+
+
+## Waktu pembaruan dan data tertunda — 19 Oktober 2026
+
+Bagian atas aplikasi selalu menampilkan **Analisis diperbarui** (tanggal, tahun, jam, menit dan detik dalam WIB) serta umur analisis. Baris **Harga sumber** menampilkan waktu harga dan umurnya secara terpisah. Waktu analisis adalah waktu pembentukan snapshot, bukan jaminan bahwa harga sumber baru diperbarui. Waktu harga mengikuti tick yang valid untuk sumber/instrumen aktif atau metadata harga sumber; bila tidak tersedia, tampil **Belum tersedia** dan **umur belum diketahui**. Waktu sumber yang berada di depan jam perangkat ditandai secara eksplisit.
+
+Ketika pembaruan gagal, aplikasi mempertahankan snapshot terakhir untuk kombinasi sumber, instrumen dan timeframe yang sama, lalu menampilkan **Pembaruan tertunda — menampilkan data terakhir**. Timestamp asli tetap dipertahankan dan umur data terus bertambah; membaca cache atau mencoba ulang tidak membuat data lama menjadi baru. Snapshot yang lebih tua tidak menggantikan snapshot terbaru. Saat mengganti sumber, instrumen atau TF, snapshot pilihan sebelumnya tidak dipakai untuk mengisi pilihan baru.
+
+Harga tick terbaru dapat tersedia ketika analisis belum diperbarui. Karena itu, periksa kedua waktu, status kesegaran dan kelengkapan data sebelum membaca rencana. Koneksi berhasil atau harga yang bergerak belum otomatis membuktikan seluruh analisis segar. Gerbang kesegaran untuk rencana, sinyal, notifikasi dan pencatatan tugas tetap berlaku.
+
+Bila pertama kali membuka aplikasi atau mengganti pilihan, status **Menunggu data** masih dapat muncul sampai respons yang sesuai tersedia. Jika pembaruan tertunda berulang, buka **Sumber Data** untuk memeriksa koneksi. Exness memerlukan bridge dan terminal MT5 yang tersambung; data Exness tidak diisi menggunakan Binance.
+
+## Batas interpretasi Busur–Target, HSH dan statistik
+
+- Arah Busur/Target adalah klasifikasi gerak terhadap JIKA. Pergantian arah ketika harga melewati Open tidak membuktikan Busur sudah selesai. Kedua level tersentuh dalam satu OHLC belum membuktikan urutan Busur → Target.
+- HSH merupakan pantauan kemungkinan kembali ke Open N. Ambang waktu 80% dan jarak/range 30% adalah aturan metode yang belum menjadi probabilitas teruji. Tingkat peringatan menunjukkan kedekatan waktu penutupan; HSH aktif bukan konfirmasi reversion.
+- Pada pemrosesan arsip lama, Close di antara Open N dan Open B disimpan sebagai observasi tersendiri, bukan bukti harga menjauh lalu kembali ke Open. Pembacaan cache lama juga menghapus klaim keberhasilan tersebut.
+- Persentase JIKA UP adalah proporsi klasifikasi, bukan win rate. Arsip historis lama yang tidak konsisten tetap dikarantina. Pengujian perangkat lunak tidak membuktikan validitas prediksi metode.
+
+Perubahan ini telah melalui pengujian terarah dan build frontend. Paket Windows 1.2.1 memuat perubahan ini setelah proses build dan verifikasi paket selesai; instalasi lama perlu diperbarui menggunakan installer baru. Deployment dan pemeriksaan visual/feed live belum diverifikasi untuk perubahan ini.
+
+
+## Momentum tick dan konflik arah
+
+NAIK/TURUN BERKONFLIK DENGAN OP–PV menggantikan penggunaan lama kata melemah untuk ketidaksesuaian Open–Pivot dengan JIKA/MOVE/Perahu. CAMPUR tetap berarti komponen memiliki arah berbeda.
+
+NAIK MELEMAH atau TURUN MELEMAH sekarang memakai sampel tick Bid dari dua jendela berurutan sekitar 30 detik. Kecepatan = perubahan harga / durasi aktual. Arah kedua jendela harus sama dan kecepatan absolut terbaru maksimal 70% sebelumnya. Perubahan kurang dari dua unit presisi instrumen dinilai datar. Timestamp batas jendela harus berada dalam toleransi 3 detik; jeda sampel di atas 10 detik atau tick terakhir lebih tua dari 10 detik menahan hasil. Data mulai terkumpul ketika panel/model dipantau, tidak direkonstruksi dari OHLC; berganti periode/sumber/instrumen memulai pengamatan baru.
+
+Momentum ini mengukur horizon tick sekitar satu menit yang sama pada tiap TF, bukan momentum sepanjang candle Daily/Weekly, volume, order flow, atau probabilitas pembalikan. Angka ambang 30% adalah parameter observasi yang belum dikalibrasi historis. Rincian tersedia pada Pembacaan gabungan → Dasar pembacaan momentum.

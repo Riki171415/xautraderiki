@@ -1,0 +1,47 @@
+{
+  "observedAt": "2026-10-26T12:06:16.928643+00:00",
+  "server": "Exness-MT5Real36",
+  "symbol": "XAUUSDc",
+  "timeframe": "D1",
+  "result": {
+    "rawPrevious": {
+      "timestamp": 1792886400000,
+      "open": 3999.361,
+      "high": 4004.211,
+      "low": 3989.291,
+      "close": 3997.289,
+      "volume": 12924,
+      "periodEnd": 1792972800000
+    },
+    "current": {
+      "timestamp": 1792972800000,
+      "open": 3997.347,
+      "high": 4022.424,
+      "low": 3978.004,
+      "close": 4019.365,
+      "volume": 158417,
+      "periodEnd": 1793059200000
+    },
+    "selectedBefore": {
+      "timestamp": 1792713600000,
+      "open": 4023.654,
+      "high": 4034.421,
+      "low": 3975.365,
+      "close": 3996.057,
+      "volume": 301321,
+      "periodEnd": 1792800000000,
+      "comparisonPolicy": "PREVIOUS_WEEKDAY"
+    },
+    "matrix": {
+      "beforePeriodStart": 1792713600000,
+      "openB": "4023.654",
+      "highB": "4034.421",
+      "lowB": "3975.365",
+      "closeB": "3996.057",
+      "pivot": "4005.625",
+      "res1": "4035.885",
+      "sup1": "3976.829",
+      "beforePolicy": "PREVIOUS_WEEKDAY"
+    }
+  }
+}

@@ -113,3 +113,47 @@ test('normal bearish verifies low-high in Asia Europe and high-low in USA',()=>{
  const r=analyzeMarketSessions(c);assert.equal(r.marketType,'NORMAL');assert.equal(r.normalStory.status,'VERIFIED');
  c.hourly[0][2]=111;assert.equal(analyzeMarketSessions(c).marketType,'MIXED');
 });
+
+test('Monday Europe uses last observed Friday USA across empty weekend sessions',()=>{
+ const monday=Date.UTC(2026,9,18,23),fridayUsa=monday-58*H;
+ const usa=Array.from({length:8},(_,i)=>[fridayUsa+i*H,75,80,70,76,1]);
+ const current=Array.from({length:12},(_,i)=>[monday+i*H,100,110,90,95,1]);
+ const result=analyzeMarketSessions({symbol:'XAUUSD',hourly:[...usa,...current],daily:{open:100,close:95},now:monday+10*H});
+ assert.equal(result.activeSession,'EROPA');assert.equal(result.hshReference.hshOpen,75);
+ assert.equal(result.hshReference.start,fridayUsa);assert.equal(result.previousUsa.hshOpen,75);
+ assert.equal(result.hshReference.skippedCalendarDays,2);
+});
+test('latest incomplete USA cannot be replaced with an older complete USA',()=>{
+ const monday=Date.UTC(2026,9,18,23),fridayUsa=monday-58*H;
+ const older=Array.from({length:8},(_,i)=>[fridayUsa-24*H+i*H,55,60,50,56,1]);
+ const latest=[[fridayUsa,75,80,70,76,1]];
+ const result=analyzeMarketSessions({symbol:'XAUUSD',hourly:[...older,...latest],daily:{open:100,close:95},now:monday+10*H});
+ assert.equal(result.hshReference.start,fridayUsa);assert.equal(result.hshReference.hshOpen,75);assert.equal(result.hshReference.coverage,false);
+});
+
+test('BTC never substitutes Friday for missing Sunday USA; present Sunday USA is used',()=>{
+ const monday=Date.UTC(2026,9,18,23),friday=monday-58*H,sunday=monday-10*H;
+ const bars=start=>Array.from({length:8},(_,i)=>[start+i*H,75,80,70,76,1]);
+ for(const symbol of ['BTCUSD','BTC/USDC']){
+  const args={symbol,hourly:bars(friday),now:monday+10*H};
+  assert.equal(analyzeMarketSessions(args).hshReference.hshOpen,null);
+  const result=analyzeMarketSessions({...args,hourly:[...bars(friday),...bars(sunday)]});
+  assert.equal(result.hshReference.start,sunday);assert.equal(result.hshReference.hshOpen,75);
+ }
+});
+test('weekday missing history is not assumed to be a holiday closure',()=>{
+ const monday=Date.UTC(2026,9,18,23),friday=monday-58*H;
+ const hourly=Array.from({length:8},(_,i)=>[friday+i*H,75,80,70,76,1]);
+ const result=analyzeMarketSessions({symbol:'EURUSD',hourly,now:monday+34*H});
+ assert.equal(result.hshReference.hshOpen,null);
+});
+
+test('HSH uses exact opening bar even when later bars are missing; missing opening bar never borrows next open',()=>{
+ const monday=Date.UTC(2026,9,18,23),usa=monday-10*H;
+ const bars=Array.from({length:8},(_,i)=>[usa+i*H,75+i,90,70,80,1]);
+ const args={symbol:'BTCUSD',now:monday+10*H};
+ const partial=analyzeMarketSessions({...args,hourly:bars.filter((_,i)=>i!==3)});
+ assert.equal(partial.hshReference.hshOpen,75);assert.equal(partial.hshReference.coverage,false);
+ const noOpen=analyzeMarketSessions({...args,hourly:bars.slice(1)});
+ assert.equal(noOpen.hshReference.hshOpen,null);assert.equal(noOpen.hshReference.open,null);
+});

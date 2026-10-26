@@ -40,15 +40,17 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
       }
     } catch (err) {
       clearTimeout(timeout);
-      if(broker==='EXNESS'){if(!controller.signal.aborted)setError(err.message);return;}
+      if(broker==='EXNESS'){if(!controller.signal.aborted || controller.signal.reason==='timeout')setError(controller.signal.reason==='timeout'?'Pembaruan data melewati batas waktu. Data terakhir dipertahankan; mencoba kembali otomatis.':err.message);return;}
       if (!controller.signal.aborted || controller.signal.reason === 'timeout') {
         const fallbackController=new AbortController();
+        fallbackController.scope=scope;fallbackController.running=true;
         requestRef.current=fallbackController;directMode=true;
+        const fallbackTimeout=setTimeout(()=>fallbackController.abort('timeout'),20000);
         try {
           const fallback=await browserBinanceAnalysis(symbol,timeframe,fallbackController.signal,'BINANCE');
           if(!fallbackController.signal.aborted){setReceivedScope(scope);setData(fallback);setLastUpdated(new Date());setError(null);return fallback;}
-        } catch(failure) {if(!fallbackController.signal.aborted)setError(`Server utama: ${err.message} Data Binance langsung: ${failure.message}`);}
-        finally {if(!fallbackController.signal.aborted)setLoading(false);}
+        } catch(failure) {if(!fallbackController.signal.aborted || fallbackController.signal.reason==='timeout')setError(`Server utama: ${err.message} Data Binance langsung: ${fallbackController.signal.reason==='timeout'?'Pembaruan melewati batas waktu.':failure.message}`);}
+        finally {clearTimeout(fallbackTimeout);fallbackController.running=false;if(!fallbackController.signal.aborted || fallbackController.signal.reason==='timeout')setLoading(false);}
       }
     } finally {
       controller.running=false;
@@ -58,8 +60,8 @@ export function useAnalysis(symbol = 'XAUUSD', timeframe = '1h', broker = 'BINAN
   }, [symbol, timeframe, broker]);
 
   useEffect(() => {
-    setData(null);
     setLoading(true);
+    setError(null);
     fetchAnalysis();
     const interval = setInterval(fetchAnalysis, pollInterval);
     return () => { clearInterval(interval); requestRef.current?.abort(); };

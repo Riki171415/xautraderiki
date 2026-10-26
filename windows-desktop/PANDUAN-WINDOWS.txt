@@ -1,4 +1,4 @@
-COP TAH 1.2.0 — Windows 64-bit — Exness MT5 dan Binance Spot
+COP TAH 1.2.8 — Windows 64-bit — Exness MT5 dan Binance Spot
 
 PEMASANGAN
 1. Salin COP-TAH-Windows-x64-Setup.exe ke komputer Windows 10/11 64-bit.
@@ -40,8 +40,71 @@ Paket diperiksa pada komputer pengembangan; komputer Windows lain tetap
 perlu diuji untuk koneksi MT5 dan akses jaringan masing-masing.
 Analisis dan rencana bersyarat bukan order broker atau jaminan hasil transaksi.
 
-VERSI 1.2.0
+VERSI 1.2.6
 Memuat header dan notifikasi baru, ringkasan tugas Daily/Market, penanda H4 lengkap,
 kesamaan level Daily-Year, koreksi kekuatan relatif Daily dan pembersihan narasi.
 Tutup aplikasi versi lama melalui ikon notifikasi, lalu jalankan installer ini.
 Installer akan menolak pembaruan ketika COP TAH masih berjalan.
+
+PEMBARUAN 1.2.6
+Header menampilkan waktu WIB dan umur analisis/harga sumber. Pembaruan tertunda mempertahankan snapshot terakhir dengan peringatan. Historis memuat catatan tugas tiap TF dan pola ANL yang tersimpan di browser; waktu deteksi bukan waktu pasti sentuhan. HSH adalah pantauan, dan urutan Busur–Target tetap memerlukan bukti.
+
+PERBAIKAN TABEL DAN SUPPORT 1.2.6
+- Hitung mundur pergantian candle dan penanda NORMAL/STRONG per timeframe.
+- Tinggi baris tabel mengikuti isi; Pivot dan S4 tidak menimpa/terpotong.
+- SUP KUAT / RES KUAT Daily diprioritaskan pada penanda level yang memenuhi.
+- Area support terpisah dari filter kuat Daily: AREA ACUAN, DIUJI,
+  PANTULAN AWAL dan DITEMBUS; termasuk swing low H1 terkonfirmasi.
+- Konfirmasi pantulan bertahan minimal 60 detik, bukan dua kenaikan cepat saja.
+- Perbaikan arah sentuhan, harga sumber, jeda data dan penanda yang berulang.
+- Laporan pengujian data Exness 10 tahun tersedia di folder docs aplikasi.
+  Replay M1 hanya sekitar dua bulan; hasil bukan win rate atau jaminan transaksi.
+
+SERVER EXNESS 1.2.6
+Server tidak dikunci ke Real36. Buka pilihan Server MT5 di header:
+- Otomatis mengikuti MT5: memakai server akun yang sedang login.
+- Pilih server yang pernah terdeteksi, atau Server lain untuk mengetik nama server.
+Nama server harus sama persis dengan nama pada akun MT5 Anda.
+Login/pergantian akun tetap dilakukan di terminal MT5 melalui
+File > Login to Trade Account. Pilihan dashboard memeriksa asal data,
+bukan login akun. Jika server berbeda, analisis server lain ditahan.
+Saat akun/server berubah, bridge memuat ulang simbol dan riwayat, dan
+matriks serta pantauan support mulai dari sumber akun/server yang baru.
+
+SUPPORT / RESISTANCE KUAT LINTAS TIMEFRAME 1.2.6
+Label SUP KUAT dan RES KUAT kini dinilai pada setiap timeframe, dengan acuan:
+M1-M5-M15-M30-H1 -> Pivot H4; H4/Market -> Pivot Daily;
+Daily/Week -> Pivot Month; Month -> Quarter; Quarter -> Semester;
+Semester -> Year; Year -> Dekade yang mempunyai pembanding lengkap.
+High B / Low B selalu milik timeframe yang sedang dinilai.
+Buka rincian level untuk melihat pembanding dan syarat yang terpenuhi.
+Jika harga lama, periode tidak aktif atau pembanding belum lengkap,
+label kuat tidak dipaksakan muncul. Year bisa menunggu data Dekade.
+Aturan Daily tetap sama. Ini perluasan aturan relatif, bukan probabilitas
+keberhasilan atau sinyal entry baru. Hasil uji historis sebelumnya tidak
+membuktikan ketepatan statistik aturan baru pada semua timeframe.
+
+PERINGATAN SEDERHANA 1.2.6
+Notifikasi langsung menyebut kondisi: MEMANTUL NAIK, TEMBUS NAIK/TURUN,
+UJI SUPPORT, DEKAT LEVEL, atau ARAH BELUM JELAS. Kejadian dan satu langkah
+pantauan ditampilkan di depan; penjelasan lengkap ada di Alasan & rincian.
+Sentuhan atau penembusan level tidak disebut sebagai bukti tren berbalik.
+
+POSISI TERBUKA MT5 1.2.6
+Buka panel Posisi terbuka MT5 di bawah header. Menampilkan semua posisi akun
+aktif: tiket, instrumen, BUY/SELL, lot, harga masuk/sekarang, SL/TP, profit
+berjalan dan swap. Panel hanya membaca posisi dan tidak mengirim order.
+Mata uang mengikuti akun MT5, termasuk USC untuk akun cent. Profit dan swap
+ditampilkan terpisah; komisi tidak dihitung. Diperbarui sekitar 3 detik,
+tergantung koneksi MT5. Data kedaluwarsa atau akun/server berbeda ditahan.
+Posisi akun dibaca melalui koneksi lokal, tidak dibagikan melalui endpoint publik.
+Login akun tetap di terminal MT5. Tutup COP TAH versi lama sebelum memperbarui.
+
+NOTIFIKASI TENANG 1.2.7
+Pop-up hanya untuk pantulan awal, support ditembus, lintasan level H4, dan sinyal kuat tanpa konflik yang baru muncul. Mendekati/menyentuh level dan pergantian candle cukup dipantau di tabel. Jeda pop-up minimal 5 menit; kejadian sama ditahan 30 menit. Sinyal kuat saat awal membuka aplikasi tidak langsung memunculkan pop-up.
+
+KEBIASAAN FOREX & MARKET BERBISIK 1.2.7
+Buka Sesi Market untuk ringkasan kebiasaan, atau tombol Market Berbisik pada tabel. Syarat belum muncul tetap ditulis, bukan menyembunyikan panel. Khusus forex dan logam Exness; tidak diterapkan pada BTC/Binance. Perbandingan USA memakai H1 selesai berdurasi sama. Awal/akhir pekan dan dua H4 terakhir memberi konteks, bukan kepastian pembalikan. Rute R3-R1-R2-mendekati S1 hanya skenario bersyarat; urutan tidak diklaim sudah terjadi.
+
+DAILY BEFORE FOREX 1.2.8
+Daily Before XAUUSD, EURUSD dan GBPUSD mengambil candle perdagangan Senin-Jumat terakhir yang tersedia, melewati candle akhir pekan dari broker. Senin memakai Jumat jika candle Jumat tersedia. Jika libur/riwayat kosong, gunakan hari kerja terakhir yang benar-benar tersedia; tidak membuat candle pengganti. OHLC N tetap candle asli terakhir broker. BTC tetap memakai candle harian sebelumnya termasuk akhir pekan. Tanggal N dan Before ditampilkan pada rincian Daily.

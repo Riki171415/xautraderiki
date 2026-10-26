@@ -28,6 +28,12 @@ test('every app page renders when feed is unavailable, including navigation icon
  }
  delete globalThis.renderRegressionData;delete globalThis.renderRegressionSymbol;delete globalThis.renderRegressionAnalysis;delete globalThis.renderRegressionSection;
  const {default:Slide}=await server.ssrLoadModule('/src/components/MatrixSlideshow.jsx');
+ const {default:ServerControl}=await server.ssrLoadModule('/src/components/ExnessServerControl.jsx');
+ const serverHtml=renderToString(React.createElement(ServerControl,{selected:'Exness-ServerB',activeServer:'Exness-ServerA',onSelect:()=>{}}));
+ assert.ok(serverHtml.includes('Pilih server Exness'));
+ assert.ok(serverHtml.includes('Otomatis mengikuti MT5'));
+ assert.ok(serverHtml.includes('Data server lain ditahan'));
+ assert.ok(!serverHtml.includes('Exness-MT5Real36'));
  const {default:Tasks}=await server.ssrLoadModule('/src/components/TimeframeTasks.jsx');
  const now=Date.now(),base={periodStart:now-1000,periodEnd:now+86400000,openN:100,openB:90,closeN:95,lowN:85,highN:115,sup1:90,sup2:80,sup3:70,sup4:60,pivot:100,res1:110,res2:120,res3:130,res4:140,plan:{action:'BUY LIMIT',stopLoss:80}};
  const frames=['market','1d','1w','1M','3M','6M','1Y'];
@@ -67,6 +73,15 @@ test('every app page renders when feed is unavailable, including navigation icon
  assert.ok(!slide.includes('id="matrix-info-panel"'),'bottom panel starts collapsed so matrix keeps its space');
  assert.ok(!slide.includes('h4-strip-items'),'matrix has no duplicated indication cards below table');
  assert.ok(body.includes('S4'),'last support row remains rendered');
+ const strengthColumns=sampleColumns.map(c=>c.timeframe==='1M'?{...c,pivot:90}:c);
+ const strengthHtml=renderToString(React.createElement(Slide,{data:{symbol:'XAUUSD',broker:{id:'EXNESS',name:'Exness'},timestamp:Date.now(),quoteTimestamp:Date.now(),decimals:3,leak4RegMatrix:{rsColumns:strengthColumns,tableRows:[],currentPrice:110}}}));
+ const dailyPivot=strengthHtml.match(/<td[^>]*data-timeframe="1d"[^>]*data-level="pivot"[^>]*>([\s\S]*?)<\/td>/)?.[1];
+ assert.ok(dailyPivot?.includes('SUP KUAT'),'strong Daily support badge stays visible even beside Pivot warnings');
+ const multiColumns=strengthColumns.map(c=>c.timeframe==='4h'?{...c,pivot:90}:c);
+ const multiHtml=renderToString(React.createElement(Slide,{data:{symbol:'XAUUSD',broker:{id:'EXNESS',name:'Exness'},timestamp:Date.now(),quoteTimestamp:Date.now(),decimals:3,leak4RegMatrix:{rsColumns:multiColumns,tableRows:[],currentPrice:110}}}));
+ const microPivot=multiHtml.match(/<td[^>]*data-timeframe="1m"[^>]*data-level="pivot"[^>]*>([\s\S]*?)<\/td>/)?.[1];
+ assert.ok(microPivot?.includes('SUP KUAT'),'M1 strong support is visible using its H4 reference');
+ assert.ok(microPivot?.includes('Pivot H4'),'strong badge explains its actual reference');
  }
  finally{await server.close();globalThis.location=oldLocation;delete globalThis.renderRegressionPage;delete globalThis.renderRegressionData;delete globalThis.renderRegressionSymbol;delete globalThis.renderRegressionAnalysis;delete globalThis.renderRegressionSection;}
 });

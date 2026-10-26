@@ -15,6 +15,39 @@ test('invalid and unordered candles rejected',()=>{
  assert.equal(validCandles([...rows].reverse()),false);
  assert.equal(validCandles([[1,100,90,80,100,1],[2,100,120,90,110,1]]),false);
 });
+
+const dailyRow=(day,open)=>[Date.UTC(2026,9,day),open,open+10,open-10,open+1,10];
+const weekendRows=[dailyRow(22,4125),dailyRow(23,4023),dailyRow(25,3999),dailyRow(26,3997)];
+const dailyState=(symbol,rows=weekendRows)=>({symbol,connected:true,lastTickTime:1000,timeframes:{'1d':{updatedAt:1000,candles:rows}}});
+test('Monday forex Daily Before selects actual Friday OHLC, not a Sunday stub',()=>{
+ for(const symbol of ['XAUUSDc','XAUUSD','EURUSDm','GBPUSD']){
+  const s=dailyState(symbol),raw=JSON.stringify(s.timeframes['1d'].candles);
+  const result=getExnessCandles(s,'1d',1001);
+  assert.deepEqual(result.at(-1),weekendRows.at(-1));
+  assert.deepEqual(result.at(-2),weekendRows[1]);
+  assert.equal(JSON.stringify(s.timeframes['1d'].candles),raw,'raw MT5 history remains intact');
+ }
+});
+test('BTC retains Sunday as Monday Daily Before',()=>{
+ assert.deepEqual(getExnessCandles(dailyState('BTCUSDc'),'1d',1001),weekendRows);
+});
+test('latest Sunday candle remains N while its forex Before is Friday',()=>{
+ const rows=weekendRows.slice(0,-1),result=getExnessCandles(dailyState('XAUUSDc',rows),'1d',1001);
+ assert.deepEqual(result.at(-1),rows.at(-1));assert.deepEqual(result.at(-2),rows[1]);
+});
+test('weekday gaps use previous available trading candle; missing comparison is rejected',()=>{
+ const holiday=[dailyRow(22,4125),dailyRow(25,3999),dailyRow(26,3997)];
+ assert.deepEqual(getExnessCandles(dailyState('XAUUSDc',holiday),'1d',1001).at(-2),holiday[0]);
+ assert.throws(()=>getExnessCandles(dailyState('EURUSD',[dailyRow(25,3999),dailyRow(26,3997)]),'1d',1001),/belum cukup/);
+ const tuesday=[...weekendRows,dailyRow(27,4010)];
+ assert.deepEqual(getExnessCandles(dailyState('XAUUSDc',tuesday),'1d',1001).at(-2),weekendRows.at(-1));
+});
+test('Saturday forex stub is skipped as Before, and H4 selection stays unchanged',()=>{
+ const rows=[dailyRow(23,4023),dailyRow(24,4000),dailyRow(25,3999),dailyRow(26,3997)];
+ assert.deepEqual(getExnessCandles(dailyState('XAUUSDc',rows),'1d',1001).at(-2),rows[0]);
+ const s=dailyState('XAUUSDc',rows);s.timeframes['4h']=s.timeframes['1d'];
+ assert.deepEqual(getExnessCandles(s,'4h',1001),rows);
+});
 test('missing matrix timeframes omitted, never cloned from H1',()=>{
  const n={open:110,high:140,low:100,close:130}; const b={open:100,high:120,low:90,close:110};
  const matrix=calcLeak4RegMatrix({'1h':{ohlcv_N:n,ohlcv_B:b}},130);

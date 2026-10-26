@@ -5,3 +5,12 @@ const rows=[];for(let d=0;d<2;d++)for(let i=0;i<8;i++)rows.push([start-d*24*H+i*
 test('session compares equal completed durations and excludes future/forming bars',()=>{const r=marketHabits({hourly:rows,cycle,now});assert.equal(r.current.bars,3);assert.equal(r.previous.bars,3);assert.equal(r.elapsedHours,3);assert.equal(r.available,true);});
 test('missing history never fabricates weekly or previous-session stats',()=>{const r=marketHabits({hourly:rows.filter(x=>x[0]>=start),cycle,now});assert.equal(r.available,false);assert.equal(r.previous,null);assert.ok(r.weeks.every(w=>!w.previous.coverage));});
 test('incomplete current session keeps comparison unavailable',()=>{const r=marketHabits({hourly:rows.filter(x=>x[0]!==start+H),cycle,now});assert.equal(r.available,false);});
+test('USA comparison remains available while another session is active',()=>{
+ const r=marketHabits({hourly:rows,cycle:{activeSession:'TRANSISI',sessions:cycle.sessions},now});
+ assert.equal(r.available,false);assert.equal(r.usaComparison.available,true);
+ assert.equal(r.usaComparison.elapsedHours,3);assert.equal(r.usaComparison.current.bars,r.usaComparison.previous.bars);
+});
+test('USA cannot compare a future session or incomplete history',()=>{
+ assert.equal(marketHabits({hourly:rows,cycle,now:start-H}).usaComparison.available,false);
+ assert.equal(marketHabits({hourly:rows.filter(x=>x[0]>=start),cycle,now}).usaComparison.available,false);
+});

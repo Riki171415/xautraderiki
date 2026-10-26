@@ -1,14 +1,14 @@
 """
 COP TAH Analytics Dashboard — Exness MT5 Python Direct Bridge
-Menghubungkan langsung terminal MetaTrader 5 (Exness-MT5Real36) ke COP TAH Backend via REST API
+Menghubungkan langsung terminal MetaTrader 5 Exness ke COP TAH Backend via REST API
 
 Persyaratan:
   pip install MetaTrader5 requests
 
 Cara Pakai:
-  1. Pastikan aplikasi MetaTrader 5 (Exness) Anda sudah terbuka dan login ke akun MT5Real36.
+  1. Pastikan aplikasi MetaTrader 5 (Exness) Anda sudah terbuka dan login ke akun pada server Exness yang sesuai.
   2. Jalankan: python exness_mt5_bridge.py
-  3. Dashboard COP TAH akan otomatis menerima tick dan candle resmi dari Exness-MT5Real36!
+  3. Dashboard COP TAH akan otomatis menerima tick dan candle resmi dari server akun MT5 aktif!
 """
 
 import time
@@ -51,14 +51,57 @@ TIMEFRAME_MAP = {
     "1M": mt5.TIMEFRAME_MN1,
 }
 
+def session_identity(info):
+    return (getattr(info, 'server', None), getattr(info, 'login', None))
+
+
+def resolve_symbols():
+    resolved = []
+    for base in ['XAUUSD', 'BTCUSD', 'EURUSD', 'GBPUSD']:
+        choices = [base, base+'m', base+'c'] if base == 'XAUUSD' else [base+'c', base+'m', base]
+        name = next((candidate for candidate in choices
+                     if mt5.symbol_info(candidate) is not None and mt5.symbol_select(candidate, True)), None)
+        if name:
+            resolved.append(name)
+    return resolved
+
+
+def read_open_positions(expected_source):
+    before = mt5.account_info()
+    if session_identity(before) != expected_source:
+        return None
+    rows = mt5.positions_get()
+    positions = []
+    if rows is not None:
+        for p in rows:
+            info = mt5.symbol_info(p.symbol)
+            positions.append({
+                'ticket': str(p.ticket), 'symbol': p.symbol,
+                'side': 'BUY' if p.type == 0 else 'SELL' if p.type == 1 else 'UNKNOWN',
+                'volume': float(p.volume), 'priceOpen': float(p.price_open),
+                'priceCurrent': float(p.price_current), 'sl': float(p.sl), 'tp': float(p.tp),
+                'profit': float(p.profit), 'swap': float(p.swap),
+                'openedAt': int(p.time_msc or p.time * 1000),
+                'digits': info.digits if info is not None else None,
+            })
+    after = mt5.account_info()
+    if session_identity(after) != expected_source:
+        return None
+    return {'server': after.server, 'account': after.login, 'currency': after.currency,
+            'timestamp': int(time.time() * 1000), 'available': rows is not None,
+            'positions': positions}
+
+
 def main():
     ensure_single_instance()
 
     parser = argparse.ArgumentParser(description="Exness MT5 Direct Bridge")
     parser.add_argument("--login", type=int, help="Nomor akun Exness MT5 (Login)", default=None)
     parser.add_argument("--password", type=str, help="Password Akun / Investor Password", default=None)
-    parser.add_argument("--server", type=str, help="Server Exness MT5 (cth: Exness-MT5Real36)", default="Exness-MT5Real36")
+    parser.add_argument("--server", type=str, help="Server Exness MT5 (cth: Exness-MT5Real36)", default=None)
     args = parser.parse_args()
+    if (args.login or args.password) and not (args.login and args.password and args.server):
+        parser.error("Login eksplisit memerlukan --login, --password dan --server yang sesuai akun.")
 
     print("=" * 60)
     print("  COP TAH Analytics — Exness MT5 Direct Bridge")
@@ -95,30 +138,15 @@ def main():
     print(f"     Akun   : {login} ({company})")
     print(f"     Target : {BACKEND_URL}")
     print("=" * 60)
-    print(f"Mulai streaming tick {SYMBOL} setiap 1.0 detik...\n")
+    print(f"Mulai streaming tick {SYMBOL} setiap sekitar 0.25 detik (mengikuti tick broker)...\n")
 
-    # Resolve the exact broker symbol, including Standard Cent suffixes.
-    candidates = [SYMBOL, 'XAUUSDm', 'XAUUSDc']
-    candidates += [item.name for item in (mt5.symbols_get('*XAUUSD*') or [])]
-    target_symbol = next((name for name in dict.fromkeys(candidates) if mt5.symbol_select(name, True)), None)
-    if not target_symbol:
-        print('[ERROR] Simbol emas tidak tersedia pada akun MT5 ini.')
-        mt5.shutdown()
-        return
-    digits = mt5.symbol_info(target_symbol).digits
-    print(f'[OK] Broker symbol: {target_symbol}, digits: {digits}')
-
-    target_symbols=[target_symbol]
-    for base in ['BTCUSD', 'EURUSD', 'GBPUSD']:
-        # Only exact broker suffix variants; never substitute another pair.
-        extra = next((name for name in [base+'c', base+'m', base]
-                      if mt5.symbol_info(name) is not None and mt5.symbol_select(name, True)), None)
-        if extra:
-            target_symbols.append(extra)
-            print(f'[OK] Tambahan broker symbol: {extra}')
-        else:
-            print(f'[WARN] {base}c/{base}m/{base} tidak tersedia pada akun ini.')
+    target_symbols = resolve_symbols()
+    if not target_symbols:
+        print("[WAIT] Simbol yang didukung belum tersedia pada akun MT5.", flush=True)
     loaded_timeframes = set()
+    history_updated = {}
+    last_positions_poll = -100
+    http = requests.Session()
     while True:
         try:
             term = mt5.terminal_info()
@@ -127,6 +155,29 @@ def main():
                 time.sleep(2)
                 continue
 
+            current_account = mt5.account_info()
+            if current_account is None:
+                time.sleep(1)
+                continue
+            source_changed = session_identity(current_account) != (server_name, login)
+            if source_changed or not target_symbols:
+                server_name, login = session_identity(current_account)
+                target_symbols = resolve_symbols()
+                if source_changed:
+                    last_positions_poll = -100
+                loaded_timeframes.clear()
+                history_updated.clear()
+                print(f"[SOURCE] Akun/server MT5 berubah; memuat ulang riwayat dari {server_name}.", flush=True)
+
+            # Read-only account positions are independent of the selected chart symbol.
+            if time.monotonic() - last_positions_poll >= 3:
+                last_positions_poll = time.monotonic()
+                positions_snapshot = read_open_positions((server_name, login))
+                if positions_snapshot is not None:
+                    try:
+                        http.post(BACKEND_URL.rsplit('/', 1)[0] + '/positions', json=positions_snapshot, timeout=2)
+                    except requests.exceptions.RequestException:
+                        pass
             for target_symbol in target_symbols:
                 digits=mt5.symbol_info(target_symbol).digits
                 # Ambil live tick
@@ -144,22 +195,38 @@ def main():
                 price = round((bid + ask) / 2.0, digits)
                 spread = round(ask - bid, digits)
 
-                # Keep every native timeframe tied to the exact broker instrument.
-                timeframes = {}
-                for tf, mt5_tf in TIMEFRAME_MAP.items():
-                    count = 120 if tf == '1M' else 50
-                    rates = mt5.copy_rates_from_pos(target_symbol, mt5_tf, 0, count)
-                    if rates is not None and len(rates) >= 2:
-                        if (target_symbol,tf) not in loaded_timeframes:
-                            print(f'[READY] {tf}: {len(rates)} bars', flush=True)
-                            loaded_timeframes.add((target_symbol,tf))
-                        timeframes[tf] = [
-                            [int(r['time']) * 1000, float(r['open']), float(r['high']),
-                             float(r['low']), float(r['close']), int(r['tick_volume'])]
-                            for r in rates
-                        ]
-                candles_list = timeframes.get('1h', [])
+                # Refresh candle history separately; lightweight tick posts run faster.
+                timeframes = None
+                if time.monotonic() - history_updated.get(target_symbol, -100) >= 3:
+                    timeframes = {}
+                    for tf, mt5_tf in TIMEFRAME_MAP.items():
+                        count = 240 if tf in ['1h','1M'] else 50
+                        rates = mt5.copy_rates_from_pos(target_symbol, mt5_tf, 0, count)
+                        if rates is not None and len(rates) >= 2:
+                            if (target_symbol,tf) not in loaded_timeframes:
+                                print(f'[READY] {tf}: {len(rates)} bars', flush=True)
+                                loaded_timeframes.add((target_symbol,tf))
+                            timeframes[tf] = [
+                                [int(r['time']) * 1000, float(r['open']), float(r['high']),
+                                 float(r['low']), float(r['close']), int(r['tick_volume'])]
+                                for r in rates
+                            ]
 
+                    history_updated[target_symbol] = time.monotonic()
+                # History reads can take time: sample price again immediately before sending.
+                tick = mt5.symbol_info_tick(target_symbol)
+                if tick is None:
+                    continue
+                bid, ask = float(tick.bid), float(tick.ask)
+                price = round((bid + ask) / 2.0, digits)
+                spread = round(ask - bid, digits)
+
+                # Do not label old-account history with a newly selected account/server.
+                if session_identity(mt5.account_info()) != (server_name, login):
+                    break
+                active_terminal = mt5.terminal_info()
+                if active_terminal is None or not active_terminal.connected:
+                    break
                 payload = {
                     "broker": "EXNESS",
                     "server": server_name,
@@ -170,14 +237,14 @@ def main():
                     "price": price,
                     "spread": spread,
                     "timeframe": "1h",
-                    "timeframes": timeframes,
                     "digits": digits,
                     "tickTimestamp": int(tick.time_msc),
-                    "candles": candles_list,
                     "timestamp": int(time.time() * 1000),
                 }
 
-                resp = requests.post(BACKEND_URL, json=payload, timeout=5)
+                if timeframes is not None:
+                    payload['timeframes'] = timeframes
+                resp = http.post(BACKEND_URL, json=payload, timeout=2)
                 if resp.status_code == 200:
                     print(f"[STREAM] {server_name} | {target_symbol}: Bid={bid:.2f} Ask={ask:.2f} Mid={price:.2f} Spread={spread:.2f} -> OK", end="\r", flush=True)
 
@@ -186,7 +253,7 @@ def main():
         except Exception as e:
             print(f"\n[ERROR] {e}")
 
-        time.sleep(1.0)
+        time.sleep(0.25)
 
 if __name__ == "__main__":
     try:

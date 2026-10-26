@@ -6,7 +6,7 @@ export const PAGES=[
  {id:'candles',title:'Chart & Fractal',group:'utama',desc:'Gerakan harga dan konfirmasi timeframe kecil'},
  {id:'ohlc',title:'Tabel OHLC',group:'utama',desc:'Seluruh timeframe dan data N/B dalam satu tabel'},
  {id:'levels',title:'Matriks R/S',group:'utama',desc:'Seluruh level dan penanda pada sel'},
- {id:'history',title:'Historis',group:'pendukung',desc:'Riwayat instrumen dan sumber aktif'},
+ {id:'history',title:'Historis',group:'pendukung',desc:'Catatan sentuhan, tugas tiap TF, pola ANL dan riwayat harga'},
  {id:'guide',title:'Panduan',group:'pendukung',desc:'Aturan dan cara membaca COP TAH'},
  {id:'sources',title:'Sumber Data',group:'pendukung',desc:'Penyedia dan status koneksi'}
 ];

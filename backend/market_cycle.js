@@ -15,13 +15,30 @@ function summarize(rows,start,end,now) {
     start,end,bars:bars.length,expectedBars:expected.length,missingBars:missing.length,
     coverage:missing.length===0 && bars.length>0,
     status:now<start?'pending':!bars.length?'unavailable':missing.length?'incomplete':now>=end?'completed':'active',
-    open:bars[0]?.[1] ?? null,high:bars.length?Math.max(...bars.map(r=>r[2])):null,
+    open:bars.find(r=>r[0]===start)?.[1] ?? null,high:bars.length?Math.max(...bars.map(r=>r[2])):null,
     low:bars.length?Math.min(...bars.map(r=>r[3])):null,close:bars.at(-1)?.[4] ?? null,
     highTime:bars.length?bars.find(r=>r[2]===Math.max(...bars.map(x=>x[2])))[0]:null,
     lowTime:bars.length?bars.find(r=>r[3]===Math.min(...bars.map(x=>x[3])))[0]:null,
   };
 }
-function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null,now=Date.now(),source='MT5 Exness'}={}) {
+// Skip empty calendar sessions (weekends/holidays), but never hide a session
+// containing incomplete history by silently substituting an older one.
+function latestObservedSession(rows,start,end,now,symbol) {
+  const immediate=summarize(rows,start,end,now);
+  if(immediate.bars)return immediate;
+  const normalized=String(symbol||'').replaceAll('/','').toUpperCase();
+  const weekdayMarket=/^(XAUUSD|EURUSD|GBPUSD)(C|M)?$/.test(normalized);
+  const weekend=t=>[0,6].includes(new Date(t+7*HOUR).getUTCDay());
+  if(!weekdayMarket||!weekend(start))return immediate;
+  const earliest=rows.length?Math.min(...rows.map(r=>r[0])):start;
+  for(let shift=24*HOUR;end-shift>earliest;shift+=24*HOUR){
+    const candidate=summarize(rows,start-shift,end-shift,now);
+    if(candidate.bars)return {...candidate,skippedCalendarDays:shift/(24*HOUR)};
+    if(!weekend(start-shift))return candidate;
+  }
+  return immediate;
+}
+function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null,now=Date.now(),source='MT5 Exness',symbol}={}) {
   const local=new Date(now+7*HOUR);
   let anchor=Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate(),6)-7*HOUR;
   if(now<anchor) anchor-=24*HOUR;
@@ -87,14 +104,16 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
     else if(complete&&!all){verification='ORDER_UNVERIFIED';description='Ekstrem sesi sesuai kandidat NORMAL; urutan High/Low belum terbukti karena berada dalam candle H1 yang sama. Tidak diberi konfirmasi penuh.';}
     else if(all){description=`NORMAL ${bias}: urutan ekstrem tiga sesi telah teramati. ${bearish?'High Eropa tertinggi dan Low USA terendah':'Low Eropa terendah dan High USA tertinggi'} dalam tiga sesi. Pencapaian sasaran mingguan dinilai terpisah.`;}
   }
-  const previousUsa=summarize(hourly,anchor-10*HOUR,anchor-2*HOUR,now);
+  const previousUsa=latestObservedSession(hourly,anchor-10*HOUR,anchor-2*HOUR,now,symbol);
   const referenceWindows={ASIA:{name:'EROPA',from:-16,to:-10,hours:'14:00–20:00 WIB'},EROPA:{name:'USA',from:-10,to:-2,hours:'20:00–04:00 WIB'},USA:{name:'ASIA',from:0,to:8,hours:'06:00–14:00 WIB'}};
   const window=referenceWindows[active?.name];
   let hshReference=null;
   if(window) {
-    const observation=summarize(hourly,anchor+window.from*HOUR,anchor+window.to*HOUR,now);
+    const observation=active.name==='USA'
+      ?summarize(hourly,anchor+window.from*HOUR,anchor+window.to*HOUR,now)
+      :latestObservedSession(hourly,anchor+window.from*HOUR,anchor+window.to*HOUR,now,symbol);
     hshReference={...observation,name:window.name,activeSession:active.name,hours:window.hours,
-      hshOpen:observation.coverage && observation.status==='completed'?observation.open:null};
+      hshOpen:observation.end<=now && Number.isFinite(observation.open)?observation.open:null};
   }
   const definitions=[
     [1,'USA → ASIA','Ringkasan USA sebelumnya',previousUsa,'close'],
@@ -112,7 +131,7 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
     activeSession:active?.name || 'TRANSISI',currentStep:activeStep?.step ?? null,
     activeStepTitle:activeStep?.title || 'Menunggu data sesi',activeStepDesc:description,
     totalSteps:12,steps,sessions,evidence,description,source,hshReference,normalStory,
-    previousUsa:{...previousUsa,name:'USA sebelumnya',hours:'20:00–04:00 WIB',hshOpen:previousUsa.coverage && previousUsa.status==='completed'?previousUsa.open:null},
+    previousUsa:{...previousUsa,name:'USA sebelumnya',hours:'20:00–04:00 WIB',hshOpen:previousUsa.end<=now && Number.isFinite(previousUsa.open)?previousUsa.open:null},
     tradingDay:new Date(anchor+7*HOUR).toISOString().slice(0,10),
     wibTime:`${String(local.getUTCHours()).padStart(2,'0')}:${String(local.getUTCMinutes()).padStart(2,'0')} WIB`,
     sessionConvention:'Jendela metode COP TAH tetap dalam WIB; bukan jam bursa/DST. Hari siklus dimulai pukul 06:00 WIB.',

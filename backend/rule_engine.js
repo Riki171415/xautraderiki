@@ -344,7 +344,7 @@ function calcHukumHSH(ohlcv_N, timeframeMs, openTimestamp, customRemainingMs = n
       hshMessage = `⚠️ HSH CRITICAL: Only ${formattedTime} left! Price far from Open (${open.toFixed(2)}). Pantau kemungkinan kembali ke Open N; belum terkonfirmasi.`;
     } else if (percentElapsed >= 90 || (timeframeMs <= 3600000 && remainingMinutes < 15)) {
       hshSeverity = 'HIGH';
-      hshMessage = `⚠️ HSH WARNING: ${formattedTime} remaining. Price at ${close.toFixed(2)}, Open was ${open.toFixed(2)}. Home Sweet Home pattern forming!`;
+      hshMessage = `⚠️ Pantauan HSH: sisa ${formattedTime}. Harga ${close.toFixed(2)}, Open N ${open.toFixed(2)}. Kembali ke Open N belum terkonfirmasi.`;
     } else {
       hshSeverity = 'MEDIUM';
       hshMessage = `⚡ HSH ALERT: Candle extended — ${formattedTime} to close. Monitor for reversion to Open (${open.toFixed(2)}).`;
@@ -353,6 +353,9 @@ function calcHukumHSH(ohlcv_N, timeframeMs, openTimestamp, customRemainingMs = n
 
   return {
     eligibility,
+    reversionVerified: false,
+    statisticalValidation: 'NOT_VALIDATED',
+    thresholdNote: 'Ambang waktu 80% dan jarak/range 30% adalah aturan metode; belum merupakan probabilitas kembali ke Open N. Tingkat peringatan menunjukkan kedekatan waktu penutupan.',
     hshActive,
     hshSeverity,
     hshMessage:eligibility.eligible?hshMessage:eligibility.reason,
@@ -880,6 +883,8 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
       periodStart:N.timestamp,periodEnd:N.periodEnd,
       timeframe: def.key,
       label: rsLabel,
+      sessionName:def.key==='market'?pair.sessionName:null,
+      beforePeriodStart:B.timestamp,beforePeriodEnd:B.periodEnd,beforePolicy:B.comparisonPolicy,
       openN: openN.toFixed(decimals),
       highN: highN.toFixed(decimals),
       lowN: lowN.toFixed(decimals),
@@ -926,9 +931,18 @@ function calcLeak4RegMatrix(tfCandlesMap = {}, currentPrice = 4174.50, spreadPoi
   const usa=market?.sessionName==='USA'?market.ohlcv_N:null;
   const hshNewYork=usa?Number(usa.open).toFixed(decimals):'Belum tersedia';
 
+  const strengthReferences=[];
+  const decade=tfCandlesMap['10Y'];
+  if(decade?.ohlcv_N&&decade?.ohlcv_B&&!decade.partialBefore){
+    const N=decade.ohlcv_N,rs=calcRSMatrix(decade.ohlcv_B,N,'10Y');
+    const year=new Date(N.timestamp).getUTCFullYear();
+    if(rs.available&&N.timestamp===Date.UTC(year,0,1)&&year%10===1&&decade.ohlcv_B.timestamp===Date.UTC(year-10,0,1))strengthReferences.push({timeframe:'10Y',label:'Dekade',pivot:Number(rs.pivot.toFixed(decimals)),periodStart:N.timestamp,periodEnd:N.periodEnd??Date.UTC(year+10,0,1)});
+  }
+
   return {
     tableRows,
     rsColumns,
+    strengthReferences,
     sessions,
     hshNewYork,
     currentPrice: Number(currentPrice).toFixed(decimals),

@@ -1,3 +1,4 @@
+import {matchesFeed} from './sourceIdentity.mjs';
 export function quoteIsStale(data,now=Date.now()) {
  if(data?.referencePrice){
    const ref=data.referencePrice;
@@ -16,5 +17,5 @@ export function dataQuality(data,now=Date.now()) {
  return {status:'FRESH',label:'Segar',reason:'Harga memiliki waktu sumber yang valid.'};
 }
 export function scopedTick(data,tick) {
- return tick&&tick.symbol===data?.symbol&&tick.broker===data?.broker?.id&&Number.isFinite(tick.bid)?tick:null;
+ return matchesFeed(data,tick)&&Number.isFinite(tick.bid)?tick:null;
 }

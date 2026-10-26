@@ -2,6 +2,14 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {calcHukumHSH,hshEligibility}=require('./rule_engine');
 const n={open:100,high:140,low:90,close:130};
+test('active HSH remains an unvalidated watch rather than confirmed reversion',()=>{
+ const result=calcHukumHSH(n,3600000,0,360000,'NRL UP');
+ assert.equal(result.hshActive,true);
+ assert.equal(result.reversionVerified,false);
+ assert.equal(result.statisticalValidation,'NOT_VALIDATED');
+ assert.match(result.hshMessage,/belum terkonfirmasi/);
+ assert.match(result.thresholdNote,/belum merupakan probabilitas/);
+});
 test('BRK UP and BRK DWN suppress HSH on every timeframe including near close',()=>{
  for(const tf of [60000,900000,1800000,3600000,14400000,28800000,86400000,604800000,2678400000,31536000000])for(const pattern of ['BRK UP','BRK DWN']){
  const result=calcHukumHSH(n,tf,0,tf*.01,{pattern});

@@ -14,7 +14,7 @@ export default function HSHOverview({data,liveTick,onSelect,now=Date.now()}) {
  const reference=data?.marketCycle?.hshReference;
  const referenceRow={id:'market-reference',label:`HSH ${reference?.name || 'pembanding'} sebelumnya`,open:reference?.hshOpen,
    price:Number(matrix?.currentPrice),
-   available:!stale&&reference?.coverage && reference?.status==='completed',
+   available:!stale&&Number.isFinite(reference?.hshOpen),
    scope:reference?.start?new Date(reference.start).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+' WIB · '+reference.hours:'Menunggu riwayat sesi pembanding'};
  const featured=[rows.find(r=>r.id==='4h') || {id:'4h',label:LABELS['4h']},market,rows.find(r=>r.id==='1d') || {id:'1d',label:LABELS['1d']}];
  if(reference) featured.push(referenceRow);

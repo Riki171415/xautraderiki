@@ -1,0 +1,79 @@
+{
+  "source": "MT5 Exness",
+  "symbol": "XAUUSDc",
+  "first": "2024-10-04T15:00:00.000Z",
+  "last": "2026-10-16T12:00:00.000Z",
+  "bars": 12000,
+  "validBars": 12000,
+  "method": "Prior completed H1 Low B, consecutive hours only, open at/above prior Low B. Touch from hourly low; outcome at same-hour close. No intrabar path assumed. Not a tick-alert backtest or win rate.",
+  "stats": {
+    "tested": 11451,
+    "touched": 5258,
+    "closedAbove": 2750,
+    "closedBelow": 2508,
+    "closedAt": 0
+  },
+  "examples": [
+    {
+      "timeWIB": "2026-07-22 18:00:00 WIB",
+      "knownLowB": 4114.751,
+      "open": 4117.471,
+      "high": 4123.031,
+      "low": 4112.564,
+      "close": 4122.521,
+      "closeRelativeToLowB": 7.769999999999527
+    },
+    {
+      "timeWIB": "2026-07-23 09:00:00 WIB",
+      "knownLowB": 4114.181,
+      "open": 4117.871,
+      "high": 4128.872,
+      "low": 4112.096,
+      "close": 4127.98,
+      "closeRelativeToLowB": 13.798999999999978
+    },
+    {
+      "timeWIB": "2026-09-28 21:00:00 WIB",
+      "knownLowB": 4136.366,
+      "open": 4157.054,
+      "high": 4157.328,
+      "low": 4110.679,
+      "close": 4118.163,
+      "closeRelativeToLowB": -18.20300000000043
+    },
+    {
+      "timeWIB": "2026-09-29 03:00:00 WIB",
+      "knownLowB": 4122.131,
+      "open": 4123.272,
+      "high": 4123.775,
+      "low": 4111.176,
+      "close": 4114.354,
+      "closeRelativeToLowB": -7.777000000000044
+    },
+    {
+      "timeWIB": "2026-10-08 22:00:00 WIB",
+      "knownLowB": 4121.853,
+      "open": 4124.421,
+      "high": 4124.619,
+      "low": 4110.617,
+      "close": 4111.803,
+      "closeRelativeToLowB": -10.050000000000182
+    }
+  ],
+  "reproductions": {
+    "resistanceFamilyBelowPrice": {
+      "key": "res1",
+      "role": "SUPPORT",
+      "status": "WRONG_SIDE"
+    },
+    "initialTouch": {
+      "events": [
+        "TOUCH"
+      ],
+      "followupEvents": []
+    },
+    "touchWithoutPriorApproach": [
+      "TOUCH"
+    ]
+  }
+}

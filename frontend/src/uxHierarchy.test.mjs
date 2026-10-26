@@ -20,10 +20,14 @@ test('unified header exposes one source selector, accessible controls and honest
  const html=renderToString(React.createElement(Header,{broker,symbol:broker==='EXNESS'?'BTCUSD':'BTC/USDC',timeframe:'4h'})).replace(/<!--.*?-->/g,'');
  assert.equal((html.match(/aria-label="Pilih sumber data"/g)||[]).length,1);
  assert.ok(html.includes('Pilih instrumen'));assert.ok(html.includes('Pilih timeframe utama'));
- assert.ok(html.includes('Harga acuan —'));assert.ok(!html.includes('TICK 1S'));
+ assert.match(html, /Harga acuan<\/span><strong>—<\/strong>/);assert.ok(!html.includes('TICK 1S'));
  }
  const session=renderToString(React.createElement(Session,{}));
  assert.ok(!session.includes('<select'));assert.ok(session.includes('<details'));assert.ok(!session.includes(' open=""'));
+ const europeNow=Date.UTC(2026,9,19,9);
+ const europe=renderToString(React.createElement(Session,{now:europeNow,data:{marketCycle:{activeSession:'EROPA',hshReference:{name:'USA',coverage:true,status:'completed',hshOpen:4200}}}})).replace(/<!--.*?-->/g,'');
+ assert.match(europe.split('</summary>')[0],/HSH USA sebelumnya/);assert.match(europe.split('</summary>')[0],/4200.000/);
+ const missing=renderToString(React.createElement(Session,{now:europeNow})).replace(/<!--.*?-->/g,'');assert.match(missing.split('</summary>')[0],/HSH USA sebelumnya/);assert.match(missing.split('</summary>')[0],/Menunggu riwayat sesi/);
  const {default:Markers}=await server.ssrLoadModule('/src/components/H4MarkerDetails.jsx');
  const base={timeframe:'4h',label:'H4',pivot:100,sup1:90,res4:140,sup4:60};
  const wait={action:'WAIT',reason:'Harga belum segar',attentionAreas:[],areas:[]};

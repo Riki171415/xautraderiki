@@ -165,7 +165,7 @@ Example: \$10,000 modal → **0.40 lot**
 
 ### Panduan pemeliharaan terkini
 
-Baca [PANDUAN_APLIKASI.md](PANDUAN_APLIKASI.md) sebelum perubahan. Panduan memuat menu, pemilik logika, aturan COP TAH, alur TF besar–kecil, rambu dan panel rincian, langkah menjalankan aplikasi, serta batas verifikasi. Perubahan alur cerita dan UI terbaru belum diuji/build ulang atas permintaan pengguna; push tidak berarti deployment terverifikasi.
+Baca [PANDUAN_APLIKASI.md](PANDUAN_APLIKASI.md) sebelum perubahan. Panduan memuat menu, pemilik logika, aturan COP TAH, alur TF besar–kecil, rambu dan panel rincian, langkah menjalankan aplikasi, serta batas verifikasi. Status validasi tiap perubahan dicatat pada panduan dan laporan audit; build lokal atau push tidak berarti deployment maupun installer terverifikasi.
 
 Laporan audit lintas menu: [AUDIT_KONSISTENSI.md](AUDIT_KONSISTENSI.md). Memuat sumber logika bersama, perbedaan yang dikoreksi dan batas verifikasi saat ini.
 
@@ -173,3 +173,14 @@ Laporan audit lintas menu: [AUDIT_KONSISTENSI.md](AUDIT_KONSISTENSI.md). Memuat 
 Paket: `installers/COP-TAH-Windows-x64-Setup.exe`. Salin ke komputer tujuan lalu jalankan; Node dan Python disertakan. Buka pintasan COP TAH. Exness memerlukan terminal MT5 desktop yang sudah login pada komputer tujuan; Binance Spot dapat dipilih tanpa MT5. Tutup layanan lewat ikon area notifikasi. Installer tidak membawa `.env`, API key, akun atau cache harga komputer pembuat. Instalasi per pengguna di LocalAppData, server paket mendengarkan localhost saja.
 
 Sumber installer berada di `windows-desktop/`; build dengan `python windows-desktop/build_installer.py` pada Windows x64 dengan Node, Python 3.11 dan dependensi proyek/bridge tersedia. Checksum SHA256 dan manifest build dihasilkan di `installers/`. Paket belum ditandatangani sertifikat penerbit. Baca `windows-desktop/PANDUAN-WINDOWS.txt` untuk pemasangan, pembaruan dan uninstall.
+
+
+### Riwayat tugas dan waktu data — 19 Oktober 2026
+
+Header menampilkan tanggal/jam WIB dan umur **Analisis diperbarui** serta **Harga sumber** secara terpisah. Pembaruan gagal mempertahankan snapshot terakhir hanya untuk sumber, instrumen dan TF yang sama, dengan peringatan **Pembaruan tertunda** dan timestamp asli. Waktu harga yang tidak diketahui tidak diganti dengan waktu pengambilan analisis.
+
+Menu **Historis → Riwayat tugas tiap TF** menyimpan catatan level tersentuh, JIKA, Busur/Target dan perubahan pola termasuk ANL. Tersedia filter TF/ANL dan unduhan JSON. Penyimpanan lokal browser mencakup maksimal 1.500 periode yang sempat diamati saat aplikasi terbuka; bukan rekonstruksi seluruh historis broker. Waktu deteksi tidak membuktikan waktu sentuhan atau urutan tugas.
+
+Lihat [panduan aplikasi](PANDUAN_APLIKASI.md) untuk penggunaan dan batas interpretasi. Pengujian terarah dan build frontend berhasil; installer Windows 1.2.1 sudah dibangun ulang dan memuat perubahan ini. Belum ada verifikasi deployment atau feed live untuk pembaruan ini.
+
+Installer terbaru: **1.2.1**, sekitar **69,8 MiB**. Verifikasi installer, integritas ZIP, SHA256 serta kesamaan frontend/backend/dokumen paket dengan sumber build berhasil diperiksa. Seluruh 255 tes aplikasi lulus. Baca [catatan rilis 1.2.1](docs/RILIS_1.2.1.md); tutup COP TAH sebelum menjalankan installer pembaruan.

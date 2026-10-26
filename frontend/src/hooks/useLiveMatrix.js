@@ -1,10 +1,11 @@
+import {sourceIdentity} from '../sourceIdentity.mjs';
 import {calcHukumPerahu,hshEligibility} from 'virtual:coptah/rule_engine';
 import {scopedTick} from '../analysisState.mjs';
 import {useRef} from 'react';
 import {projectMatrix} from '../liveMatrix.mjs';
 export function useLiveMatrix(data,tick,now=Date.now()) {
  const ref=useRef(null);
- const scope=`${data?.broker?.id}|${data?.symbol}`;
+ const scope=sourceIdentity(data);
  const scoped=scopedTick(data,tick);
  const validTick=scoped&&Number.isFinite(scoped.timestamp)&&scoped.timestamp<=now&&now-scoped.timestamp<=45000&&scoped.timestamp>=(data?.quoteTimestamp||0)?scoped:null;
  const previous=ref.current?.scope===scope?ref.current.matrix:null;
