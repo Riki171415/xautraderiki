@@ -13,7 +13,7 @@ test('unified header exposes one source selector, accessible controls and honest
  const {default:Session}=await server.ssrLoadModule('/src/components/SourceHSHBar.jsx');
  const {default:Notice}=await server.ssrLoadModule('/src/components/NotificationCard.jsx');
  const card=renderToString(React.createElement(Notice,{notice:{type:'warning',title:'Area H4 tersentuh',body:'Pivot 100',next:'Pantau reaksi',details:['H4 Pivot'],symbol:'BTCUSD',source:'Exness'},onClose:()=>{},onOpen:()=>{}}));
- assert.ok(card.includes('Tutup notifikasi'));assert.ok(card.includes('Berikutnya:'));assert.ok(card.includes('Buka rincian'));assert.ok(card.includes('<details'));
+ assert.ok(card.includes('Tutup notifikasi'));assert.ok(card.includes('Pantau:'));assert.ok(card.includes('Buka rincian'));assert.ok(card.includes('<details'));
 
  const {default:Decision}=await server.ssrLoadModule('/src/components/DecisionSummary.jsx');
  for(const broker of ['EXNESS','BINANCE']){

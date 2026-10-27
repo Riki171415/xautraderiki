@@ -1,6 +1,8 @@
 import {h4ConfluencePlan,confluenceCell} from './h4ConfluencePlan.mjs';
 import {MICRO_TIMEFRAMES,microH4Guide} from './microH4Guide.mjs';
 export function matrixPlan(column,marketEntry,context={}){
+ const reference=context.columns?.find(c=>c.referenceAnalysis?.enabled)?.referenceAnalysis;
+ if(reference)return {...h4ConfluencePlan(context.columns,context.price,context.options),observerOnly:column.timeframe!==reference.plan.timeframe,cellRoles:Object.fromEntries(['res4','res3','res2','res1','pivot','sup1','sup2','sup3','sup4'].map(k=>[k,confluenceCell(reference.plan,column,k).map(a=>a.role)]))};
  if(MICRO_TIMEFRAMES.has(column.timeframe))return microH4Guide(column,context.columns,context.price,context.options);
  if(context.columns){
   const anchored=h4ConfluencePlan(context.columns,context.price,context.options);

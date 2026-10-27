@@ -2,6 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {allowMarketNotice} from './marketNoticePolicy.mjs';
 const minute=60000;
+test('reference plans and important cancellations share cooldown and semantic deduplication',()=>{
+ const ref={current:null};
+ assert.equal(allowMarketNotice(ref,'a','reference',{status:'WAIT_DATA',key:'x'},0),false);
+ assert.equal(allowMarketNotice(ref,'a','reference',{status:'PLAN_VALID',key:'x'},0),true);
+ assert.equal(allowMarketNotice(ref,'a','reference',{status:'PLAN_VALID',key:'x'},6*minute),false);
+ assert.equal(allowMarketNotice(ref,'a','reference',{status:'INVALIDATED',key:'x'},7*minute),true);
+ assert.equal(allowMarketNotice(ref,'a','reference',{status:'STRONG',key:'y'},8*minute),false);
+});
 test('routine observations never interrupt the user',()=>{
  const ref={current:null};
  for(let n=0;n<60;n++)for(const stage of ['NEAR','TOUCH','AREA','REACTION'])assert.equal(allowMarketNotice(ref,'a','support',{stage,id:n},n*minute),false);

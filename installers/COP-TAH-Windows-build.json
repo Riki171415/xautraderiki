@@ -1,9 +1,9 @@
 {
-  "version": "1.2.11",
-  "builtAt": "2026-10-27T18:51:13.142484",
-  "files": 3798,
-  "sizeBytes": 73620992,
-  "sha256": "66ff9564470ca0c4e166911adce7c502c795abaff4fb6cbd6e3560c7386205a1",
+  "version": "1.3.0",
+  "builtAt": "2026-10-27T20:34:48.271296",
+  "files": 3802,
+  "sizeBytes": 73644544,
+  "sha256": "a66d5728e20e3a59d844b69888d2cfa3c5b360fbf867f474de2430f397ec91c5",
   "node": "v24.22.1",
   "python": "3.11.9",
   "sources": [
@@ -11,15 +11,16 @@
     "BINANCE"
   ],
   "contentSha256": {
-    "backend/server.js": "9b3a73a62bd77ff6753ce478f94d3b2ea08dd399ca9d6ef51382784d60a721d6",
+    "backend/server.js": "f0161352217b96ab78640ffa7c28795ac3c9f94f426ea233f99bb2fd5ffce0ba",
     "backend/rule_engine.js": "dfc7fccd6982b0876294de8f29a2a87873aa81fed2f6fda9889fb6dc0eaa4f69",
     "backend/mt5_positions.js": "fc7e72ee9fa0f7812d4240dafea382c07abf9372c4df41bdc78a4dff5b334fb2",
     "backend/market_habits.js": "06cfd8c5c4a4009acf59dbfb7ff44ae90f34543fca5c697e0947c714bf1e88db",
     "backend/market_cycle.js": "392e27805462f08951eed3d8280b7c2df948662771b790af411150805ce81745",
     "backend/mt5_data.js": "7cf65f8f32cf10507fd87ecbd462aeea66a386cdc79e337809d780d6e2ce052d",
+    "backend/reference_analysis.js": "2e8a9354cc9bab07dd9b271df33546ab07cfb03dcd22b76317ca197d56d08573",
     "exness_mt5_bridge.py": "16a05cd93ccc75e2f0d5d6a3e914f26a8e7d08ce4b722def480b7e8cdc9dae06",
-    "frontend/dist/assets/index-CnnGnCdH.js": "7b9fd1ffaa67b34195c29cacefb4a27535490c2ae0371631d6a0766652af8adb",
-    "frontend/dist/assets/index-DR_dE0h8.css": "494850bcd60580490a146d01ba495e69edc4154d7c96c560cb227d3bb78e044c",
-    "frontend/dist/index.html": "3d2f8cedfd2ec762da4549df86623cd6d0392b63ac01929dd97e074ef9f91717"
+    "frontend/dist/assets/index-B3g5lMA_.css": "043612b9b81a4dcfde0431af3f77b1822c3b74df7e49a7c6aad2e56d9933f99c",
+    "frontend/dist/assets/index-DZ4bzuJV.js": "e47acbbf096f2e7dc782ebe2bfaa8ca57eaa3ad1493a0127605aa37d8c388380",
+    "frontend/dist/index.html": "02761beaf54658cb7b10f398c65d932cdc07e390c0c05bcb5ba2fbd29afed4f3"
   }
 }

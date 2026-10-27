@@ -11,7 +11,7 @@ export default function TerminalAnalysisDetails({model,data,columns,price,decima
  const section=(title,content,open=false)=><details className="tf-analysis-block" open={open}><summary>{title}</summary><div>{content}</div></details>;
  return <div className="tf-analysis-content">
   {weekly&&<BtcWeeklySchedule columns={columns} data={data} now={now}/>}
-  {weekly&&<div className="tf-week-intro"><h3>Plan Mingguan · W1</h3><p>Data mingguan, rumah HSH dan skenario dua arah. Entry aktif tetap memakai kecocokan H4 yang sama dengan Ringkasan.</p></div>}
+  {weekly&&<div className="tf-week-intro"><h3>Plan Mingguan · W1</h3><p>Data mingguan, rumah HSH dan skenario dua arah. {plan.source==='REFERENCE'?'Entry aktif mengikuti keputusan Puzzle bersama dan level TF asal.':'Entry aktif tetap memakai kecocokan H4 yang sama dengan Ringkasan.'}</p></div>}
   <div className="tf-detail-plan"><strong>{plan.observerOnly?'PENANDA H4':plan.action}</strong><span>{plan.reason}</span>{active&&<dl className="tf-order-values">{[['Entry',plan.entryPrice],...targets.map((t,i)=>['TP'+(i+1),t.value]),['SL',plan.stopLoss]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{fmt(v)}</dd></div>)}</dl>}</div>
   <CoptahStory compact columns={columns} price={price} data={data} now={now} tolerance={tolerance} decimals={decimals}/>{column&&<DirectionContext columns={columns} timeframe={column.timeframe} now={now} stale={model.stale} tolerance={tolerance} decimals={decimals}/>}<DailyRangeEstimate columns={columns} data={data} now={now} decimals={decimals}/>
   {!row||!column?<p>Riwayat timeframe ini belum lengkap. Tidak memakai angka atau timeframe pengganti.</p>:<>

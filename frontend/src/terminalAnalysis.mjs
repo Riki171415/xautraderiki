@@ -2,6 +2,8 @@ import {quoteIsStale} from './analysisState.mjs';
 import {matrixPlan} from './matrixPlan.mjs';
 export const TERMINAL_LEVELS=['res4','res3','res2','res1','pivot','sup1','sup2','sup3','sup4'];
 export function terminalAnalysis({data,rows,columns,selected,price,tolerance=0,now=Date.now(),decimals=3}) {
+ const reference=columns.find(c=>c.referenceAnalysis?.enabled)?.referenceAnalysis||data?.referenceAnalysis;
+ if(reference?.enabled)columns=columns.map(c=>({...c,referenceAnalysis:reference}));
  const row=rows.find(r=>r.timeframe===selected),column=columns.find(c=>c.timeframe===selected);
  const expired=!!column&&Number.isFinite(column.periodEnd)&&!(column.periodStart<=now&&now<column.periodEnd);
  const stale=quoteIsStale(data,now)||expired;

@@ -21,7 +21,7 @@ import { ArrowUp, ArrowDown, Activity, Globe, Clock, Shield, Info } from 'lucide
 function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimeframes, tolerance=0, onTolerance,dailyTarget='AUTO',onDailyTarget,terminalSection,onTerminalSection,onTerminalSelect,onOpenAnalysis }) {
   const [now,setNow]=React.useState(Date.now);
   React.useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
-  const liveMatrix=useLiveMatrix(data,liveTick,now);
+  const liveMatrix=useLiveMatrix(data,liveTick,now,tolerance);
   if (!data) return null;
 
   const { leak4RegMatrix, broker, decimals = 3 } = data;

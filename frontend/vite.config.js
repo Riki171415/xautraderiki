@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const sharedRules={name:'shared-coptah-rules',resolveId(id){if(id.startsWith('virtual:coptah/'))return '\0'+id;},load(id){
  if(!id.startsWith('\0virtual:coptah/'))return;
  const name=id.split('/').pop();
- if(!['rule_engine','h4_compass','market_cycle','market_entry','plan_monitor','market_habits','mt5_data','exness_symbols'].includes(name))throw new Error('Unknown shared rule');
+ if(!['rule_engine','h4_compass','market_cycle','market_entry','plan_monitor','market_habits','mt5_data','exness_symbols','reference_analysis'].includes(name))throw new Error('Unknown shared rule');
  let code=readFileSync(new URL('../backend/'+name+'.js',import.meta.url),'utf8');
  code=code.replace(/const (\{[^;]+?\})=require\('\.\/(\w+)'\);/g,(_,names,dep)=>`import ${names} from 'virtual:coptah/${dep}';`);
  code=code.replace("return require('./market_cycle').analyzeMarketSessions(context);",'return analyzeMarketSessions(context);');

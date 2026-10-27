@@ -1,0 +1,314 @@
+{
+  "generatedAt": "2026-10-27T12:39:46.894Z",
+  "modelVersion": 1,
+  "ruleSHA256": "2e8a9354cc9bab07dd9b271df33546ab07cfb03dcd22b76317ca197d56d08573",
+  "results": [
+    {
+      "symbol": "XAUUSD",
+      "status": "COMPLETED",
+      "source": "Exness-MT5Real36",
+      "coverage": {
+        "1h": {
+          "bars": 57232,
+          "start": 1477612800000,
+          "end": 1793102400000
+        },
+        "4h": {
+          "bars": 15669,
+          "start": 1477612800000,
+          "end": 1793102400000
+        },
+        "1d": {
+          "bars": 3065,
+          "start": 1477612800000,
+          "end": 1793059200000
+        },
+        "1w": {
+          "bars": 522,
+          "start": 1477785600000,
+          "end": 1792886400000
+        },
+        "1M": {
+          "bars": 120,
+          "start": 1477958400000,
+          "end": 1790812800000
+        },
+        "30m": {
+          "bars": 90000,
+          "start": 1553000400000,
+          "end": 1793102400000
+        },
+        "15m": {
+          "bars": 90000,
+          "start": 1672930800000,
+          "end": 1793103300000
+        }
+      },
+      "requestedStart": "2016-10-27T12:18:40.718880+00:00",
+      "requestedEnd": "2026-10-27T12:18:40.718880+00:00",
+      "splitTimestamp": 1698458040000,
+      "developmentFraction": 0.7,
+      "stats": {
+        "development": {
+          "samples": 9824,
+          "statuses": {
+            "NO_CANDIDATE": 4042,
+            "WAIT_CONFIRMATION": 2657,
+            "PLAN_VALID": 1394,
+            "CONFLICT": 1636,
+            "WAIT_DATA": 95
+          },
+          "candidates": 5945,
+          "conflicts": 1640,
+          "cancellations": 965,
+          "newPlans": 1313,
+          "outcomes": {
+            "UNFILLED": 791,
+            "SL": 18,
+            "CANCELLED_UNFILLED": 83,
+            "TP1": 20,
+            "AMBIGUOUS_ENTRY_BAR": 231,
+            "GAP_UNVERIFIED": 104,
+            "OPEN_AT_EXPIRY": 64,
+            "AMBIGUOUS_SL_TP": 2
+          },
+          "grossR": 1.4632675868200735
+        },
+        "test": {
+          "samples": 4424,
+          "statuses": {
+            "CONFLICT": 1606,
+            "WAIT_CONFIRMATION": 551,
+            "NO_CANDIDATE": 1677,
+            "PLAN_VALID": 561,
+            "WAIT_DATA": 29
+          },
+          "candidates": 2828,
+          "conflicts": 1612,
+          "cancellations": 454,
+          "newPlans": 535,
+          "outcomes": {
+            "UNFILLED": 363,
+            "GAP_UNVERIFIED": 41,
+            "CANCELLED_UNFILLED": 35,
+            "OPEN_AT_EXPIRY": 14,
+            "AMBIGUOUS_ENTRY_BAR": 76,
+            "TP1": 2,
+            "SL": 3,
+            "AMBIGUOUS_SL_TP": 1
+          },
+          "grossR": -1.0449451963554721
+        }
+      },
+      "limitations": [
+        "Samples every four available H1 bars; no tick-level simulation.",
+        "M1/M5 unavailable for historical puzzle; M15/M30 shorter than ten years.",
+        "Current macro candle is reconstructed from completed H1 only. Missing hours mean partial evidence, not fabricated candles.",
+        "Simulation reports first TP only; spread, commission, swap and slippage excluded. Gross R is not net performance.",
+        "Same-bar entry/SL/TP has unknown order and is marked ambiguous; gaps are not assigned profit.",
+        "No parameter tuning on the final chronological 30 percent. One simulated plan at a time per instrument."
+      ]
+    },
+    {
+      "symbol": "EURUSD",
+      "status": "COMPLETED",
+      "source": "Exness-MT5Real36",
+      "coverage": {
+        "1h": {
+          "bars": 60202,
+          "start": 1477612800000,
+          "end": 1793077200000
+        },
+        "4h": {
+          "bars": 15750,
+          "start": 1477612800000,
+          "end": 1793102400000
+        },
+        "1d": {
+          "bars": 3077,
+          "start": 1477612800000,
+          "end": 1793059200000
+        },
+        "1w": {
+          "bars": 522,
+          "start": 1477785600000,
+          "end": 1792886400000
+        },
+        "1M": {
+          "bars": 120,
+          "start": 1477958400000,
+          "end": 1790812800000
+        },
+        "30m": {
+          "bars": 90000,
+          "start": 1565128800000,
+          "end": 1793102400000
+        },
+        "15m": {
+          "bars": 90000,
+          "start": 1678904100000,
+          "end": 1793103300000
+        }
+      },
+      "requestedStart": "2016-10-27T12:18:40.718880+00:00",
+      "requestedEnd": "2026-10-27T12:18:40.718880+00:00",
+      "splitTimestamp": 1698440400000,
+      "developmentFraction": 0.7,
+      "stats": {
+        "development": {
+          "samples": 10339,
+          "statuses": {
+            "CONFLICT": 3770,
+            "NO_CANDIDATE": 4051,
+            "WAIT_CONFIRMATION": 2241,
+            "PLAN_VALID": 156,
+            "WAIT_DATA": 121
+          },
+          "candidates": 6531,
+          "conflicts": 3811,
+          "cancellations": 110,
+          "newPlans": 83,
+          "outcomes": {
+            "CANCELLED_UNFILLED": 61,
+            "SL": 3,
+            "UNFILLED": 14,
+            "AMBIGUOUS_ENTRY_BAR": 3,
+            "TP1": 1,
+            "OPEN_AT_EXPIRY": 1
+          },
+          "grossR": -2.778097982708957
+        },
+        "test": {
+          "samples": 4652,
+          "statuses": {
+            "WAIT_CONFIRMATION": 602,
+            "NO_CANDIDATE": 1883,
+            "CONFLICT": 2126,
+            "PLAN_VALID": 41
+          },
+          "candidates": 2869,
+          "conflicts": 2126,
+          "cancellations": 32,
+          "newPlans": 26,
+          "outcomes": {
+            "UNFILLED": 5,
+            "OPEN_AT_EXPIRY": 1,
+            "CANCELLED_UNFILLED": 18,
+            "SL": 1,
+            "AMBIGUOUS_ENTRY_BAR": 1
+          },
+          "grossR": -1
+        }
+      },
+      "limitations": [
+        "Samples every four available H1 bars; no tick-level simulation.",
+        "M1/M5 unavailable for historical puzzle; M15/M30 shorter than ten years.",
+        "Current macro candle is reconstructed from completed H1 only. Missing hours mean partial evidence, not fabricated candles.",
+        "Simulation reports first TP only; spread, commission, swap and slippage excluded. Gross R is not net performance.",
+        "Same-bar entry/SL/TP has unknown order and is marked ambiguous; gaps are not assigned profit.",
+        "No parameter tuning on the final chronological 30 percent. One simulated plan at a time per instrument."
+      ]
+    },
+    {
+      "symbol": "GBPUSD",
+      "status": "COMPLETED",
+      "source": "Exness-MT5Real36",
+      "coverage": {
+        "1h": {
+          "bars": 60202,
+          "start": 1477612800000,
+          "end": 1793077200000
+        },
+        "4h": {
+          "bars": 15750,
+          "start": 1477612800000,
+          "end": 1793102400000
+        },
+        "1d": {
+          "bars": 3077,
+          "start": 1477612800000,
+          "end": 1793059200000
+        },
+        "1w": {
+          "bars": 522,
+          "start": 1477785600000,
+          "end": 1792886400000
+        },
+        "1M": {
+          "bars": 120,
+          "start": 1477958400000,
+          "end": 1790812800000
+        },
+        "30m": {
+          "bars": 90000,
+          "start": 1565121600000,
+          "end": 1793102400000
+        },
+        "15m": {
+          "bars": 90000,
+          "start": 1678903200000,
+          "end": 1793103300000
+        }
+      },
+      "requestedStart": "2016-10-27T12:18:40.718880+00:00",
+      "requestedEnd": "2026-10-27T12:18:40.718880+00:00",
+      "splitTimestamp": 1698440400000,
+      "developmentFraction": 0.7,
+      "stats": {
+        "development": {
+          "samples": 10339,
+          "statuses": {
+            "CONFLICT": 3641,
+            "NO_CANDIDATE": 4158,
+            "WAIT_CONFIRMATION": 2208,
+            "PLAN_VALID": 210,
+            "WAIT_DATA": 121,
+            "STRONG": 1
+          },
+          "candidates": 6476,
+          "conflicts": 3681,
+          "cancellations": 149,
+          "newPlans": 115,
+          "outcomes": {
+            "UNFILLED": 14,
+            "CANCELLED_UNFILLED": 90,
+            "OPEN_AT_EXPIRY": 2,
+            "AMBIGUOUS_ENTRY_BAR": 4,
+            "TP1": 1,
+            "SL": 4
+          },
+          "grossR": -3.2267759562841425
+        },
+        "test": {
+          "samples": 4652,
+          "statuses": {
+            "NO_CANDIDATE": 1908,
+            "CONFLICT": 2102,
+            "WAIT_CONFIRMATION": 585,
+            "PLAN_VALID": 57
+          },
+          "candidates": 2890,
+          "conflicts": 2102,
+          "cancellations": 49,
+          "newPlans": 36,
+          "outcomes": {
+            "CANCELLED_UNFILLED": 26,
+            "UNFILLED": 4,
+            "AMBIGUOUS_ENTRY_BAR": 3,
+            "SL": 2,
+            "TP1": 1
+          },
+          "grossR": -1.7412199630314067
+        }
+      },
+      "limitations": [
+        "Samples every four available H1 bars; no tick-level simulation.",
+        "M1/M5 unavailable for historical puzzle; M15/M30 shorter than ten years.",
+        "Current macro candle is reconstructed from completed H1 only. Missing hours mean partial evidence, not fabricated candles.",
+        "Simulation reports first TP only; spread, commission, swap and slippage excluded. Gross R is not net performance.",
+        "Same-bar entry/SL/TP has unknown order and is marked ambiguous; gaps are not assigned profit.",
+        "No parameter tuning on the final chronological 30 percent. One simulated plan at a time per instrument."
+      ]
+    }
+  ]
+}

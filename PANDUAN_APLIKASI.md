@@ -485,3 +485,9 @@ NAIK/TURUN BERKONFLIK DENGAN OP–PV menggantikan penggunaan lama kata melemah u
 NAIK MELEMAH atau TURUN MELEMAH sekarang memakai sampel tick Bid dari dua jendela berurutan sekitar 30 detik. Kecepatan = perubahan harga / durasi aktual. Arah kedua jendela harus sama dan kecepatan absolut terbaru maksimal 70% sebelumnya. Perubahan kurang dari dua unit presisi instrumen dinilai datar. Timestamp batas jendela harus berada dalam toleransi 3 detik; jeda sampel di atas 10 detik atau tick terakhir lebih tua dari 10 detik menahan hasil. Data mulai terkumpul ketika panel/model dipantau, tidak direkonstruksi dari OHLC; berganti periode/sumber/instrumen memulai pengamatan baru.
 
 Momentum ini mengukur horizon tick sekitar satu menit yang sama pada tiap TF, bukan momentum sepanjang candle Daily/Weekly, volume, order flow, atau probabilitas pembalikan. Angka ambang 30% adalah parameter observasi yang belum dikalibrasi historis. Rincian tersedia pada Pembacaan gabungan → Dasar pembacaan momentum.
+
+## Puzzle COP TAH — 1.3.0
+
+Sumber aturan bersama baru: `backend/reference_analysis.js`. Baca [logika lengkap](docs/LOGIKA_PUZZLE_COPTAH.md) sebelum mengubah sinyal/entry. Berlaku pada forex/emas Exness; BTC/Binance terpisah. API menambah `referenceContext`/`referenceAnalysis`; frontend mengevaluasi ulang dengan quote dan toleransi aktif, seluruh tiket/penanda mengacu model yang sama. Rencana bisa berasal dari Daily/H4/Weekly sehingga jangan mengunci label entry/SL/TP ke H4. Konflik atau bukti kurang berarti WAIT. Konfirmasi dari candle selesai, Week berjalan tetap sementara. Tidak ada order otomatis.
+
+Panel Puzzle tersedia di Analisis dan Terminal serta dialog tombol ringkas di tabel. Kamus dapat dicari. Kontrol mobile minimal 44px, nilai membungkus dan kamus muat dalam lebar layar. Laporan historis: [Uji Puzzle](docs/UJI_HISTORIS_PUZZLE.md).

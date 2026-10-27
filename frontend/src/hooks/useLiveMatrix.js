@@ -1,9 +1,10 @@
+import {buildReferenceAnalysis} from 'virtual:coptah/reference_analysis';
 import {sourceIdentity} from '../sourceIdentity.mjs';
 import {calcHukumPerahu,hshEligibility} from 'virtual:coptah/rule_engine';
 import {scopedTick} from '../analysisState.mjs';
 import {useRef} from 'react';
 import {projectMatrix} from '../liveMatrix.mjs';
-export function useLiveMatrix(data,tick,now=Date.now()) {
+export function useLiveMatrix(data,tick,now=Date.now(),tolerance=0) {
  const ref=useRef(null);
  const scope=sourceIdentity(data);
  const scoped=scopedTick(data,tick);
@@ -25,6 +26,10 @@ export function useLiveMatrix(data,tick,now=Date.now()) {
    const direct=o>ob?'UP':o<ob?'DOWN':'NEUTRAL',move=close==null?'WAIT':close>o?'UP':close<o?'DOWN':'FLAT';
    return {...row,direct,move,opPv:pivot==null?'—':o>pivot?'ABOVE':o<pivot?'BELOW':'EQV',pattern:calcHukumPerahu({open:o,high:h,low:l},{open:ob,high:hb,low:lb}).pattern,track:['UP','DOWN'].includes(move)&&direct!=='NEUTRAL'?(move===direct?'TARGET ':'BUSUR ')+move:'WAIT'};
   })};
+ }
+ if(matrix&&data?.referenceContext){
+  const referenceAnalysis=buildReferenceAnalysis({...data.referenceContext,columns:matrix.rsColumns,now,tolerance,price:Number(matrix.currentPrice),quoteTimestamp:data.requirementsComplete===false?0:(validTick?.timestamp??data.quoteTimestamp)});
+  matrix={...matrix,referenceAnalysis,rsColumns:matrix.rsColumns.map(c=>({...c,referenceAnalysis}))};
  }
  ref.current={scope,matrix};
  return matrix;

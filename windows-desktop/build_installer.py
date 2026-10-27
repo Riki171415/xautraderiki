@@ -14,7 +14,7 @@ ROOT=Path(__file__).resolve().parents[1]
 BUILD=ROOT/'windows-desktop'/'build'/datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 STAGE=BUILD/'app'
 OUT=ROOT/'installers'/'COP-TAH-Windows-x64-Setup.exe'
-VERSION='1.2.11'
+VERSION='1.3.0'
 CSC=Path(os.environ['WINDIR'])/'Microsoft.NET'/'Framework64'/'v4.0.30319'/'csc.exe'
 
 def run(args,**kwargs):
@@ -78,7 +78,9 @@ def main():
     copy(ROOT/'windows-desktop'/'PANDUAN-WINDOWS.txt',STAGE/'PANDUAN-WINDOWS.txt')
     copy(ROOT/'PANDUAN_APLIKASI.md',STAGE/'PANDUAN_APLIKASI.md')
     copy(ROOT/'docs'/'PERBAIKAN_SUPPORT_UJI_10_TAHUN.md',STAGE/'docs'/'PERBAIKAN_SUPPORT_UJI_10_TAHUN.md')
-    release_files=[STAGE/'backend'/'server.js',STAGE/'backend'/'rule_engine.js',STAGE/'backend'/'mt5_positions.js',STAGE/'backend'/'market_habits.js',STAGE/'backend'/'market_cycle.js',STAGE/'backend'/'mt5_data.js',STAGE/'exness_mt5_bridge.py',*sorted((STAGE/'frontend'/'dist').rglob('*'))]
+    for name in ['LOGIKA_PUZZLE_COPTAH.md','UJI_HISTORIS_PUZZLE.md','RILIS_1.3.0.md']:
+        copy(ROOT/'docs'/name,STAGE/'docs'/name)
+    release_files=[STAGE/'backend'/'server.js',STAGE/'backend'/'rule_engine.js',STAGE/'backend'/'mt5_positions.js',STAGE/'backend'/'market_habits.js',STAGE/'backend'/'market_cycle.js',STAGE/'backend'/'mt5_data.js',STAGE/'backend'/'reference_analysis.js',STAGE/'exness_mt5_bridge.py',*sorted((STAGE/'frontend'/'dist').rglob('*'))]
     content_hashes={f.relative_to(STAGE).as_posix():hashlib.sha256(f.read_bytes()).hexdigest() for f in release_files if f.is_file()}
     (STAGE/'build-info.json').write_text(json.dumps({'version':VERSION,'builtAt':datetime.datetime.now().isoformat(),'contentSha256':content_hashes},indent=2),encoding='utf-8')
     run([CSC,'/nologo','/target:winexe','/platform:x64','/out:'+str(STAGE/'COPTAH.exe'),'/r:System.Windows.Forms.dll','/r:System.Drawing.dll',ROOT/'windows-desktop'/'Launcher.cs'])

@@ -10,7 +10,7 @@ test('new global story and direction details render from the same current scoped
   const {directionContext}=await server.ssrLoadModule('/src/directionContext.mjs');
   const {default:Story}=await server.ssrLoadModule('/src/components/CoptahStory.jsx');
   const {default:Sesi}=await server.ssrLoadModule('/src/components/MarketCycleAnalysis.jsx');
-  const now=Date.now(),base={periodStart:now-1000,periodEnd:now+100000,openN:100,openB:90,closeN:95,highN:120,lowN:85,highB:110,lowB:80,pivot:105,sup1:90,sup2:80,sup3:70,sup4:60,res1:110,res2:120,res3:130,res4:140,plan:{action:'BUY LIMIT',stopLoss:80}};
+  const now=Date.now(),base={momentumSamples:Array.from({length:13},(_,i)=>({time:now-60000+i*5000,price:80+(i<=6?i*10/6:10+(i-6)*5/6)})),periodStart:now-120000,periodEnd:now+100000,openN:100,openB:90,closeN:95,highN:120,lowN:85,highB:110,lowB:80,pivot:105,sup1:90,sup2:80,sup3:70,sup4:60,res1:110,res2:120,res3:130,res4:140,plan:{action:'BUY LIMIT',stopLoss:80}};
   const frames=['1Y','6M','3M','1M','1w','1d','market','4h','1h','30m','15m','5m','1m'];
   const columns=frames.map(timeframe=>({...base,timeframe,label:timeframe}));
   const context=directionContext(columns,'1d',{now});assert.equal(context.mixed,true);assert.ok(context.flags.includes('NAIK MELEMAH'));assert.ok(context.scenarios.some(s=>s.label.includes('PIVOT WEEK')));

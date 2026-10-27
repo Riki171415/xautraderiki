@@ -1,3 +1,4 @@
+const {buildReferenceAnalysis,referenceEnabled,REFERENCE_LADDER}=require('./reference_analysis');
 // Local server secrets stay in the ignored backend/.env; hosted environments
 // continue to use their configured environment variables.
 const localEnvPath = require('path').join(__dirname, '.env');
@@ -818,7 +819,19 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
 
     let instrumentYears=[];
     try{instrumentYears=await fetchBrokerOHLCV(broker.id,marketSymbol,'1Y');}catch{}
+    let referenceContext=null,referenceAnalysis=null;
+    if(referenceEnabled(broker.id,displaySymbol)){
+      const histories={};
+      for(const tf of REFERENCE_LADDER){
+        try{histories[tf]=await fetchBrokerOHLCV(broker.id,marketSymbol,tf);}catch{histories[tf]=[];}
+      }
+      referenceContext={broker:broker.id,symbol:displaySymbol,histories,decimals,sourceSession:feedState.sourceSession};
+      referenceAnalysis=buildReferenceAnalysis({...referenceContext,columns:leak4RegMatrix?.rsColumns||[],price:feedState.bid,quoteTimestamp:feedState.quoteTimestamp,now:Date.now()});
+      entryRecommendations=entryRecommendations.map(rec=>({...rec,legacyBusur:rec.busur,busur:referenceAnalysis.plan,observation:null,alternatives:[],coptahRationale:{...rec.coptahRationale,whyEntryHere:referenceAnalysis.reasons.join(' ')},referenceAnalysisStatus:referenceAnalysis.status}));
+      marketEntry={...marketEntry,legacyPlan:marketEntry.plan,plan:referenceAnalysis.plan,observation:null,alternatives:[]};
+    }
     const result = {
+      referenceContext,referenceAnalysis,
       h4Compass,
       dailyH4Context,
       supportHistory:{hourly:(cycleContext.hourly||[]).slice(-240)},
@@ -841,12 +854,12 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
       jika,
       perahu,
       rsMatrix: rsMatrixUpdated,
-      busur,
+      busur:referenceAnalysis?.enabled?referenceAnalysis.plan:busur,
       hsh,
       lotCalc,
       session,
-      storyline,
-      opStatus,
+      storyline:referenceAnalysis?.enabled?{...storyline,referenceReason:referenceAnalysis.reasons.join(' ')}:storyline,
+      opStatus:referenceAnalysis?.enabled?{...opStatus,op:referenceAnalysis.action}:opStatus,
       userModal,
       marketCycle,
       subAlurCerita,

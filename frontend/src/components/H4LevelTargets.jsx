@@ -13,7 +13,7 @@ export default function H4LevelTargets({data,liveTick,now=Date.now(),onNotify,to
  const setAlertsEnabled=value=>onAlertSettings?.(s=>({...s,h4Enabled:value}));
  const setAlertDistance=value=>onAlertSettings?.(s=>({...s,distance:value}));
 
- const matrix=useLiveMatrix(data,liveTick,now);
+ const matrix=useLiveMatrix(data,liveTick,now,tolerance);
  const price=Number(matrix?.currentPrice),digits=data?.decimals??3;
  const h4=matrix?.rsColumns?.find(c=>c.timeframe==='4h');
  const move=h4?Number(h4.closeN)>Number(h4.openN)?'UP':Number(h4.closeN)<Number(h4.openN)?'DOWN':'FLAT':'FLAT';

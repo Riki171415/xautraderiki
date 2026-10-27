@@ -21,6 +21,10 @@ test('switching MT5 server/account clears every symbol history before accepting 
    const result=analysis.data.data,daily=result.leak4RegMatrix.rsColumns.find(c=>c.timeframe==='1d');
    assert.equal(daily.beforePeriodStart,friday[0]);assert.equal(Number(daily.highB),120);assert.equal(Number(daily.lowB),90);
    assert.equal(daily.beforePolicy,'PREVIOUS_WEEKDAY');
+   assert.equal(result.referenceAnalysis.enabled,true);
+   assert.equal(result.referenceAnalysis.action,'WAIT','missing confirmation history must not produce reference orders');
+   assert.equal(result.busur.action,result.referenceAnalysis.action);
+   assert.equal(result.referenceContext.symbol,'XAUUSD');
    if(timeframe==='1d'){assert.equal(result.ohlcv_B.timestamp,friday[0]);assert.equal(result.ohlcv_B.open,100);}
   }
   assert.equal((await call('/api/mt5/positions',{server:'Exness-TestA',account:1,currency:'USC',timestamp:Date.now(),available:true,positions:[]})).status,200);

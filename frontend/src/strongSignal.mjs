@@ -4,6 +4,8 @@ import {h4MicroMatches} from './h4LevelMatches.mjs';
 import {h4ConfluencePlan} from './h4ConfluencePlan.mjs';
 import {timeframeTask} from './timeframeTask.mjs';
 export function strongSignals(columns=[],price,{now=Date.now(),stale=false,tolerance=0,decimals=3,cycle}={}) {
+ const reference=columns.find(c=>c.referenceAnalysis?.enabled)?.referenceAnalysis;
+ if(reference)return ['BUY','SELL'].flatMap(side=>['1m','5m','15m','30m','1h'].map(timeframe=>({side,timeframe,strong:!stale&&reference.strong&&reference.side===side&&reference.candidates.some(c=>c.side===side&&c.evidence.some(e=>e.timeframe===timeframe)),status:!stale&&reference.strong&&reference.side===side&&reference.candidates.some(c=>c.side===side&&c.evidence.some(e=>e.timeframe===timeframe))?`SINYAL KUAT ${side}`:'BELUM LENGKAP',warnings:reference.conflicts,checks:[{key:'reference',label:reference.reasons.join(' '),pass:reference.side===side&&reference.strong&&!stale}],target:reference.plan.timeframe?{timeframe:reference.plan.timeframe,h4Key:reference.plan.entryKey,level:reference.plan.entryKey,value:reference.plan.entryPrice}:null})));
  const active=c=>c&&(!Number.isFinite(c.periodEnd)||c.periodStart<=now&&now<c.periodEnd);
  const plan=h4ConfluencePlan(columns,Number(price),{now,tolerance,decimals,stale});
  const h4=columns.find(c=>c.timeframe==='4h');

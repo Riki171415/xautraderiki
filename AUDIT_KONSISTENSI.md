@@ -122,3 +122,7 @@ Validasi terarah yang telah dijalankan pada perubahan masing-masing: 63 tes logi
 
 
 Paket Windows **1.2.1** selesai dibangun pada 19 Oktober 2026. Seluruh 255 tes aplikasi lulus; build frontend, impor Python bawaan dan pemeriksaan launcher berhasil. Mode installer `--verify`, integritas ZIP, kesesuaian SHA256 dengan manifest/checksum, serta kesamaan seluruh aset frontend, modul historical_observation dan panduan paket terhadap sumber build diperiksa dan lulus. Ukuran EXE 73.182.720 byte; 3.795 file paket. Installer 1.2.0 sebelumnya digantikan pada lokasi keluaran yang sama. Pemasangan pada perangkat lain dan feed live belum diuji; tidak ada tindakan memasang atau menutup aplikasi pengguna pada proses build ini.
+
+## Pembaruan Puzzle 1.3.0
+
+Model referensi bersama mengendalikan tiket, rekomendasi, penanda, Terminal dan notifikasi pada XAUUSD/EURUSD/GBPUSD Exness. Pengujian memeriksa pasangan candle selesai, konflik, periode entry asli, larangan menebak urutan HSH dan scope BTC/Binance. [Dokumentasi aturan](docs/LOGIKA_PUZZLE_COPTAH.md) dan [hasil replay](docs/UJI_HISTORIS_PUZZLE.md) menjadi acuan. Riwayat mikro tidak lengkap selama 10 tahun; tidak ada klaim profitabilitas.

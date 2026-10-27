@@ -2,7 +2,7 @@ import {quoteIsStale} from '../analysisState.mjs';
 import {useLiveMatrix} from './useLiveMatrix';
 import {h4ConfluencePlan} from '../h4ConfluencePlan.mjs';
 export function useH4Plan(data,tick,tolerance=0,now=Date.now()) {
- const matrix=useLiveMatrix(data,tick,now);
+ const matrix=useLiveMatrix(data,tick,now,tolerance);
  const valid=!!tick&&!!data&&Number.isFinite(tick.bid)&&tick.symbol===data?.symbol&&tick?.broker===data?.broker?.id;
  const price=Number(matrix?.currentPrice);
  const h4=matrix?.rsColumns?.find(c=>c.timeframe==='4h');

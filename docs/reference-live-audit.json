@@ -1,0 +1,18 @@
+{
+  "server": "Exness-MT5Real36",
+  "symbol": "XAUUSDc",
+  "status": "WAIT_CONFIRMATION",
+  "action": "WAIT",
+  "reasons": [
+    "Menunggu konfirmasi TF adik atau urutan level/sisi limit yang valid."
+  ],
+  "candidates": [
+    {
+      "side": "SELL",
+      "timeframe": "4h",
+      "confirmed": false
+    }
+  ],
+  "readOnlyMT5": true,
+  "isolatedServerPort": 3034
+}

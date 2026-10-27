@@ -184,3 +184,7 @@ Menu **Historis → Riwayat tugas tiap TF** menyimpan catatan level tersentuh, J
 Lihat [panduan aplikasi](PANDUAN_APLIKASI.md) untuk penggunaan dan batas interpretasi. Pengujian terarah dan build frontend berhasil; installer Windows 1.2.1 sudah dibangun ulang dan memuat perubahan ini. Belum ada verifikasi deployment atau feed live untuk pembaruan ini.
 
 Installer terbaru: **1.2.1**, sekitar **69,8 MiB**. Verifikasi installer, integritas ZIP, SHA256 serta kesamaan frontend/backend/dokumen paket dengan sumber build berhasil diperiksa. Seluruh 255 tes aplikasi lulus. Baca [catatan rilis 1.2.1](docs/RILIS_1.2.1.md); tutup COP TAH sebelum menjalankan installer pembaruan.
+
+## Pembaruan 1.3.0
+
+[Logika Puzzle COP TAH](docs/LOGIKA_PUZZLE_COPTAH.md) mendokumentasikan aturan Om Dhan, konfirmasi TF adik, Selasa/Rabu, HSH referensi dan keputusan entry. [Uji historis](docs/UJI_HISTORIS_PUZZLE.md) melaporkan cakupan dan keterbatasannya; hasil bukan bukti profitabilitas. UI memakai rincian lipat dan layout responsif.

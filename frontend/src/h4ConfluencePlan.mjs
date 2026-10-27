@@ -1,5 +1,7 @@
 import {h4LevelMatches,h4MicroMatches,levelName} from './h4LevelMatches.mjs';
 export function h4ConfluencePlan(columns,price,{tolerance=0,decimals=3,now=Date.now(),stale=false}={}){
+ const reference=columns.find(c=>c.referenceAnalysis?.enabled)?.referenceAnalysis;
+ if(reference)return stale?{...reference.plan,action:'WAIT',areas:[],reason:'Harga belum segar; rencana Puzzle ditahan.'}:reference.plan;
  const comparison=h4LevelMatches(columns,price,{tolerance,decimals,now});
  const h4=columns.find(c=>c.timeframe==='4h'),base=h4?.plan;
  const micro=h4MicroMatches(columns,price,{tolerance,decimals,now});
@@ -19,6 +21,7 @@ export function h4ConfluencePlan(columns,price,{tolerance=0,decimals=3,now=Date.
  return {action:base.action,status:'PLAN_AVAILABLE',attentionAreas,reason:'Entry dan sasaran berasal dari level H4 yang bertemu Market/Daily/Week/Month/Kuartal/Semester/Year. TP berurutan menurut harga dari entry, bukan menurut nomor R/S.',entryPrice:entry.value,stopLoss:base.stopLoss,stopKey:buy?'sup2':'res2',areas,comparison};
 }
 export function confluenceCell(plan,column,key){
+ if(plan.source==='REFERENCE')return (plan.areas||[]).filter(a=>a.timeframe===column.timeframe&&a.key===key).map(a=>({role:a.role,observerOnly:false,anchor:a.value,anchorKey:a.key,count:1,delta:0}));
  const areas=plan.action==='WAIT'?(plan.attentionAreas||[]):plan.areas;
  return areas.filter(g=>column.timeframe==='4h'?g.key===key:[...(g.matches||[]),...(g.microMatches||[])].some(m=>m.timeframe===column.timeframe&&m.level===key)).map(g=>({role:g.role,observerOnly:['1m','5m','15m','30m','1h'].includes(column.timeframe),anchor:g.value,anchorKey:g.key,count:g.count,delta:Math.abs(Number(column[key])-g.value)}));
 }

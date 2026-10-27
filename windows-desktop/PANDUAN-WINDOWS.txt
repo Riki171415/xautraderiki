@@ -1,4 +1,4 @@
-COP TAH 1.2.11 — Windows 64-bit — Exness MT5 dan Binance Spot
+COP TAH 1.3.0 — Windows 64-bit — Exness MT5 dan Binance Spot
 
 PEMASANGAN
 1. Salin COP-TAH-Windows-x64-Setup.exe ke komputer Windows 10/11 64-bit.
@@ -117,3 +117,6 @@ Sesi Exness mengikuti timestamp pembukaan D1 broker. Asia 0-8 jam, Eropa 8-14 ja
 
 POSISI RINGKAS 1.2.11
 Ringkasan posisi MT5 berada di tengah baris HSH/Acuan Sesi di atas tabel. Menampilkan jumlah posisi, BUY/SELL dan profit dalam mata uang akun. Klik ringkasan untuk membuka rincian. Panel posisi di bawah tabel dihapus agar tabel kembali lega.
+
+PUZZLE COP TAH 1.3.0
+Aturan Om Dhan, RPS, Selasa/Rabu dan HSH referensi menjadi rencana bersama untuk XAUUSD/EURUSD/GBPUSD Exness. Konfirmasi candle selesai, Week berjalan sementara, konflik berarti WAIT. Buka Puzzle di Analisis/Terminal atau tombol di tabel. Rencana R1/S1 memakai TF asal dan SL/TP di panel; tidak mengirim order. Kamus tersedia dalam rincian lipat dan dapat dicari. Layout dirancang responsif untuk mobile. Baca docs/LOGIKA_PUZZLE_COPTAH.md dan docs/UJI_HISTORIS_PUZZLE.md dalam paket untuk aturan dan batas hasil uji.
