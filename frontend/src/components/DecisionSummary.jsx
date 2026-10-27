@@ -3,7 +3,7 @@ import {dataQuality,quoteIsStale} from '../analysisState.mjs';
 import {h4SessionOutlook} from '../h4SessionOutlook.mjs';
 export default function DecisionSummary({data,liveTick,now=Date.now(),tolerance=0,onPlan,onAnalysis}) {
  const anchored=useH4Plan(data,liveTick,tolerance,now),plan=anchored.plan;
- const outlook=h4SessionOutlook(anchored.matrix?.rsColumns||[],{now,stale:quoteIsStale(data,now)});
+ const outlook=h4SessionOutlook(anchored.matrix?.rsColumns||[],{now,stale:quoteIsStale(data,now),cycle:data?.marketCycle});
  const quality=dataQuality(data,now),wait=plan.action==='WAIT';
  const direction=outlook.direction==='UP'?'↑ NAIK':outlook.direction==='DOWN'?'↓ TURUN':'Belum terverifikasi';
  const move=outlook.move==='UP'?'naik':outlook.move==='DOWN'?'turun':'belum berarah';

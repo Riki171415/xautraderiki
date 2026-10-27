@@ -10,7 +10,7 @@ payload=stage/'payload.zip'
 with zipfile.ZipFile(payload) as z:
  assert z.testzip() is None,'Payload CRC failed'
  info=json.loads(z.read('build-info.json'))
- assert info['version']==manifest['version']=='1.2.8'
+ assert info['version']==manifest['version']=='1.2.11'
  assert info['contentSha256']==manifest['contentSha256']
  for name,digest in info['contentSha256'].items():
   assert hashlib.sha256(z.read(name)).hexdigest()==digest,name
@@ -30,6 +30,7 @@ with zipfile.ZipFile(payload) as z:
  assert 'USA sekarang vs USA sebelumnya'.encode() in js
  assert b'usaComparison' in z.read('backend/market_habits.js')
  assert b'PREVIOUS_WEEKDAY' in js and b'usesWeekdayDailyBefore' in z.read('backend/mt5_data.js')
+ assert b'BROKER_DAILY' in js and b'BROKER_DAILY' in z.read('backend/market_cycle.js')
  assert 'backend/mt5_positions.js' in z.namelist()
  assert b'positions_get()' in z.read('exness_mt5_bridge.py') and b'order_send' not in z.read('exness_mt5_bridge.py')
  assert 'docs/PERBAIKAN_SUPPORT_UJI_10_TAHUN.md' in z.namelist()

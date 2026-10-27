@@ -6,8 +6,8 @@ using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 
-[assembly: System.Reflection.AssemblyVersion("1.2.8.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.2.8.0")]
+[assembly: System.Reflection.AssemblyVersion("1.2.11.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.2.11.0")]
 [assembly: System.Reflection.AssemblyProduct("COP TAH") ]
 
 internal static class Setup {
@@ -47,7 +47,7 @@ internal static class Setup {
    string programs=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs),"COP TAH");Directory.CreateDirectory(programs);
    Shortcut(Path.Combine(programs,"COP TAH.lnk"),target);
    using(var key=Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\COPTAH")){
-    key.SetValue("DisplayName","COP TAH · Exness dan Binance");key.SetValue("DisplayVersion","1.2.8");key.SetValue("Publisher","COP TAH");key.SetValue("InstallLocation",target);key.SetValue("DisplayIcon",Path.Combine(target,"COPTAH.exe"));
+    key.SetValue("DisplayName","COP TAH · Exness dan Binance");key.SetValue("DisplayVersion","1.2.11");key.SetValue("Publisher","COP TAH");key.SetValue("InstallLocation",target);key.SetValue("DisplayIcon",Path.Combine(target,"COPTAH.exe"));
     key.SetValue("UninstallString","powershell.exe -NoProfile -ExecutionPolicy Bypass -File \""+Path.Combine(target,"Uninstall.ps1")+"\"");key.SetValue("NoModify",1);key.SetValue("NoRepair",1);
    }
    progress.Close();

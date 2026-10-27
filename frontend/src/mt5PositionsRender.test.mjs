@@ -11,8 +11,14 @@ test('position panel preserves actual currency and hides stale or wrong-account 
  try{
   const {Mt5PositionsView:View}=await server.ssrLoadModule('/src/components/Mt5PositionsPanel.jsx');
   const now=100000,snapshot={success:true,available:true,updatedAt:now,server:'Exness-Test',sourceSession:'a',currency:'USC',profit:12.3,swap:-.4,positions:[{ticket:'90071992547409999',symbol:'XAUUSDc',side:'BUY',volume:.01,priceOpen:4100.123,priceCurrent:4110.123,sl:null,tp:4200,profit:12.3,swap:-.4,digits:3,openedAt:50000}]};
-  const render=extra=>renderToString(React.createElement(View,{snapshot,now,...extra}));
+  const render=extra=>renderToString(React.createElement(View,{snapshot,now,...extra})).replace(/<!--.*?-->/g,'');
   const html=render({});assert.ok(html.includes('USC'));assert.ok(html.includes('90071992547409999'));assert.ok(html.includes('4100.123'));
+  const compactHtml=render({compact:true});assert.ok(compactHtml.includes('BUY 1'));assert.ok(compactHtml.includes('SELL 0'));assert.ok(compactHtml.includes('USC'));assert.ok(!compactHtml.includes('<table'));assert.ok(!render({compact:true,sourceSession:'b'}).includes('BUY 1'));
+  const matrixHtml=render({tableView:true});assert.ok(matrixHtml.includes('mt5-positions-in-matrix'));assert.ok(matrixHtml.includes('open=""'));assert.ok(matrixHtml.includes('4100.123'));
+  const {default:Matrix}=await server.ssrLoadModule('/src/components/MatrixSlideshow.jsx');
+  const matrix=renderToString(React.createElement(Matrix,{broker:'EXNESS',selectedServer:'Exness-Test',sourceSession:'a'}));
+  assert.ok(matrix.includes('mt5-positions-inline'),'compact positions mounted inside upper session bar');assert.ok(!matrix.includes('mt5-positions-in-matrix'),'no lower positions panel reducing matrix height');assert.ok(matrix.indexOf('mt5-positions-inline')<matrix.indexOf('rs-fit-viewport'));
+  const binance=renderToString(React.createElement(Matrix,{broker:'BINANCE'}));assert.ok(!binance.includes('mt5-positions-inline'));
   assert.ok(!render({now:now+16000}).includes('90071992547409999'));
   assert.ok(!render({sourceSession:'b'}).includes('90071992547409999'));
   assert.ok(!render({selectedServer:'Exness-Other'}).includes('90071992547409999'));

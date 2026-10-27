@@ -1,0 +1,71 @@
+{
+  "server": "Exness-MT5Real36",
+  "symbol": "XAUUSDc",
+  "readOnly": true,
+  "result": {
+    "now": 1793084986700,
+    "daily": {
+      "timestamp": 1793059200000,
+      "periodEnd": 1793145600000,
+      "open": 4005.555,
+      "close": 4000.798
+    },
+    "asia": {
+      "key": "asia",
+      "name": "ASIA",
+      "from": 0,
+      "to": 8,
+      "hours": "07:00\u00e2\u20ac\u201c15:00 WIB",
+      "start": 1793059200000,
+      "end": 1793088000000,
+      "bars": 8,
+      "expectedBars": 8,
+      "missingBars": 0,
+      "coverage": true,
+      "status": "active",
+      "open": 4005.555,
+      "high": 4025.72,
+      "low": 3997.097,
+      "close": 4000.798,
+      "highTime": 1793073600000,
+      "lowTime": 1793080800000
+    },
+    "activeSession": "ASIA",
+    "schedule": [
+      {
+        "name": "ASIA",
+        "start": 1793059200000,
+        "end": 1793088000000,
+        "hours": "07:00\u201315:00 WIB"
+      },
+      {
+        "name": "EROPA",
+        "start": 1793088000000,
+        "end": 1793109600000,
+        "hours": "15:00\u201321:00 WIB"
+      },
+      {
+        "name": "USA",
+        "start": 1793109600000,
+        "end": 1793138400000,
+        "hours": "21:00\u201305:00 WIB"
+      },
+      {
+        "name": "TRANSISI",
+        "start": 1793138400000,
+        "end": 1793145600000,
+        "hours": "05:00\u201307:00 WIB"
+      }
+    ],
+    "market": {
+      "timestamp": 1793059200000,
+      "periodEnd": 1793088000000,
+      "open": 4005.555,
+      "high": 4025.72,
+      "low": 3997.097,
+      "close": 4000.798,
+      "volume": 89177
+    },
+    "h4Start": 1793073600000
+  }
+}

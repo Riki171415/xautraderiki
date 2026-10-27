@@ -1,3 +1,4 @@
+import Mt5PositionsPanel from './Mt5PositionsPanel';
 import {forexHabitContext} from '../forexHabits.mjs';
 import SupportWatchPanel from './SupportWatchPanel';
 import MarketMovementBadge from './MarketMovementBadge';
@@ -29,11 +30,11 @@ import {Maximize,Minimize,ChevronLeft,ChevronRight,ArrowLeft} from 'lucide-react
 import {h4ConfluencePlan,confluenceCell} from '../h4ConfluencePlan.mjs';
 import {microH4Guide,MICRO_TIMEFRAMES} from '../microH4Guide.mjs';
 import {levelName} from '../h4LevelMatches.mjs';
-import {projectMatrix,activeSessionAt} from '../liveMatrix.mjs';
+import {projectMatrix,activeSessionAt,sessionHoursAt} from '../liveMatrix.mjs';
 const TIMEFRAMES=[['1m','M1'],['5m','M5'],['15m','M15'],['30m','M30'],['1h','H1'],['4h','H4'],['market','MARKET'],['1d','DAILY'],['1w','WEEK'],['1M','MONTH'],['3M','QUARTER'],['6M','SEMESTER'],['1Y','YEAR']];
 const shortLabel=c=>c.timeframe==='market'?(c.sessionName||c.label?.replace('MARKET · ','')||'MARKET'):({ '1m':'M1','5m':'M5','15m':'M15','30m':'M30','1h':'H1','4h':'H4','market':'MARKET','1d':'DAILY','1w':'WEEK','1M':'MONTH','3M':'QUARTER','6M':'SEMESTER','1Y':'YEAR' }[c.timeframe]||c.label);
 const LEVELS=['res4','res3','res2','res1','pivot','sup1','sup2','sup3','sup4'];
-export default function MatrixSlideshow({data,liveTick,focusedTf,onBack,tolerance=0,onTolerance,dailyTarget='AUTO',onDailyTarget,broker,onBrokerChange,markerExpanded=false,onMarkerExpanded,onOpenAnalysis}) {
+export default function MatrixSlideshow({data,liveTick,focusedTf,onBack,selectedServer,sourceSession,tolerance=0,onTolerance,dailyTarget='AUTO',onDailyTarget,broker,onBrokerChange,markerExpanded=false,onMarkerExpanded,onOpenAnalysis}) {
   const [panel,setPanel]=useState(null);
  const [taskFrame,setTaskFrame]=useState('1d');
  const viewportRef=useRef(null);
@@ -72,9 +73,9 @@ export default function MatrixSlideshow({data,liveTick,focusedTf,onBack,toleranc
  const digits=data?.decimals??3,fmt=v=>Number.isFinite(Number(v))&&v!=null?Number(v).toFixed(digits):'—';
  const equalLevels=macroEqualLevels(columns,{decimals:digits,now});
  return <section className="matrix-slideshow rs-presentation" aria-label="Presentasi matriks Support dan Resistance">
-  <header className="matrix-slide-header"><button className="chart-toggle" onClick={back} aria-label="Kembali ke tabel"><ArrowLeft size={17}/><span>Tabel</span></button><div><p className="workspace-eyebrow">SUPPORT & RESISTANCE · {columns.length} TIMEFRAME</p><h1>{data?.symbol||'—'} <small>{data?.broker?.name||'Menunggu data'} · {activeSessionAt(now)}</small></h1></div><button className="chart-toggle" onClick={toggle}>{full?<Minimize size={17}/>:<Maximize size={17}/>}<span>{full?'Keluar layar penuh':'Layar penuh'}</span></button></header>
-  <div className="rs-presentation-tools"><label>Sumber <select aria-label="Pilih sumber data matriks" value={broker||data?.broker?.id||'EXNESS'} onChange={e=>onBrokerChange?.(e.target.value)}><option value="EXNESS">Exness MT5</option><option value="BINANCE">Binance Spot</option></select></label><strong>{data?.symbol||'—'} · {fmt(price)}</strong><span className="rs-market-clock"><time dateTime={new Date(now).toISOString()}>{new Date(now).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit'})} WIB</time><b>{activeSessionAt(now)} · {({ASIA:'06.00–14.00',EROPA:'14.00–20.00',USA:'20.00–04.00',TRANSISI:'04.00–06.00'})[activeSessionAt(now)]}</b></span><label>Selisih H4 <select aria-label="Toleransi pertemuan H4" value={tolerance} onChange={e=>onTolerance?.(Number(e.target.value))}>{instrumentTolerance(data?.symbol).values.map(v=><option key={v} value={v}>{v===0?'Sama persis':`≤ ${v}`}</option>)}</select></label></div>
-  <SourceHSHBar data={data} broker={broker} onBrokerChange={onBrokerChange} now={now}/>
+  <header className="matrix-slide-header"><button className="chart-toggle" onClick={back} aria-label="Kembali ke tabel"><ArrowLeft size={17}/><span>Tabel</span></button><div><p className="workspace-eyebrow">SUPPORT & RESISTANCE · {columns.length} TIMEFRAME</p><h1>{data?.symbol||'—'} <small>{data?.broker?.name||'Menunggu data'} · {activeSessionAt(now,data?.marketCycle)}</small></h1></div><button className="chart-toggle" onClick={toggle}>{full?<Minimize size={17}/>:<Maximize size={17}/>}<span>{full?'Keluar layar penuh':'Layar penuh'}</span></button></header>
+  <div className="rs-presentation-tools"><label>Sumber <select aria-label="Pilih sumber data matriks" value={broker||data?.broker?.id||'EXNESS'} onChange={e=>onBrokerChange?.(e.target.value)}><option value="EXNESS">Exness MT5</option><option value="BINANCE">Binance Spot</option></select></label><strong>{data?.symbol||'—'} · {fmt(price)}</strong><span className="rs-market-clock"><time dateTime={new Date(now).toISOString()}>{new Date(now).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit'})} WIB</time><b>{activeSessionAt(now,data?.marketCycle)} · {sessionHoursAt(now,data?.marketCycle)}</b></span><label>Selisih H4 <select aria-label="Toleransi pertemuan H4" value={tolerance} onChange={e=>onTolerance?.(Number(e.target.value))}>{instrumentTolerance(data?.symbol).values.map(v=><option key={v} value={v}>{v===0?'Sama persis':`≤ ${v}`}</option>)}</select></label></div>
+  <SourceHSHBar middle={(broker||data?.broker?.id)==='EXNESS'?<Mt5PositionsPanel compact selectedServer={selectedServer} sourceSession={sourceSession} now={now}/>:null} data={data} broker={broker} onBrokerChange={onBrokerChange} now={now}/>
   {missing.length>0&&<div className="rs-missing-summary rs-missing-inline"><span><b>{actual.length} timeframe tersedia</b> · {missing.map(c=>c.label).join(', ')} menunggu riwayat</span><button className="chart-toggle" onClick={()=>{setShowMissing(v=>!v);setPage(0);}}>{showMissing?'Sembunyikan kolom kosong':'Lihat kolom belum tersedia'}</button><details><summary>Mengapa?</summary><p>Kolom yang ditandai belum mempunyai candle periode aktif atau riwayat pembanding lengkap. Saat pasar tutup, candle terakhir tidak dianggap sebagai sesi aktif. Riwayat akan ditampilkan setelah diterima dan lolos validasi dari sumber aktif.</p></details></div>}
 
   {error&&<p role="status" className="text-xs text-amber-200">{error}</p>}

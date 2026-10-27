@@ -1,6 +1,21 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {analyzeMarketSessions}=require('./market_cycle');
+test('broker clock aligns Asia with D1 and moves every session and Market aggregation together',()=>{
+ const {aggregateActiveMarket}=require('./market_cycle'),H=3600000,start=Date.UTC(2026,9,27);
+ const hourly=Array.from({length:72},(_,i)=>[start+(i-24)*H,100+i,110+i,90+i,101+i,1]);
+ const daily={timestamp:start,periodEnd:start+24*H,open:124,close:125};
+ for(const [offset,name] of [[0,'ASIA'],[7,'ASIA'],[8,'EROPA'],[14,'USA'],[22,'TRANSISI']]){
+  const now=start+offset*H,context={daily,clockMode:'BROKER_DAILY',symbol:'XAUUSD'};
+  const c=analyzeMarketSessions({...context,hourly,now});
+  assert.equal(c.activeSession,name);assert.equal(c.sessions[0].start,start);assert.equal(c.sessions[0].open,daily.open);
+  assert.equal(c.sessions[0].hours,'07:00–15:00 WIB');
+  const market=aggregateActiveMarket(hourly,now,context);assert.equal(market.sessionName,name);assert.equal(market.ohlcv_N.timestamp,c.sessions.find(s=>s.name===name).start);
+ }
+ const shifted={...daily,timestamp:start+H,periodEnd:start+25*H};
+ assert.equal(analyzeMarketSessions({hourly,daily:shifted,clockMode:'BROKER_DAILY',now:start+2*H}).sessions[0].hours,'08:00–16:00 WIB');
+ const expired=analyzeMarketSessions({hourly,daily,clockMode:'BROKER_DAILY',now:start+25*H});assert.equal(expired.available,false);assert.equal(expired.activeSession,'TRANSISI');assert.equal(expired.cycleStart,null);
+});
 const {calcMarketCycle}=require('./rule_engine');
 const H=3600000, anchor=Date.UTC(2026,9,15,23);
 function fixture(kind='strongBear',now=anchor+23*H) {

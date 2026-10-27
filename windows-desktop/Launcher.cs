@@ -7,8 +7,8 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
 
-[assembly: System.Reflection.AssemblyVersion("1.2.8.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.2.8.0")]
+[assembly: System.Reflection.AssemblyVersion("1.2.11.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.2.11.0")]
 [assembly: System.Reflection.AssemblyProduct("COP TAH") ]
 
 internal static class Launcher {

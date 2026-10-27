@@ -1,8 +1,13 @@
 import {sampleMomentum} from './priceMomentum.mjs';
 const keys=['res4','res3','res2','res1','pivot','sup1','sup2','sup3','sup4'];
-export function activeSessionAt(now=Date.now()) {
+export function activeSessionAt(now=Date.now(),cycle) {
+ if(cycle?.clockMode==='BROKER_DAILY')return cycle.sessions?.find(s=>now>=s.start&&now<s.end)?.name||'MENUNGGU D1';
  const h=new Date(now+7*3600000).getUTCHours();
  return h>=6 && h<14?'ASIA':h>=14 && h<20?'EROPA':h>=20 || h<4?'USA':'TRANSISI';
+}
+export function sessionHoursAt(now,cycle){
+ const session=cycle?.sessions?.find(s=>now>=s.start&&now<s.end);
+ return session?.hours||(cycle?.clockMode==='BROKER_DAILY'?'Menunggu waktu broker':({ASIA:'06.00–14.00 WIB',EROPA:'14.00–20.00 WIB',USA:'20.00–04.00 WIB',TRANSISI:'04.00–06.00 WIB'})[activeSessionAt(now)]);
 }
 export function projectMatrix(matrix,tick,decimals=3,now=Date.now(),previous=null) {
  if(matrix) {

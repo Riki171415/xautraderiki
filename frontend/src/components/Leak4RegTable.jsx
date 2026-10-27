@@ -34,7 +34,7 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
   const activePrice = currentPrice;
   const badges=(col,key)=>planBadges(matrixPlan(col,data.marketEntry,{columns:allRsColumns,price:Number(activePrice),options:{now,decimals,tolerance,stale:quoteIsStale(data,now)}}),key).map(label=><span key={label} className={`matrix-plan-badge ${label==='SL'?'matrix-plan-sl':label.startsWith('TP')?'matrix-plan-tp':label.startsWith('BUY')?'matrix-plan-buy':'matrix-plan-sell'}`}>{label}</span>);
   const hshReference=data.marketCycle?.hshReference;
-  const hshActive=data.marketCycle?.sessions?.find(s=>s.name===activeSessionAt(now));
+  const hshActive=data.marketCycle?.sessions?.find(s=>s.name===activeSessionAt(now,data?.marketCycle));
   const hshFmt=v=>Number.isFinite(v)?v.toFixed(decimals):'Menunggu riwayat sesi';
   const tickDirection = liveTick?.direction || 'SAME';
 
@@ -66,7 +66,7 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
 
   return (
     <div className={`cop-panel space-y-4 ${rsOnly?'':'terminal-compact terminal-restored'}`} >
-      <div className="terminal-screen-tools"><p className="text-xs text-slate-400">Market aktif: <strong className="text-amber-200">{activeSessionAt(now)}</strong>{!tableRows.some(r=>r.timeframe==='market') && ' · Menunggu candle sesi baru dan riwayat pembanding lengkap. Data sesi lama tidak ditampilkan sebagai sesi aktif.'}</p></div>
+      <div className="terminal-screen-tools"><p className="text-xs text-slate-400">Market aktif: <strong className="text-amber-200">{activeSessionAt(now,data?.marketCycle)}</strong>{!tableRows.some(r=>r.timeframe==='market') && ' · Menunggu candle sesi baru dan riwayat pembanding lengkap. Data sesi lama tidak ditampilkan sebagai sesi aktif.'}</p></div>
       {/* ── Top Bar & Telemetry ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-cop-border pb-3 text-xs font-mono">
         <div className="flex items-center gap-2.5">
@@ -381,7 +381,7 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
 
             <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono text-slate-400 pt-1 border-t border-cop-border/60">
               <span>SPREAD : <strong className="text-cop-cyan">{spreadPoints} PTS</strong></span>
-              <span>HSH {activeSessionAt(now)} · OPEN SESI : <strong className="text-amber-300">{hshFmt(hshActive?.coverage?hshActive.open:null)}</strong></span>
+              <span>HSH {activeSessionAt(now,data?.marketCycle)} · OPEN SESI : <strong className="text-amber-300">{hshFmt(hshActive?.coverage?hshActive.open:null)}</strong></span>
               <span className="block mt-1 text-xs text-slate-400">HSH {hshReference?.name||'pembanding'} sebelumnya : <strong className="text-cyan-200">{hshFmt(hshReference?.hshOpen)}</strong></span>
             </div>
 
@@ -394,7 +394,7 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
           <div className="border border-cop-border rounded-xl bg-cop-card/70 p-2.5 space-y-1.5 text-xs font-mono">
             {sessions.map((s) => (
               <div key={s.city} className="flex items-center justify-between">
-                <span className="text-slate-300 font-medium">{s.city} : {s.time}</span>
+                <span className="text-slate-300 font-medium">{s.city} : {data.marketCycle?.sessions?.find(x=>x.name===s.city)?.hours||s.time}</span>
                 <span
                   className={`font-bold px-2 py-0.5 rounded text-[10px] ${
                     s.status === 'OPEN'
@@ -404,7 +404,7 @@ function CompleteMatrix({ data, liveTick, focusedTf, rsOnly=false, displayTimefr
                       : 'text-rose-400 bg-rose-950/60 border border-rose-700/50'
                   }`}
                 >
-                  {s.city===activeSessionAt(now)?'OPEN':'CLOSED'}
+                  {s.city===activeSessionAt(now,data?.marketCycle)?'OPEN':'CLOSED'}
                 </span>
               </div>
             ))}

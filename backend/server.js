@@ -425,7 +425,7 @@ async function getMultiTfCandles(brokerId = 'EXNESS', marketSymbol = 'XAUUSD') {
   }
 
   // Aggregate London market session
-  const marketSession = require('./market_cycle').aggregateActiveMarket(ohlcv1hRaw || []);
+  const marketSession = require('./market_cycle').aggregateActiveMarket(ohlcv1hRaw || [],Date.now(),{symbol:marketSymbol,daily:res['1d']?.ohlcv_N,clockMode:brokerId==='EXNESS'?'BROKER_DAILY':'FIXED_WIB'});
   if (marketSession) {
     res['market'] = marketSession;
   }
@@ -626,7 +626,7 @@ async function runAnalysis(symbol = 'XAUUSD', timeframe = '1h', brokerId = 'EXNE
     const session = getTradingSession();
 
     // Market Cycle Analysis (NORMAL vs STRONG, 12-step cycle)
-    let cycleContext = {symbol,source: broker.id === 'EXNESS' ? `MT5 Exness ${feedState.symbol}` : broker.name};
+    let cycleContext = {symbol,clockMode:broker.id==='EXNESS'?'BROKER_DAILY':'FIXED_WIB',source: broker.id === 'EXNESS' ? `MT5 Exness ${feedState.symbol}` : broker.name};
     try {
       const [hourly, dailyRows] = await Promise.all([
         fetchBrokerOHLCV(broker.id, marketSymbol, '1h'),

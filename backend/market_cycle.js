@@ -38,12 +38,18 @@ function latestObservedSession(rows,start,end,now,symbol) {
   }
   return immediate;
 }
-function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null,now=Date.now(),source='MT5 Exness',symbol}={}) {
+function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null,now=Date.now(),source='MT5 Exness',symbol,clockMode='FIXED_WIB'}={}) {
   const local=new Date(now+7*HOUR);
   let anchor=Date.UTC(local.getUTCFullYear(),local.getUTCMonth(),local.getUTCDate(),6)-7*HOUR;
   if(now<anchor) anchor-=24*HOUR;
+  const brokerClock=clockMode==='BROKER_DAILY';
+  const dailyStart=daily?.timestamp,dailyEnd=daily?.periodEnd??(dailyStart+24*HOUR);
+  const validClock=!brokerClock||(Number.isFinite(dailyStart)&&Number.isFinite(dailyEnd)&&dailyStart<=now&&now<dailyEnd);
+  if(brokerClock)anchor=validClock?dailyStart:NaN;
+  const clock=t=>new Date(t+7*HOUR).toISOString().slice(11,16);
+  const hours=(start,end)=>Number.isFinite(start)&&Number.isFinite(end)?`${clock(start)}–${clock(end)} WIB`:'Menunggu waktu D1 broker';
   // Fixed windows belong to the COP TAH model; these are not exchange opening hours.
-  const sessions=WINDOWS.map(w=>({...w,...summarize(hourly,anchor+w.from*HOUR,anchor+w.to*HOUR,now)}));
+  const sessions=WINDOWS.map(w=>({...w,...summarize(hourly,anchor+w.from*HOUR,anchor+w.to*HOUR,now),hours:hours(anchor+w.from*HOUR,anchor+w.to*HOUR)}));
   const [asia,europe,usa,transition]=sessions;
   const active=sessions.find(s=>now>=s.start && now<s.end);
   const close=Number.isFinite(price)?price:daily?.close;
@@ -51,7 +57,7 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
   const dailyJika=!daily || !dailyBefore?'UNAVAILABLE':daily.open>dailyBefore.open?'UP':daily.open<dailyBefore.open?'DOWN':'NEUTRAL';
   let marketType='WAITING',verification='WAITING',description='Menunggu data sesi Asia dan Eropa yang lengkap.';
   const evidence=[];
-  if(!daily || !hourly.length) {marketType='UNAVAILABLE';description='Data D1/H1 belum tersedia. Tidak membuat kesimpulan dari timeframe pengganti.';}
+  if(!validClock || !daily || !hourly.length) {marketType='UNAVAILABLE';description='Data D1/H1 belum tersedia. Tidak membuat kesimpulan dari timeframe pengganti.';}
   else if(!asia.coverage || asia.status!=='completed') {description='Sesi Asia belum lengkap/selesai. High dan Low belum final.';}
   else if(now<europe.start || !europe.bars) {description='Asia selesai; menunggu pergerakan sesi Eropa.';}
   else if(!europe.coverage || (now>=usa.start && (!usa.bars || !usa.coverage))) {
@@ -112,7 +118,7 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
     const observation=active.name==='USA'
       ?summarize(hourly,anchor+window.from*HOUR,anchor+window.to*HOUR,now)
       :latestObservedSession(hourly,anchor+window.from*HOUR,anchor+window.to*HOUR,now,symbol);
-    hshReference={...observation,name:window.name,activeSession:active.name,hours:window.hours,
+    hshReference={...observation,name:window.name,activeSession:active.name,hours:hours(observation.start,observation.end),
       hshOpen:observation.end<=now && Number.isFinite(observation.open)?observation.open:null};
   }
   const definitions=[
@@ -126,20 +132,21 @@ function analyzeMarketSessions({hourly=[],daily=null,dailyBefore=null,price=null
     status:s.status,value:s[field],desc:s[field]==null?'Belum ada data sesi.':`${field.toUpperCase()} ${s[field]} · ${s.status==='completed'?'sesi selesai':s.status==='incomplete'?'riwayat belum lengkap':'nilai sementara; sesi masih berjalan'}`,
   }));
   const activeStep=steps.find(s=>s.session===active?.name && s.status==='active');
-  return {available:!!daily && hourly.length>0,marketType,bias,dailyJika,verification,
+  return {available:validClock && !!daily && hourly.length>0,marketType,bias,dailyJika,verification,
     label:`${verification==='PROVISIONAL'?'INDIKASI ':''}${marketType} · ${bias}`,
     activeSession:active?.name || 'TRANSISI',currentStep:activeStep?.step ?? null,
     activeStepTitle:activeStep?.title || 'Menunggu data sesi',activeStepDesc:description,
     totalSteps:12,steps,sessions,evidence,description,source,hshReference,normalStory,
-    previousUsa:{...previousUsa,name:'USA sebelumnya',hours:'20:00–04:00 WIB',hshOpen:previousUsa.end<=now && Number.isFinite(previousUsa.open)?previousUsa.open:null},
-    tradingDay:new Date(anchor+7*HOUR).toISOString().slice(0,10),
+    previousUsa:{...previousUsa,name:'USA sebelumnya',hours:hours(previousUsa.start,previousUsa.end),hshOpen:previousUsa.end<=now && Number.isFinite(previousUsa.open)?previousUsa.open:null},
+    clockMode,cycleStart:Number.isFinite(anchor)?anchor:null,cycleEnd:Number.isFinite(anchor)?anchor+24*HOUR:null,
+    tradingDay:Number.isFinite(anchor)?new Date(anchor+7*HOUR).toISOString().slice(0,10):null,
     wibTime:`${String(local.getUTCHours()).padStart(2,'0')}:${String(local.getUTCMinutes()).padStart(2,'0')} WIB`,
-    sessionConvention:'Jendela metode COP TAH tetap dalam WIB; bukan jam bursa/DST. Hari siklus dimulai pukul 06:00 WIB.',
+    sessionConvention:brokerClock?'Awal siklus mengikuti Open D1 broker. Asia 0–8 jam, Eropa 8–14 jam, USA 14–22 jam, transisi 22–24 jam dari pembukaan Daily. TF lain mengikuti candle MT5 masing-masing.':'Jendela metode COP TAH tetap dalam WIB; hari siklus dimulai pukul 06:00 WIB.',
     hshOpen:daily?.open ?? null,
   };
 }
-function aggregateActiveMarket(hourly, now=Date.now()) {
-  const cycle=analyzeMarketSessions({hourly,now});
+function aggregateActiveMarket(hourly, now=Date.now(),context={}) {
+  const cycle=analyzeMarketSessions({...context,hourly,now});
   const current=cycle.sessions.find(s=>s.name===cycle.activeSession);
   if(!current?.coverage) return null;
   let previous=null;

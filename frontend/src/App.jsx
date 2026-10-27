@@ -116,14 +116,6 @@ export default function App() {
   useEffect(() => { const timer = setInterval(() => setClock(Date.now()), 1000); return () => clearInterval(timer); }, []);
   const tickAge = rawTick ? Math.max(0, Math.floor((clock - rawTick.timestamp) / 1000)) : null;
   const liveTick = rawTick?.broker === broker && rawTick?.symbol === symbol && tickAge < 10 ? rawTick : null;
-  const previousSession=useRef(activeSessionAt(clock));
-  const activeSession=activeSessionAt(clock);
-  useEffect(()=>{
-    if(previousSession.current!==activeSession) {
-      previousSession.current=activeSession;
-      refetch();
-    }
-  },[activeSession,refetch]);
   const lastAnalysis=useRef(null);
   const incoming = newestScopedAnalysis(wsData,restData,symbol,timeframe,broker);
   const candidate = retainedScopedAnalysis(incoming,lastAnalysis.current,symbol,timeframe,broker);
@@ -132,6 +124,15 @@ export default function App() {
   const data = candidate&&acceptsExnessSource(candidate,exnessServer,broker==='EXNESS'?latestSource.current:null)?candidate:null;
   const activeExnessServer=rawTick?.broker==='EXNESS'?rawTick.server:candidate?.broker?.id==='EXNESS'?candidate.broker.server:null;
   lastAnalysis.current=data;
+  const previousSession=useRef(activeSessionAt(clock,data?.marketCycle));
+  const activeSession=activeSessionAt(clock,data?.marketCycle);
+  useEffect(()=>{
+    if(previousSession.current!==activeSession) {
+      previousSession.current=activeSession;
+      refetch();
+    }
+  },[activeSession,refetch]);
+
 
 
   // Subscribe to live feed (Stale-While-Revalidate: do NOT blank out screen)
@@ -228,7 +229,7 @@ export default function App() {
       />
 
       {signalPopup?.scope===sourceIdentity(data)&&<StrongSignalPopup signal={liveSignals.find(s=>strongSignalKey(s,data,h4Tolerance)===signalPopup.eventKey)||{...signalPopup,strong:false,checks:signalPopup.checks.map(c=>({...c,pass:false}))}} symbol={symbol} source={broker} decimals={data?.decimals??3} onClose={()=>setSignalPopup(null)}/>}
-      {broker==='EXNESS'&&<Mt5PositionsPanel selectedServer={exnessServer} sourceSession={latestSource.current?.sourceSession} now={clock}/>}
+      {broker==='EXNESS'&&viewMode!=='levels'&&<Mt5PositionsPanel selectedServer={exnessServer} sourceSession={latestSource.current?.sourceSession} now={clock}/>}
       {/* ── Notification Toast ── */}
       {notification&&!noticesOpen&&<aside onMouseEnter={()=>clearTimeout(toastTimer.current)} onFocusCapture={()=>clearTimeout(toastTimer.current)} className="notification-toast" aria-label="Notifikasi terbaru"><NotificationCard compact notice={notification} onClose={()=>setNotification(null)} onOpen={()=>{navigate(notification.page);setNotification(null);}}/></aside>}
       <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{notification?notification.title+'. '+notification.body:''}</span>
@@ -275,7 +276,7 @@ export default function App() {
       <main className="workspace-main flex-1 p-4 lg:p-6 space-y-6">
         {data&&!['levels','history','sources','guide'].includes(viewMode)&&<DecisionSummary data={data} liveTick={liveTick} now={clock} tolerance={h4Tolerance} onPlan={()=>navigate('entries')} onAnalysis={()=>navigate('global')}/> }
         {viewMode!=='levels'&&<SourceHSHBar data={data} broker={broker} onBrokerChange={handleBrokerChange} now={clock}/>}
-        {viewMode==='levels'&&<MatrixSlideshow markerExpanded={markerExpanded} onMarkerExpanded={setMarkerExpanded} onOpenAnalysis={()=>navigate('cycle')} broker={broker} onBrokerChange={handleBrokerChange} dailyTarget={dailyTarget} onDailyTarget={setDailyTarget} data={data} liveTick={liveTick} focusedTf={timeframe} onTolerance={setH4Tolerance} tolerance={h4Tolerance} onBack={()=>navigate('entries')}/>}
+        {viewMode==='levels'&&<MatrixSlideshow selectedServer={exnessServer} sourceSession={latestSource.current?.sourceSession} markerExpanded={markerExpanded} onMarkerExpanded={setMarkerExpanded} onOpenAnalysis={()=>navigate('cycle')} broker={broker} onBrokerChange={handleBrokerChange} dailyTarget={dailyTarget} onDailyTarget={setDailyTarget} data={data} liveTick={liveTick} focusedTf={timeframe} onTolerance={setH4Tolerance} tolerance={h4Tolerance} onBack={()=>navigate('entries')}/>}
 
         {viewMode==='ohlc'&&<OHLCWorkspace data={data} liveTick={liveTick} now={clock} focusedTf={timeframe} onSelect={tf=>{setTerminalFocus(tf);navigate('entries');}}/>}
         {viewMode === 'guide' && <AnalysisGuide data={data} liveTick={liveTick} now={clock} />}

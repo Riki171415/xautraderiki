@@ -1,4 +1,4 @@
-COP TAH 1.2.8 — Windows 64-bit — Exness MT5 dan Binance Spot
+COP TAH 1.2.11 — Windows 64-bit — Exness MT5 dan Binance Spot
 
 PEMASANGAN
 1. Salin COP-TAH-Windows-x64-Setup.exe ke komputer Windows 10/11 64-bit.
@@ -106,5 +106,14 @@ Pop-up hanya untuk pantulan awal, support ditembus, lintasan level H4, dan sinya
 KEBIASAAN FOREX & MARKET BERBISIK 1.2.7
 Buka Sesi Market untuk ringkasan kebiasaan, atau tombol Market Berbisik pada tabel. Syarat belum muncul tetap ditulis, bukan menyembunyikan panel. Khusus forex dan logam Exness; tidak diterapkan pada BTC/Binance. Perbandingan USA memakai H1 selesai berdurasi sama. Awal/akhir pekan dan dua H4 terakhir memberi konteks, bukan kepastian pembalikan. Rute R3-R1-R2-mendekati S1 hanya skenario bersyarat; urutan tidak diklaim sudah terjadi.
 
-DAILY BEFORE FOREX 1.2.8
+DAILY BEFORE FOREX 1.2.11
 Daily Before XAUUSD, EURUSD dan GBPUSD mengambil candle perdagangan Senin-Jumat terakhir yang tersedia, melewati candle akhir pekan dari broker. Senin memakai Jumat jika candle Jumat tersedia. Jika libur/riwayat kosong, gunakan hari kerja terakhir yang benar-benar tersedia; tidak membuat candle pengganti. OHLC N tetap candle asli terakhir broker. BTC tetap memakai candle harian sebelumnya termasuk akhir pekan. Tanggal N dan Before ditampilkan pada rincian Daily.
+
+POSISI DI TABEL 1.2.11
+Daftar posisi terbuka MT5 kini tampil langsung di bawah tabel level. Klik judul untuk melipatnya. Daftar diperbarui sekitar 3 detik, mengikuti server dan akun MT5 aktif; data kedaluwarsa disembunyikan. Tidak ada tombol transaksi.
+
+WAKTU BROKER 1.2.11
+Sesi Exness mengikuti timestamp pembukaan D1 broker. Asia 0-8 jam, Eropa 8-14 jam, USA 14-22 jam dan transisi 22-24 jam dari D1. Contoh D1 mulai 07.00 WIB: Asia 07-15, Eropa 15-21, USA 21-05 dan transisi 05-07. HSH Asia memakai Open H1 tepat pada pembukaan D1; bila candle pembukaan hilang, tunggu data, tidak meminjam harga dari jam lain. M1 sampai Year tetap mengikuti timestamp candle asli MT5 dan tidak digeser manual.
+
+POSISI RINGKAS 1.2.11
+Ringkasan posisi MT5 berada di tengah baris HSH/Acuan Sesi di atas tabel. Menampilkan jumlah posisi, BUY/SELL dan profit dalam mata uang akun. Klik ringkasan untuk membuka rincian. Panel posisi di bawah tabel dihapus agar tabel kembali lega.
